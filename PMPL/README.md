@@ -42,3 +42,17 @@ Untuk membandingkan hasil pengujian antara **Playwright** dan **Katalon** pada d
 Menjalankan pengujian otomatis:
 ```bash
 npx playwright test --headed
+
+### 🔹 Install
+Menjalankan install depenedensi:
+```bash
+npm install
+composer install
+
+
+### 🔹 menjalanakan laravel 
+Menjalankan menjalankan laravel :
+```bash
+npm run dev
+php artisans serve 
+
