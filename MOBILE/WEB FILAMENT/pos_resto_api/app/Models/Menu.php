@@ -2,45 +2,53 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-// use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Relations\HasMany; // <-- 1. Import HasMany
 
 class Menu extends Model
 {
     use HasFactory;
 
-    // TAMBAHKAN INI
     protected $fillable = [
+        'category_id',
         'name',
         'price',
-        'stock', // safrizal ini yang menambahkan
+        'stock',
         'description',
         'image',
-        'category_id',
     ];
 
     protected $appends = ['image_url'];
 
+    /**
+     * Relasi ke Kategori
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
     /**
-     * Membuat atribut 'image_url' secara otomatis.
+     * ⬇️ 2. TAMBAHKAN FUNGSI INI ⬇️
+     * Relasi ke OrderItem (untuk dashboard)
+     * Ini akan memperbaiki error Anda.
+     */
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Accessor untuk URL Gambar (untuk API)
      */
     public function getImageUrlAttribute(): ?string
     {
-        // Jika kolom 'image' tidak kosong (ada file)
         if ($this->image) {
-            // Kembalikan URL lengkap dari file di public disk
             return Storage::disk('public')->url($this->image);
         }
-
-        // Jika tidak ada gambar, kembalikan null
         return null;
     }
 }

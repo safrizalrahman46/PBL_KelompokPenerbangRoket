@@ -12,9 +12,12 @@ use App\Http\Controllers\Api\V1\OrderController;
 
 use App\Http\Controllers\Api\V1\TransactionController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+use App\Http\Controllers\Api\V1\AuthController; // Kita akan buat ini nanti
+use App\Http\Controllers\Api\V1\DataController; // Kita akan buat ini nanti
+
+// Route::get('/user', function (Request $request) {
+//     return $request->user();
+// })->middleware('auth:sanctum');
 
 
 // DAFTARKAN API MENU ANDA DI SINI
@@ -33,4 +36,31 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Endpoint untuk Flutter "Bayar"
     Route::post('/v1/transactions', [TransactionController::class, 'store']);
+});
+
+Route::prefix('v1')->group(function () {
+
+    // --- Rute Otentikasi (API Public) ---
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+
+    // --- Rute Terlindungi (Membutuhkan Token Otentikasi) ---
+    Route::middleware('auth:sanctum')->group(function () {
+        // Otentikasi
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/user', [AuthController::class, 'user']); // API: /v1/user
+
+        // Rute Meja
+        Route::patch('/tables/{restoTable}/status', [RestoTableController::class, 'updateStatus']);
+
+        // Rute Transaksi (Pembayaran)
+        Route::post('/transactions', [TransactionController::class, 'store']); // API: /v1/transactions
+
+        // Contoh rute untuk mengambil data
+        Route::apiResource('posts', DataController::class);
+    });
+});
+
+Route::middleware('auth:sanctum')->get('/v1/user', function (Request $request) {
+    return $request->user();
 });
