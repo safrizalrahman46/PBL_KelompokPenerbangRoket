@@ -1,8 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+        <!-- 1. Tambahkan izin internet -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:label="pos_resto_app"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
+      
+        <!-- 2. Tambahkan izin cleartext (HTTP) -->
+        android:usesCleartextTraffic="true">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
