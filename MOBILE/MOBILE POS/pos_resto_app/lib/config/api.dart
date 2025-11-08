@@ -10,3 +10,11 @@ const kPrimaryColor = Color(0xFFF9A825); // Oranye Utama
 const kSecondaryColor = Color(0xFF212121); // Abu-abu Gelap (Dark Grey)
 const kLightGreyColor = Color(0xFFF5F5F5); // Latar Belakang Abu-abu Cerah
 const kBackgroundColor = Color(0xFFFFFFFF); // Putih
+
+class ApiConfig {
+  static const String baseUrl = "http://192.168.1.7:8000/api/v1";
+}
+
+// class ApiConfig {
+//   static const String baseUrl = "http://10.0.2.2:8000/api/v1";
+// }

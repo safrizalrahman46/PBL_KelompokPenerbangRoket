@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 
 // PENTING: Gunakan 10.0.2.2 untuk Android Emulator
 // Ganti dengan IP asli laptop Anda (cek di cmd 'ipconfig') jika pakai HP fisik
-const String BASE_URL = 'http://10.0.2.2:8000';
+// uri lama
+// const String BASE_URL = 'http://10.0.2.2:8000';
+// uri baru
+// const String BASE_URL = 'http://localhost:8000';
+// baru lagi
+const BASE_URL = 'http://127.0.0.1:8000';
+
 const String API_URL = '$BASE_URL/api/v1';
 
 // // Warna Tema dari Desain Anda

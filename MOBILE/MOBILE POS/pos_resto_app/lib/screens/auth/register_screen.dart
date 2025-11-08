@@ -2,12 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../../services/auth_service.dart';
 import '../../utils/constants.dart';
-import '../home/cashier_home_screen.dart'; // Import halaman utama kasir
-import '../home/kitchen_home_screen.dart'; // Import halaman utama dapur
-import 'login_screen.dart'; // Import halaman login
+import '../home/cashier_home_screen.dart';
+import '../home/kitchen_home_screen.dart';
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -22,8 +21,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  String? _selectedRole; // State untuk dropdown Role
-  final List<String> _roles = ['Kasir', 'Dapur']; // Daftar role yang tersedia
+  String? _selectedRole;
+  // Ubah daftar role agar label ≠ value
+  final List<Map<String, String>> _roles = [
+    {'label': 'Kasir', 'value': 'cashier'},
+    {'label': 'Dapur', 'value': 'kitchen'},
+    {'label': 'Admin', 'value': 'admin'},
+  ];
 
   void _submitRegister() async {
     if (_formKey.currentState!.validate()) {
@@ -39,27 +43,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       final authService = Provider.of<AuthService>(context, listen: false);
 
+      print('🟡 [REGISTER] Memulai proses registrasi...');
+      print('📧 Email: ${_emailController.text}');
+      print('👤 Username: ${_nameController.text}');
+      print('🔑 Password: ${_passwordController.text}');
+      print('🎭 Role dipilih: $_selectedRole');
+
       try {
-        // --- 1. PERBAIKAN DI SINI (Gunakan Parameter Bernama) ---
+        // Kirim request ke API
         await authService.register(
           name: _nameController.text,
           email: _emailController.text,
           password: _passwordController.text,
-          role: _selectedRole!.toLowerCase(), // Kirim role dalam lowercase ke API
+          role: _selectedRole!, // Sudah dalam format API
         );
-        // ----------------------------------------------------
 
+        print('✅ [REGISTER] Respons dari server: ${authService.user}');
         if (!mounted) return;
 
-        // Setelah register, service akan otomatis login dan mengisi 'user'
-        // --- 2. PERBAIKAN DI SINI (Gunakan getter 'user') ---
+        // Arahkan ke halaman sesuai role
+        print('🚀 [NAVIGASI] Mengarahkan berdasarkan role: ${authService.user!.role}');
         _navigateBasedOnRole(authService.user!.role);
-        // --------------------------------------------------
-
       } catch (e) {
+        print('❌ [REGISTER ERROR] $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceFirst('Exception: ', '')),
+            content: Text(
+              e.toString().replaceFirst('Exception: ', ''),
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -69,16 +80,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _navigateBasedOnRole(String role) {
     Widget homeScreen;
+    print('🧭 [ROLE CHECK] Role terdeteksi: $role');
+
     switch (role.toLowerCase()) {
-      case 'kasir':
+      case 'cashier':
         homeScreen = const CashierHomeScreen();
+        print('➡️ Navigasi ke CashierHomeScreen');
         break;
-      case 'dapur':
+      case 'kitchen':
         homeScreen = const KitchenHomeScreen();
+        print('➡️ Navigasi ke KitchenHomeScreen');
+        break;
+      case 'admin':
+        homeScreen = const LoginScreen(); // nanti ganti halaman admin kalau sudah ada
+        print('➡️ Navigasi sementara ke LoginScreen (Admin belum dibuat)');
         break;
       default:
         homeScreen = const LoginScreen();
+        print('⚠️ Role tidak dikenali, kembali ke LoginScreen');
     }
+
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => homeScreen),
     );
@@ -131,15 +152,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   child: DropdownButtonFormField<String>(
                     value: _selectedRole,
-                    hint: const Text('Role'),
+                    hint: const Text('Pilih Role'),
                     decoration: const InputDecoration(
-                      border: InputBorder.none, // Hapus border bawaan Dropdown
+                      border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                     ),
-                    items: _roles.map((String role) {
+                    items: _roles.map((role) {
                       return DropdownMenuItem<String>(
-                        value: role,
-                        child: Text(role),
+                        value: role['value'],
+                        child: Text(role['label']!),
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
@@ -168,7 +189,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -191,7 +213,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -217,7 +240,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -238,7 +262,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: authService.isLoading ? null : _submitRegister,
+                        onPressed:
+                            authService.isLoading ? null : _submitRegister,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryColor,
                           shape: RoundedRectangleBorder(
@@ -247,7 +272,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           elevation: 0,
                         ),
                         child: authService.isLoading
-                            ? const CircularProgressIndicator(color: kBackgroundColor)
+                            ? const CircularProgressIndicator(
+                                color: kBackgroundColor)
                             : const Text(
                                 'Register',
                                 style: TextStyle(

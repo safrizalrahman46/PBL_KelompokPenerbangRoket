@@ -1,13 +1,11 @@
-// lib/screens/auth/login_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
-import '../../utils/constants.dart'; // Import constants Anda
-import '../home/cashier_home_screen.dart'; // Import halaman utama kasir
-import '../home/kitchen_home_screen.dart'; // Import halaman utama dapur
-import 'register_screen.dart'; // Import halaman register
+import '../../utils/constants.dart';
+import '../home/cashier_home_screen.dart';
+import '../home/kitchen_home_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,56 +17,69 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>(); // Kunci untuk validasi form
+  final _formKey = GlobalKey<FormState>();
 
   void _submitLogin() async {
     if (_formKey.currentState!.validate()) {
       final authService = Provider.of<AuthService>(context, listen: false);
 
       try {
-        // 1. Panggil login DAN TANGKAP role yang dikembalikan
+        print('🚀 Proses login dimulai...');
+        print('📧 Email: ${_emailController.text}');
+        print('🔑 Password: ${_passwordController.text}');
+
+        // 🔹 Panggil login DAN TANGKAP role yang dikembalikan
         final String role = await authService.login(
           _emailController.text,
           _passwordController.text,
         );
 
-        // Cek jika widget masih ada sebelum navigasi
+        print('✅ Login berhasil, role dari server: $role');
+
         if (!mounted) return;
 
-        // 2. Gunakan 'role' yang sudah kita dapatkan
+        // 🔹 Navigasi berdasarkan role
         _navigateBasedOnRole(role);
       } catch (e) {
-        // Tampilkan pesan error jika login gagal
+        print('❌ Login gagal: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               e.toString().replaceFirst('Exception: ', ''),
-            ), // Bersihkan pesan exception
+            ),
             backgroundColor: Colors.red,
           ),
         );
       }
+    } else {
+      print('⚠️ Form tidak valid, periksa input');
     }
   }
 
+  // 🔹 Navigasi berdasarkan role user
   void _navigateBasedOnRole(String role) {
+    print('🧭 Navigasi berdasarkan role: $role');
     Widget homeScreen;
+
     switch (role.toLowerCase()) {
-      case 'kasir':
+      case 'cashier':
+        print('➡️ Mengarahkan ke halaman kasir');
         homeScreen = const CashierHomeScreen();
         break;
-      case 'dapur':
+      case 'kitchen':
+        print('➡️ Mengarahkan ke halaman dapur');
         homeScreen = const KitchenHomeScreen();
         break;
       default:
-        homeScreen =
-            const LoginScreen(); // Default ke login jika role tidak dikenal
+        print('⚠️ Role tidak dikenal: $role, kembali ke login');
+        homeScreen = const LoginScreen();
     }
 
-    // Gunakan pushReplacement untuk mencegah kembali ke halaman login
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => homeScreen));
+    if (!mounted) return;
+
+    // 🔁 Gunakan pushReplacement agar tidak bisa kembali ke login
+    Navigator.of(context)
+        .pushReplacement(MaterialPageRoute(builder: (_) => homeScreen));
   }
 
   @override
@@ -80,9 +91,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Gunakan Consumer untuk mendengarkan perubahan loading state dari AuthService
     return Scaffold(
-      backgroundColor: kBackgroundColor, // Warna background dari constants
+      backgroundColor: kBackgroundColor,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -96,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.bold,
-                    color: kPrimaryColor, // Warna primer dari constants
+                    color: kPrimaryColor,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -104,21 +114,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   "Mari Kita Kelola Restoranmu",
                   style: TextStyle(
                     fontSize: 18,
-                    color: kSecondaryColor.withOpacity(
-                      0.7,
-                    ), // Warna sekunder dari constants
+                    color: kSecondaryColor.withOpacity(0.7),
                   ),
                 ),
                 const SizedBox(height: 48),
 
-                // Username/Email Field
+                // 🔹 Input Email
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
-                    hintText:
-                        'Email', // Ganti ke Email sesuai standar otentikasi
-                    fillColor: kLightGreyColor, // Warna input dari constants
+                    hintText: 'Email',
+                    fillColor: kLightGreyColor,
                     filled: true,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -141,7 +148,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Password Field
+                // 🔹 Input Password
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
@@ -170,19 +177,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Login Button
+                // 🔹 Tombol Login
                 Consumer<AuthService>(
                   builder: (context, authService, child) {
                     return SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: authService.isLoading
-                            ? null
-                            : _submitLogin, // Disable saat loading
+                        onPressed: authService.isLoading ? null : _submitLogin,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              kPrimaryColor, // Warna primer dari constants
+                          backgroundColor: kPrimaryColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -206,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Link ke Register
+                // 🔹 Link ke Register
                 GestureDetector(
                   onTap: () {
                     Navigator.of(context).push(
