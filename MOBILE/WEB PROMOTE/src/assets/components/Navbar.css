@@ -3,56 +3,56 @@
     position: fixed; 
     top: 0;          
     left: 0;         
-    width: 100%;     /* Navbar membentang penuh (Full Width) */
+    width: 100%;     
     z-index: 1000;   
 
     transition: background-color 0.5s ease, box-shadow 0.5s ease;
-    background-color: transparent; 
-    box-shadow: none;
-    
     background-color: white;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
     border-radius: 0;
-    padding: 0; /* Padding diatur di .navbar-content */
-    margin: 0; 
+    padding: 0;
+    margin: 0;
+
+    /* ===== Tambahan Animasi Slide In ===== */
+    opacity: 0;
+    transform: translateY(-60px);
+    animation: slideDown 0.8s ease forwards;
 }
 
-/* 2. Kontainer Pembatas Konten (.navbar-content) */
-/* Ini yang membuat logo, menu, dan tombol terpusat di tengah */
+/* 2. Kontainer Pembatas Konten */
 .navbar-content {
     display: flex;
-    justify-content: space-between; /* Untuk memisahkan Logo | Menu | Tombol */
+    justify-content: space-between;
     align-items: center; 
-    
-    /* Atur Lebar Maksimal dan Sentrasikan */
-    max-width: 1100px; /* Nilai ini membuat konten lebih dekat ke tengah, seperti referensi Eat.o */
+    max-width: 1100px;
     width: 100%;
-    margin: 0 auto; /* Otomatis sentrasikan kontainer di tengah */
-    padding: 25px 30px; /* Padding di kiri dan kanan di dalam kontainer */
+    margin: 0 auto;
+    padding: 25px 30px;
 }
 
+/* Saat di-scroll */
 .navbar.navbar-scrolled {
-    background-color: white; /* Berubah menjadi putih solid */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Tambahkan bayangan */
+    background-color: white;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* --- Styling Logo (Eat.o) --- */
+/* --- Logo --- */
 .navbar-logo {
     display: flex;
     align-items: center;
 }
 .logo-image {
-    height: 60px; /* Sesuaikan tinggi logo */
+    height: 60px;
     width: auto;
     margin-right: 10px;
 }
 .navbar-logo .logo-text-label {
-    font-size: 28px; /* Ukuran font label yang besar */
+    font-size: 28px;
     font-weight: bold;
-    color: #FFA500; /* Menggunakan warna oranye untuk label Eat.o */
+    color: #FFA500;
 }
 
-/* --- Styling Menu Navigasi (Home, Tentang, Kontak) --- */
+/* --- Menu Navigasi --- */
 .navbar-links {
     list-style: none;
     display: flex;
@@ -60,29 +60,28 @@
     padding: 0;
 }
 .navbar-links li {
-    margin: 0 20px; /* Jarak antar menu diperlebar */
+    margin: 0 20px;
 }
 .navbar-links li a {
     text-decoration: none;
     color: #333;
-    font-size: 18px; /* Ukuran font menu yang besar */
+    font-size: 18px;
     font-weight: 700;
     transition: color 0.3s;
 }
 .navbar-links li a:hover {
-    color: #FFA500; /* Efek hover oranye */
+    color: #FFA500;
 }
 
-/* --- Styling Tombol CTA (DOWNLOAD NOW) --- */
+/* --- Tombol CTA --- */
 .navbar-actions {
     display: flex;
     align-items: center;
 }
 .cta-button {
-    /* Menggunakan border-only seperti di referensi Eat.o */
     background-color: white;
-    color: #FFA500; /* Teks oranye */
-    border: 2px solid #FFA500; /* Border oranye */
+    color: #FFA500;
+    border: 2px solid #FFA500;
     padding: 12px 25px;
     border-radius: 5px;
     font-weight: bold;
@@ -91,8 +90,19 @@
     transition: background-color 0.3s, color 0.3s;
 }
 .cta-button:hover {
-    /* Saat hover, warna terbalik (Orange background, white text) */
     background-color: #FFA500;
     color: white;
     border-color: #FFA500;
+}
+
+/* ===== ANIMASI SLIDE IN DARI ATAS ===== */
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-60px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

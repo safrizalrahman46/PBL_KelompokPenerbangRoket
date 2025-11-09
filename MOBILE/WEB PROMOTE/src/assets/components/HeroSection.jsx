@@ -1,46 +1,35 @@
 import React from 'react';
 import './HeroSection.css';
-// Ganti dengan jalur file gambar mockup aplikasi POS mobile Anda
-import AppMockup from '../images/logo.png'; 
+
+// Import gambar mockup
+import MockupMenu from '../images/mockup3.png';   // tampilan menu
+import MockupOrder from '../images/mockup2.png';  // tampilan order
+import MockupLogo from '../images/mockup1.png';   // logo
 
 const HeroSection = () => {
-  const handleDownloadClick = () => {
-    // Di sini Anda akan menambahkan logika untuk mengarahkan ke link download
-    console.log('Tombol DOWNLOAD NOW ditekan!');
-    // Contoh: window.location.href = 'LINK_APLIKASI_ANDA';
-  };
-
   return (
     <section className="hero">
       <div className="hero-content">
-        
-        {/* Kolom Kiri: Teks & CTA */}
+
+        {/* Kiri: Teks */}
         <div className="hero-text">
-          
-          {/* HEADLINE UTAMA (Opsi 2: Versi Inggris) */}
-          <h1 className="hero-headline">
-            The Complete F&B POS, Right in Your Hand.
-          </h1>
-          
-          {/* SUB-HEADLINE UTAMA (Opsi 2: Versi Inggris) */}
-          <p className="hero-subheadline">
-            Streamline every order, sync data in real-time, and manage your entire restaurant from one powerful dashboard.
+          <h1 className="hero-title">The Complete F&B POS, Right in Your Hand.</h1>
+          <p className="hero-subtitle">
+            Manage every order, track table status, and update your menu instantly.
+            Get <strong>real-time data sync</strong> via robust API—no more data errors.
           </p>
-          
-          {/* Tombol CTA Primer */}
-          <button className="hero-cta-button" onClick={handleDownloadClick}>
-            DOWNLOAD NOW
-          </button>
-    
+          <button className="hero-btn">Try Demo</button>
         </div>
 
-        {/* Kolom Kanan: Visual Marketing */}
+        {/* Kanan: Mockup Section */}
         <div className="hero-visual">
-          <img 
-            src={AppMockup} 
-            alt="Eat.o POS Mobile App Mockup on a Smartphone" 
-            className="mockup-image"
-          />
+          <div className="mockup-top">
+            <img src={MockupMenu} alt="POS Menu Mockup" className="hero-img float delay1" />
+            <img src={MockupOrder} alt="POS Order Mockup" className="hero-img float delay2" />
+          </div>
+          <div className="mockup-bottom">
+            <img src={MockupLogo} alt="App Logo Mockup" className="hero-img float delay3" />
+          </div>
         </div>
 
       </div>
