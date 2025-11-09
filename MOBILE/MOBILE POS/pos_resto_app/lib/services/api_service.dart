@@ -208,4 +208,33 @@ class ApiService {
       throw Exception('Error koneksi: $e');
     }
   }
+
+  // Di dalam class ApiService di lib/services/api_service.dart
+
+// ... (fungsi Anda yang lain seperti createOrder)
+
+// --- TAMBAHKAN FUNGSI INI ---
+Future<RestoTable> updateTableStatus(int tableId, String newStatus) async {
+  try {
+    final headers = await _getHeaders(); // <-- Sekarang ini akan dikenali
+
+    final response = await http.patch( // <-- 'http' akan dikenali
+      Uri.parse('$API_URL/tables/$tableId/status'), 
+      headers: headers,
+      body: json.encode({ // <-- 'json' akan dikenali
+        'status': newStatus,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return RestoTable.fromJson(json.decode(response.body));
+    } else {
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Gagal update status meja');
+    }
+  } catch (e) {
+    throw Exception('Error koneksi: $e');
+  }
+}
+// ---------------------------------
 }

@@ -2,65 +2,62 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\V1\MenuController;
 
-use App\Http\Controllers\Api\V1\CategoryController;
-
-use App\Http\Controllers\Api\V1\RestoTableController;
-
+// Import semua Controller Anda
 use App\Http\Controllers\Api\V1\OrderController;
-
+use App\Http\Controllers\Api\V1\MenuController;
+use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\RestoTableController;
 use App\Http\Controllers\Api\V1\TransactionController;
+use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\DataController; // (Dari file Anda)
 
-use App\Http\Controllers\Api\V1\AuthController; // Kita akan buat ini nanti
-use App\Http\Controllers\Api\V1\DataController; // Kita akan buat ini nanti
-
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
-
-
-// DAFTARKAN API MENU ANDA DI SINI
-Route::get('/v1/menu', [MenuController::class, 'index']);
-Route::get('/v1/tables', [RestoTableController::class, 'index']);
-Route::get('/v1/orders', [OrderController::class, 'index']);
-Route::get('/v1/categories', [CategoryController::class, 'index']);
-
-// Endpoint untuk update status meja (Perlu login)
-Route::middleware('auth:sanctum')->group(function () {
-    // ... (Rute Anda yang lain seperti POST order, logout)
-    Route::patch('/v1/tables/{restoTable}/status', [RestoTableController::class, 'updateStatus']);
-});
-Route::middleware('auth:sanctum')->group(function () {
-    // ... (Rute Anda yang lain seperti POST order, logout, PATCH status)
-
-    // Endpoint untuk Flutter "Bayar"
-    Route::post('/v1/transactions', [TransactionController::class, 'store']);
-});
+/*
+|--------------------------------------------------------------------------
+| Rute API v1
+|--------------------------------------------------------------------------
+|
+| Semua rute API untuk aplikasi Flutter Anda harus ada di sini.
+| Dikelompokkan berdasarkan prefix 'v1'.
+|
+*/
 
 Route::prefix('v1')->group(function () {
 
-    // --- Rute Otentikasi (API Public) ---
+    // --- Rute PUBLIK (Tidak perlu Login) ---
+
+    // Auth
     Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register']); // Ini untuk API
 
-    // --- Rute Terlindungi (Membutuhkan Token Otentikasi) ---
+    // Data Publik (Untuk Cashier & Dapur)
+    Route::get('/menu', [MenuController::class, 'index']);
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::get('/tables', [RestoTableController::class, 'index']);
+    Route::get('/orders', [OrderController::class, 'index']); // (Untuk Dapur GET pesanan)
+
+
+    // --- Rute TERLINDUNGI (Perlu Token / Login) ---
     Route::middleware('auth:sanctum')->group(function () {
-        // Otentikasi
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::get('/user', [AuthController::class, 'user']); // API: /v1/user
 
-        // Rute Meja
+        // Auth
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/user', [AuthController::class, 'user']);
+
+        // Meja (Cashier)
         Route::patch('/tables/{restoTable}/status', [RestoTableController::class, 'updateStatus']);
 
-        // Rute Transaksi (Pembayaran)
-        Route::post('/transactions', [TransactionController::class, 'store']); // API: /v1/transactions
+        // Pesanan (Order)
+        // INI MEMPERBAIKI ERROR ANDA ('Lanjutkan Transaksi') [cite: image_3995b6.png]
+        Route::post('/orders', [OrderController::class, 'store']);
 
-        // Contoh rute untuk mengambil data
+        // INI UNTUK KITCHEN SCREEN (Tombol 'Mulai Siapkan' / 'Selesai')
+        Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+
+        // Transaksi (Cashier - "Bayar Sekarang")
+        Route::post('/transactions', [TransactionController::class, 'store']);
+
+        // Rute 'posts' Anda
         Route::apiResource('posts', DataController::class);
     });
-});
-
-Route::middleware('auth:sanctum')->get('/v1/user', function (Request $request) {
-    return $request->user();
 });

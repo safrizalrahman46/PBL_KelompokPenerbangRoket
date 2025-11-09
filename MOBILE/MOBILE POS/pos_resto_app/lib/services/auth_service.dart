@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 import '../utils/constants.dart';
+// import '../models/order_model.dart'; // <-- Untuk 'RestoTable'
 
 class AuthService with ChangeNotifier {
   final String baseUrl = 'http://127.0.0.1:8000/api/v1';
@@ -215,4 +216,6 @@ class AuthService with ChangeNotifier {
       print('✅ Logout selesai (local data dibersihkan)');
     }
   }
+
+  
 }

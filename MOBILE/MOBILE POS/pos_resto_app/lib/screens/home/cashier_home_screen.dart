@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/menu_model.dart';
-import '../../models/order_model.dart'; // Impor ini diperlukan untuk RestoTable
+import '../../models/order_model.dart';
+// BARU: Impor model Transaction
+import '../../models/transactions_model.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
-import '../../services/auth_service.dart';
+import '../../services/auth_service.dart'; // BARU: Impor AuthService
 import '../../utils/constants.dart';
 import '../auth/login_screen.dart';
 
@@ -24,9 +26,14 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
 
   List<Menu> _menus = [];
   List<Category> _categories = [];
-  List<RestoTable> _tables = []; // BARU: Untuk menyimpan daftar meja
+  List<RestoTable> _tables = [];
+  
+  // BARU: State untuk menampung data order & transaksi
+  List<Order> _orders = [];
+  List<Transaction> _transactions = []; // Sekarang class Transaction dikenali
+
   int _selectedNavIndex = 0;
-  int? _selectedCategoryId = null; // null untuk "All"
+  int? _selectedCategoryId = null;
 
   @override
   void initState() {
@@ -34,32 +41,76 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
     _loadDataFuture = _loadData();
   }
 
-  // Mengambil data menu, kategori, dan meja dari API
+  // DIUBAH: Memperbaiki _loadData
+ // DIUBAH: Memperbaiki _loadData
   Future<void> _loadData() async {
     try {
-      // Ambil data secara paralel
+      final authService = Provider.of<AuthService>(context, listen: false);
+      
+      final userId = authService.user?.id; 
+      
+      if (userId == null) {
+        throw Exception("User tidak terautentikasi. Silakan login ulang.");
+      }
+
       final results = await Future.wait([
         _apiService.fetchMenus(),
         _apiService.fetchCategories(),
-        _apiService.fetchTables(), // BARU: Ambil data meja
+        _apiService.fetchTables(),
+        // PERBAIKAN: Ubah int userId menjadi String
+        _apiService.fetchOrders(userId.toString()), 
+        Future.value(<Transaction>[]), 
       ]);
 
       setState(() {
         _menus = results[0] as List<Menu>;
         _categories = results[1] as List<Category>;
-        _tables = results[2] as List<RestoTable>; // BARU: Simpan data meja
+        _tables = results[2] as List<RestoTable>;
+        _orders = results[3] as List<Order>;
+        _transactions = results[4] as List<Transaction>;
       });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal memuat data: ${e.toString()}')),
         );
+        if (e.toString().contains("User tidak terautentikasi")) {
+          _logout();
+        }
       }
     }
   }
+  
+  // DIUBAH: Fungsi untuk me-refresh data setelah order
+  Future<void> _refreshData() async {
+     try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      
+      final userId = authService.user?.id;
 
-  // Fungsi untuk logout
+      if (userId == null) {
+        throw Exception("User tidak terautentikasi.");
+      }
+
+      final results = await Future.wait([
+        _apiService.fetchTables(),
+        // PERBAIKAN: Ubah int userId menjadi String
+        _apiService.fetchOrders(userId.toString()),
+      ]);
+      setState(() {
+        _tables = results[0] as List<RestoTable>;
+        _orders = results[1] as List<Order>;
+      });
+    } catch (e) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal refresh data: ${e.toString()}')),
+      );
+    }
+  }
+
+
   void _logout() async {
+    // ... (Fungsi ini tidak berubah) ...
     final authService = Provider.of<AuthService>(context, listen: false);
     await authService.logout();
     if (mounted) {
@@ -72,6 +123,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ... (Fungsi ini tidak berubah) ...
     return Scaffold(
       body: FutureBuilder<void>(
         future: _loadDataFuture,
@@ -101,8 +153,8 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
     );
   }
 
-  // WIDGET UNTUK KOLOM 1 (NAVIGASI)
   Widget _buildNavRail() {
+    // ... (Fungsi ini tidak berubah) ...
     return Container(
       width: 110,
       color: kSplashBackgroundColor,
@@ -134,6 +186,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   }
 
   Widget _buildNavRailItem(IconData icon, String label, int index) {
+    // ... (Fungsi ini tidak berubah) ...
     final bool isSelected = _selectedNavIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _selectedNavIndex = index),
@@ -166,31 +219,29 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
     );
   }
 
-  // WIDGET UNTUK KOLOM 2 (KONTEN UTAMA)
+  // DIUBAH: Mengganti placeholder dengan halaman baru
   Widget _buildMainContent() {
     switch (_selectedNavIndex) {
       case 0:
         return _buildMenuPageContent();
       case 1:
-        return const Center(
-            child: Text("Halaman Transaksi", style: TextStyle(fontSize: 24)));
+        // REQ 6: Halaman Transaksi
+        return _buildTransactionPage();
       case 2:
-        return const Center(
-            child: Text("Halaman Order", style: TextStyle(fontSize: 24)));
+        // REQ 7: Halaman Order
+        return _buildOrderPage();
       case 3:
-        return const Center(
-            child: Text("Halaman Meja", style: TextStyle(fontSize: 24)));
+        return _buildTableManagementPage();
       default:
         return _buildMenuPageContent();
     }
   }
 
   Widget _buildMenuPageContent() {
-    // --- PERBAIKAN FILTER ---
-    // Sesuaikan dengan model: menu.category?.id
+    // ... (Fungsi ini tidak berubah) ...
     final displayedMenus = _selectedCategoryId == null
         ? _menus
-        : _menus.where((menu) => menu.category?.id == _selectedCategoryId).toList();
+        : _menus.where((menu) => menu.categoryId == _selectedCategoryId).toList();
 
     return Container(
       color: kBackgroundColor,
@@ -230,10 +281,9 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   }
 
   Widget _buildCategoryFilterBar() {
-    // --- PERBAIKAN COUNT ---
-    // Tambahkan "All" secara manual ke daftar kategori
+    // ... (Fungsi ini tidak berubah) ...
     List<Category> allCategories = [
-      Category(id: -1, name: "All", menusCount: _menus.length), // Ganti ke menusCount
+      Category(id: -1, name: "All", menusCount: _menus.length),
       ..._categories,
     ];
 
@@ -254,6 +304,9 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
               break;
             case 'snack':
               icon = Icons.fastfood;
+              break;
+            case 'makanan':
+              icon = Icons.restaurant;
               break;
             case 'minuman':
               icon = Icons.local_cafe;
@@ -298,8 +351,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                           ),
                         ),
                         Text(
-                          // --- PERBAIKAN COUNT ---
-                          "${category.menusCount ?? 0} Items", // Gunakan menusCount
+                          "${category.menusCount ?? 0} Items",
                           style: TextStyle(
                             fontSize: 14,
                             color: isSelected ? kBackgroundColor.withOpacity(0.8) : kSecondaryColor.withOpacity(0.6),
@@ -318,6 +370,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   }
 
   Widget _buildMenuCard(Menu menu) {
+    // ... (Fungsi ini tidak berubah) ...
     final cart = Provider.of<CartProvider>(context, listen: false);
     final int itemCountInCart = context.watch<CartProvider>().getItemQuantity(menu.id);
 
@@ -328,7 +381,6 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- PERBAIKAN NULL CHECK ---
           (menu.imageUrl == null || menu.imageUrl!.isEmpty)
               ? Container(
                   height: 120,
@@ -360,7 +412,6 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
-                // --- PERBAIKAN NULL CHECK ---
                 Text(
                   menu.description ?? 'Tidak ada deskripsi',
                   style: TextStyle(fontSize: 12, color: kSecondaryColor.withOpacity(0.6)),
@@ -372,7 +423,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      "Rp ${menu.price.toStringAsFixed(0)}", // Format harga
+                      "Rp ${menu.price.toStringAsFixed(0)}",
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -415,8 +466,454 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
     );
   }
 
-  // WIDGET UNTUK KOLOM 3 (KERANJANG)
+  // --- HALAMAN TRANSAKSI (BARU - REQ 6) ---
+  Widget _buildTransactionPage() {
+    // Tampilkan order yang sudah 'completed' atau 'paid'
+    final paidOrders = _orders.where((order) {
+      final status = order.status.toLowerCase();
+      return status == 'completed' || status == 'paid';
+    }).toList();
+
+    return Container(
+      color: kBackgroundColor,
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Detail Transaksi", // Sesuai gambar
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: kSecondaryColor,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: paidOrders.isEmpty
+                ? const Center(child: Text('Belum ada transaksi selesai.'))
+                : ListView.builder(
+                    itemCount: paidOrders.length,
+                    itemBuilder: (context, index) {
+                      return _buildTransactionCard(paidOrders[index]);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionCard(Order order) {
+    // Dibuat mirip dengan (iPad Pro 12.9_ - 5.png)
+    return Align( 
+      alignment: Alignment.centerLeft,
+      child: Card(
+        color: const Color(0xFF2D2D2D), 
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.only(bottom: 16),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: SizedBox(
+            width: 450, 
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: const BoxDecoration(
+                        color: kPrimaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          order.restoTable?.number ?? '??',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          // PERBAIKAN: Handle String?
+                          order.customerName ?? 'Nama Pelanggan',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Order #${order.id}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  // TODO: Format tanggal lebih baik
+                  '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
+                ),
+                const Divider(color: Colors.grey, height: 32),
+                // Header List
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Row(
+                    children: [
+                      Text('Qty', style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                      const SizedBox(width: 16),
+                      Expanded(child: Text('Items', style: TextStyle(color: Colors.white.withOpacity(0.7)))),
+                      Text('Price', style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                    ],
+                  ),
+                ),
+                // Daftar Item
+                ...order.orderItems.map((item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
+                        children: [
+                          Text('${item.quantity}'.padLeft(2, '0'),
+                              style: const TextStyle(color: Colors.white)),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Text(item.menu.name, // menu tidak null di model Anda
+                                style: const TextStyle(color: Colors.white)),
+                          ),
+                          Text('Rp ${item.priceAtTime.toStringAsFixed(0)}',
+                              style: const TextStyle(color: Colors.white)),
+                        ],
+                      ),
+                    )),
+                const Divider(color: Colors.grey, height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('SubTotal',
+                        style: TextStyle(color: Colors.white, fontSize: 16)),
+                    Text(
+                        'Rp ${order.totalPrice.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- HALAMAN ORDER (BARU - REQ 7) ---
+  Widget _buildOrderPage() {
+    // Tampilkan order yang BELUM selesai
+    final activeOrders = _orders.where((o) {
+      final status = o.status.toLowerCase();
+      return status != 'completed' && status != 'paid';
+    }).toList();
+
+    return Container(
+      color: kBackgroundColor,
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Order List",
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: kSecondaryColor,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: activeOrders.isEmpty
+                ? const Center(child: Text('Belum ada order aktif.'))
+                : GridView.builder(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3, 
+                      childAspectRatio: 0.7, 
+                      crossAxisSpacing: 20,
+                      mainAxisSpacing: 20,
+                    ),
+                    itemCount: activeOrders.length,
+                    itemBuilder: (context, index) {
+                      return _buildOrderCard(activeOrders[index]);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderCard(Order order) {
+    final statusInfo = _getStatusInfo(order.status);
+
+    return Card(
+      color: const Color(0xFF2D2D2D), 
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Card
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: kPrimaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          order.restoTable?.number ?? '??',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          // PERBAIKAN: Handle String?
+                          order.customerName ?? 'Nama Pelanggan',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          'Order #${order.id}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                _buildStatusChip(
+                    statusInfo['text']!, statusInfo['icon']!, statusInfo['color']!),
+              ],
+            ),
+            const SizedBox(height: 8),
+            // Waktu
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
+                Text(
+                  '${order.createdAt.hour.toString().padLeft(2,'0')}:${order.createdAt.minute.toString().padLeft(2,'0')}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(color: Colors.grey, height: 20),
+
+            // Header List Item
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                children: [
+                  Text('Qty',
+                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Items',
+                        style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                  ),
+                  Text('Price',
+                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                ],
+              ),
+            ),
+            // Daftar Item
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: order.orderItems.length,
+                itemBuilder: (context, index) {
+                  final item = order.orderItems[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 6.0),
+                    child: Row(
+                      children: [
+                        Text('${item.quantity}'.padLeft(2, '0'),
+                            style: const TextStyle(color: Colors.white, fontSize: 13)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(item.menu.name,
+                              style: const TextStyle(color: Colors.white, fontSize: 13)),
+                        ),
+                        Text('Rp ${item.priceAtTime.toStringAsFixed(0)}',
+                            style: const TextStyle(color: Colors.white, fontSize: 13)),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+            const Divider(color: Colors.grey, height: 20),
+            // Subtotal
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('SubTotal',
+                    style: TextStyle(color: Colors.white, fontSize: 16)),
+                Text('Rp ${order.totalPrice.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // Tombol Aksi
+            _buildOrderActionButtons(order),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper untuk status di Order Card
+  Map<String, dynamic> _getStatusInfo(String status) {
+    switch (status.toLowerCase()) {
+      case 'ready':
+      case 'ready to serve':
+        return {'text': 'Ready to serve', 'icon': Icons.check_circle, 'color': Colors.green};
+      case 'cooking':
+      case 'cooking now':
+        return {'text': 'Cooking Now', 'icon': Icons.fireplace, 'color': Colors.orange};
+      case 'in process':
+      case 'in the kitchen':
+        return {'text': 'In the Kitchen', 'icon': Icons.kitchen, 'color': Colors.pink};
+      case 'completed':
+      case 'paid':
+        return {'text': 'Completed', 'icon': Icons.check, 'color': Colors.blue};
+      default:
+        return {'text': 'Pending', 'icon': Icons.pending, 'color': Colors.grey};
+    }
+  }
+
+  Widget _buildStatusChip(String text, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 4),
+          Text(text, style: TextStyle(color: color, fontSize: 11)),
+        ],
+      ),
+    );
+  }
+
+  // Helper untuk tombol aksi di Order Card
+  Widget _buildOrderActionButtons(Order order) {
+    // Logika tombol berdasarkan status
+    switch (order.status.toLowerCase()) {
+      case 'pending':
+        return SizedBox(
+          width: double.infinity,
+          height: 40,
+          child: ElevatedButton(
+            onPressed: () { /* TODO: API call untuk update status ke 'cooking' */ },
+            style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
+            child: const Text('Confirm', style: TextStyle(color: kBackgroundColor)),
+          ),
+        );
+      case 'ready':
+      case 'ready to serve':
+      case 'cooking':
+      case 'cooking now':
+      case 'in process':
+      case 'in the kitchen':
+        return Row(
+          children: [
+            IconButton(onPressed: () {}, icon: const Icon(Icons.edit, color: kPrimaryColor)),
+            IconButton(onPressed: () {}, icon: const Icon(Icons.delete, color: Colors.red)),
+            const Spacer(),
+            Expanded(
+              flex: 2,
+              child: SizedBox(
+                height: 40,
+                child: ElevatedButton(
+                  onPressed: () { /* TODO: API call untuk update status 'completed' atau langsung bayar */ },
+                  style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
+                  child: const Text('Pay Bill', style: TextStyle(color: kBackgroundColor)),
+                ),
+              ),
+            ),
+          ],
+        );
+      case 'completed':
+      case 'paid':
+        return SizedBox(
+          width: double.infinity,
+          height: 40,
+          child: ElevatedButton(
+            onPressed: null, // Sudah dibayar
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+            child: const Text('Bill Paid', style: TextStyle(color: kBackgroundColor)),
+          ),
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+
+  // --- SIDEBAR KERANJANG & PEMBAYARAN ---
+
   Widget _buildCartSidebar() {
+    // ... (Fungsi ini tidak berubah) ...
     return Consumer<CartProvider>(
       builder: (context, cart, child) {
         return Container(
@@ -453,7 +950,6 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
               const SizedBox(height: 24),
               _buildCartSummary(cart),
               const SizedBox(height: 24),
-              // --- PERBAIKAN TOMBOL ---
               _buildCartButtons(cart),
             ],
           ),
@@ -463,13 +959,13 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   }
 
   Widget _buildCartItem(CartItem item, CartProvider cart) {
+    // ... (Fungsi ini tidak berubah) ...
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8.0),
-            // --- PERBAIKAN NULL CHECK ---
             child: (item.menu.imageUrl == null || item.menu.imageUrl!.isEmpty)
                 ? Container(
                     width: 60,
@@ -500,7 +996,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  "Rp ${item.menu.price.toStringAsFixed(0)}", // Format harga
+                  "Rp ${item.menu.price.toStringAsFixed(0)}",
                   style: const TextStyle(fontSize: 14, color: kSecondaryColor),
                 ),
               ],
@@ -523,6 +1019,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   }
 
   Widget _buildCartSummary(CartProvider cart) {
+    // ... (Fungsi ini tidak berubah) ...
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -542,7 +1039,13 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isTotal = false}) {
+  // DIUBAH: Menambahkan 'isChange' untuk Req 1
+  Widget _buildSummaryRow(String label, String value, {bool isTotal = false, bool isChange = false}) {
+    final Color valueColor = isChange ? Colors.blueAccent : (isTotal ? kPrimaryColor : kSecondaryColor);
+    final Color labelColor = isChange ? Colors.blueAccent : kSecondaryColor.withOpacity(0.8);
+    final double fontSize = (isTotal || isChange) ? 18 : 16;
+    final FontWeight fontWeight = (isTotal || isChange) ? FontWeight.bold : FontWeight.normal;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -551,17 +1054,17 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
           Text(
             label,
             style: TextStyle(
-              fontSize: isTotal ? 18 : 16,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: kSecondaryColor.withOpacity(0.8),
+              fontSize: fontSize,
+              fontWeight: fontWeight,
+              color: labelColor,
             ),
           ),
           Text(
             value,
             style: TextStyle(
-              fontSize: isTotal ? 18 : 16,
+              fontSize: fontSize,
               fontWeight: FontWeight.bold,
-              color: isTotal ? kPrimaryColor : kSecondaryColor,
+              color: valueColor,
             ),
           ),
         ],
@@ -569,16 +1072,15 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
     );
   }
 
-  // --- WIDGET BARU (Implementasi TODO) ---
   Widget _buildCartButtons(CartProvider cart) {
+    // ... (Fungsi ini tidak berubah) ...
     return Column(
       children: [
         SizedBox(
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            // Panggil dialog saat ditekan
-            onPressed: cart.items.isEmpty ? null : () => _showCreateOrderDialog(cart),
+            onPressed: cart.items.isEmpty ? null : () => _showPaymentScreen(cart),
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimaryColor,
               shape: RoundedRectangleBorder(
@@ -619,13 +1121,16 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
     );
   }
 
-  // --- FUNGSI BARU (Implementasi TODO) ---
-  Future<void> _showCreateOrderDialog(CartProvider cart) async {
+  // --- TAMPILAN PEMBAYARAN (DIUBAH) ---
+  Future<void> _showPaymentScreen(CartProvider cart) async {
     int? selectedTableId;
+    String? selectedPaymentMethod;
+    final receivedController = TextEditingController();
+    final customerNameController = TextEditingController(text: 'Udean');
     bool isSubmitting = false;
-    final formKey = GlobalKey<FormState>();
+    
+    final BuildContext homeScreenContext = context;
 
-    // Cek jika tidak ada meja, beri tahu user
     if (_tables.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -636,104 +1141,951 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
       return;
     }
 
-    // Tampilkan dialog
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => StatefulBuilder(
+          builder: (context, setPaymentState) {
+            double received = double.tryParse(receivedController.text) ?? 0;
+            // REQ 1: Pastikan kembalian tidak negatif
+            double change = (received > cart.total) ? received - cart.total : 0;
+
+            return Scaffold(
+              backgroundColor: kBackgroundColor,
+              body: Row(
+                children: [
+                  // KOLOM KIRI - Order Details
+                  Expanded(
+                    flex: 2,
+                    child: Container(
+                      color: kLightGreyColor.withOpacity(0.3),
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ... (Header Meja & Pelanggan - tidak berubah) ...
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    selectedTableId == null
+                                        ? 'Pilih Meja'
+                                        : 'Meja ${_tables.firstWhere((t) => t.id == selectedTableId).number}',
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: kPrimaryColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  SizedBox(
+                                    width: 250, 
+                                    child: TextField(
+                                      controller: customerNameController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Nama Pelanggan',
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.symmetric(vertical: 4.0),
+                                        border: UnderlineInputBorder(),
+                                      ),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        color: kSecondaryColor,
+                                      ),
+                                      onChanged: (value) {
+                                        setPaymentState(() {});
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: kPrimaryColor, size: 28),
+                                onPressed: () {
+                                  _showTableSelectionDialog(
+                                    context,
+                                    selectedTableId,
+                                    (newTableId) {
+                                      setPaymentState(() {
+                                        selectedTableId = newTableId;
+                                      });
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          
+                          // ... (Daftar item pesanan - tidak berubah) ...
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: cart.items.length,
+                              itemBuilder: (context, index) {
+                                final item = cart.items[index];
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFF4E0),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: const BoxDecoration(
+                                          color: kPrimaryColor,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '${index + 1}'.padLeft(2, '0'),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item.menu.name,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            Text(
+                                              'x ${item.quantity}',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: kSecondaryColor.withOpacity(0.6),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(
+                                        'Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: kPrimaryColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // DIUBAH: Summary (Req 1: Kembalian)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF4E0),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              children: [
+                                _buildSummaryRow('Subtotal', 'Rp ${cart.subtotal.toStringAsFixed(0)}'),
+                                const SizedBox(height: 12),
+                                _buildSummaryRow('Tax 10%', 'Rp ${(cart.subtotal * cart.taxPercent / 100).toStringAsFixed(0)}'),
+                                const SizedBox(height: 12),
+                                _buildSummaryRow('Tip', 'Rp 500'), // Hardcoded
+                                const Divider(height: 24, thickness: 1),
+                                _buildSummaryRow('Total', 'Rp ${cart.total.toStringAsFixed(0)}', isTotal: true),
+                                // REQ 1: Tampilkan Kembalian
+                                if (change > 0 && selectedPaymentMethod == 'cash')
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 12.0),
+                                    child: _buildSummaryRow(
+                                      'Kembalian', 
+                                      'Rp ${change.toStringAsFixed(0)}',
+                                      isChange: true,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // ... (Payment Method - tidak berubah) ...
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF4E0),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSummaryRow('Recieved', 'Rp ${received.toStringAsFixed(0)}'),
+                                const SizedBox(height: 24),
+                                const Text(
+                                  'Payment Method',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildPaymentMethodButton(
+                                        'Cash',
+                                        Icons.money,
+                                        'cash',
+                                        selectedPaymentMethod,
+                                        (method) {
+                                          setPaymentState(() {
+                                            selectedPaymentMethod = method;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildPaymentMethodButton(
+                                        'Debit Card',
+                                        Icons.credit_card,
+                                        'debit',
+                                        selectedPaymentMethod,
+                                        (method) {
+                                          setPaymentState(() {
+                                            selectedPaymentMethod = method;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildPaymentMethodButton(
+                                        'E-Wallet',
+                                        Icons.account_balance_wallet,
+                                        'qris',
+                                        selectedPaymentMethod,
+                                        (method) {
+                                          setPaymentState(() {
+                                            selectedPaymentMethod = method;
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 16),
+                          
+                          // DIUBAH: Order Completed Button (Req 2, 3, 9)
+                          SizedBox(
+                            width: double.infinity,
+                            height: 56,
+                            child: ElevatedButton(
+                              onPressed: (selectedTableId == null || 
+                                          selectedPaymentMethod == null || 
+                                          customerNameController.text.isEmpty || 
+                                          isSubmitting)
+                                  ? null
+                                  : () async {
+                                      // REQ 2 & 3: Cek metode pembayaran
+                                      if (selectedPaymentMethod == 'debit' || selectedPaymentMethod == 'qris') {
+                                        final bool? isConfirmed = await _showPaymentConfirmationDialog(
+                                          context, // 'context' dari StatefulBuilder
+                                          selectedPaymentMethod!,
+                                        );
+                                        
+                                        if (isConfirmed != true) {
+                                          return; // Batalkan jika user menekan 'Tidak'
+                                        }
+                                      }
+
+                                      // --- Lanjut jika 'Cash' atau 'Debit/QRIS' dikonfirmasi ---
+                                      setPaymentState(() {
+                                        isSubmitting = true;
+                                      });
+
+                                      try {
+                                        final orderData = cart.createOrderJson(
+                                          tableId: selectedTableId!,
+                                          paymentMethod: selectedPaymentMethod!,
+                                          customerName: customerNameController.text, 
+                                        );
+                                        
+                                        // PERBAIKAN: API Call (Req 9)
+                                        // 1. Buat Order (API Anda void)
+                                        await _apiService.createOrder(orderData);
+                                        
+                                        // 2. Buat Transaksi (DIHAPUS, API tidak ada)
+
+                                        // --- LOGIKA SUKSES ---
+                                        cart.clearCart();
+                                        Navigator.of(context).pop(); 
+                                        
+                                        // Tampilkan Popup Sukses
+                                        _showSuccessOrderDialog(homeScreenContext);
+
+                                        // REQ 6 & 7: Refresh data di home screen
+                                        _refreshData(); // Panggil _refreshData
+                                        
+                                      } catch (e) {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('Gagal: ${e.toString().replaceFirst("Exception: ", "")}'),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                          setPaymentState(() {
+                                              isSubmitting = false;
+                                          });
+                                        }
+                                      } 
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kPrimaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: isSubmitting
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: kBackgroundColor,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Order Completed',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: kBackgroundColor,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  
+                  // KOLOM KANAN - Calculator & Payment
+                  Expanded(
+                    flex: 1,
+                    child: Container(
+                      color: kBackgroundColor,
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          // ... (Display Uang - tidak berubah) ...
+                          const Text(
+                            'Uang Pembayaran',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: kSecondaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(24),
+                            decoration: BoxDecoration(
+                              color: kLightGreyColor,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              'Rp ${received.toStringAsFixed(0)}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.bold,
+                                color: kPrimaryColor,
+                              ),
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 24),
+                          
+                          // ... (Calculator - tidak berubah) ...
+                          Expanded(
+                            child: GridView.count(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio: 1.2,
+                              children: [
+                                _buildCalculatorButton('1', receivedController, setPaymentState),
+                                _buildCalculatorButton('2', receivedController, setPaymentState),
+                                _buildCalculatorButton('3', receivedController, setPaymentState),
+                                _buildCalculatorButton('4', receivedController, setPaymentState),
+                                _buildCalculatorButton('5', receivedController, setPaymentState),
+                                _buildCalculatorButton('6', receivedController, setPaymentState),
+                                _buildCalculatorButton('7', receivedController, setPaymentState),
+                                _buildCalculatorButton('8', receivedController, setPaymentState),
+                                _buildCalculatorButton('9', receivedController, setPaymentState),
+                                _buildCalculatorButton('0', receivedController, setPaymentState),
+                                _buildCalculatorButton('X', receivedController, setPaymentState, isDelete: true),
+                              ],
+                            ),
+                          ),
+                          
+                          const SizedBox(height: 24),
+                          
+                          // DIUBAH: Buat Nota & Apply Buttons (Req 4, 5)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextButton(
+                                  onPressed: () {
+                                    // REQ 4: Panggil fungsi buat nota
+                                    _printReceipt(
+                                      context,
+                                      cart,
+                                      customerNameController.text,
+                                      selectedTableId,
+                                      selectedPaymentMethod,
+                                      received,
+                                    );
+                                  },
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    side: const BorderSide(color: kPrimaryColor),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Buat Nota',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: kPrimaryColor,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    setPaymentState(() {
+                                      // REQ 5: Set uang diterima = total
+                                      receivedController.text = cart.total.toStringAsFixed(0);
+                                    });
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    backgroundColor: kPrimaryColor,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Apply',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: kBackgroundColor,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    receivedController.dispose();
+    customerNameController.dispose();
+  }
+
+
+  Widget _buildCalculatorButton(
+    // ... (Fungsi ini tidak berubah) ...
+    String value,
+    TextEditingController controller,
+    StateSetter setState, {
+    bool isDelete = false,
+  }) {
+    return ElevatedButton(
+      onPressed: () {
+        setState(() {
+          if (isDelete) {
+            if (controller.text.isNotEmpty) {
+              controller.text = controller.text.substring(0, controller.text.length - 1);
+            }
+          } else {
+            controller.text += value;
+          }
+        });
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isDelete ? kPrimaryColor : const Color(0xFFFFF4E0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: EdgeInsets.zero,
+      ),
+      child: Text(
+        value,
+        style: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+          color: isDelete ? kBackgroundColor : kSecondaryColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethodButton(
+    // ... (Fungsi ini tidak berubah) ...
+    String label,
+    IconData icon,
+    String method,
+    String? selectedMethod,
+    Function(String) onSelect,
+  ) {
+    final bool isSelected = selectedMethod == method;
+    return InkWell(
+      onTap: () => onSelect(method),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: isSelected ? kPrimaryColor : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? kPrimaryColor : kLightGreyColor,
+            width: 2,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 32,
+              color: isSelected ? Colors.white : kSecondaryColor,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.white : kSecondaryColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showTableSelectionDialog(
+    // ... (Fungsi ini tidak berubah) ...
+    BuildContext context,
+    int? currentTableId,
+    Function(int) onSelect,
+  ) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Pilih Meja'),
+          content: SizedBox(
+            width: 300,
+            height: 400,
+            child: ListView.builder(
+              itemCount: _tables.length,
+              itemBuilder: (context, index) {
+                final table = _tables[index];
+                final isSelected = table.id == currentTableId;
+                return ListTile(
+                  leading: Icon(
+                    Icons.table_restaurant,
+                    color: isSelected ? kPrimaryColor : kSecondaryColor,
+                  ),
+                  title: Text(
+                    'Meja ${table.number}',
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected ? kPrimaryColor : kSecondaryColor,
+                    ),
+                  ),
+                  trailing: isSelected
+                      ? const Icon(Icons.check_circle, color: kPrimaryColor)
+                      : null,
+                  onTap: () {
+                    onSelect(table.id);
+                    Navigator.of(dialogContext).pop();
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Batal'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTableManagementPage() {
+    // ... (Fungsi ini tidak berubah) ...
+    return Container(
+      color: kBackgroundColor,
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Manajemen Meja",
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: kSecondaryColor,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _refreshData, // Panggil _refreshData
+              child: GridView.builder(
+                padding: EdgeInsets.zero,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 6, // DIUBAH agar lebih banyak
+                  childAspectRatio: 1.1, // DIUBAH agar pas
+                  crossAxisSpacing: 20,
+                  mainAxisSpacing: 20,
+                ),
+                itemCount: _tables.length,
+                itemBuilder: (context, index) {
+                  _tables.sort((a, b) => a.number.compareTo(b.number));
+                  final table = _tables[index];
+                  return _buildTableCard(table);
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // DIUBAH: _buildTableCard (Req 8: Kuning & Merah)
+  Widget _buildTableCard(RestoTable table) {
+    // REQ 8: "kuning masih kosong", "merah sudah terisi"
+    final bool isAvailable = table.status.toLowerCase() == 'available';
+    final Color cardColor = isAvailable ? Colors.orange.shade600 : Colors.red.shade600; // KUNING/MERAH
+    final String statusText = isAvailable ? 'Tersedia' : 'Terisi';
+
+    return GestureDetector(
+      onTap: () {
+        _showUpdateStatusDialog(table);
+      },
+      child: Card(
+        elevation: 4,
+        color: cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                table.number, // Tampilkan nomor saja
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                statusText,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white.withOpacity(0.8),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showUpdateStatusDialog(RestoTable table) async {
+    // ... (Fungsi ini tidak berubah) ...
+    final bool isAvailable = table.status.toLowerCase() == 'available';
+    final String newStatus = isAvailable ? 'occupied' : 'available';
+    final String newStatusText = isAvailable ? 'Terisi' : 'Tersedia';
+
     await showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Selesaikan Pesanan'),
-              content: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Dropdown untuk pilih meja
-                    DropdownButtonFormField<int>(
-                      value: selectedTableId,
-                      hint: const Text('Pilih Meja'),
-                      items: _tables.map((RestoTable table) {
-                        return DropdownMenuItem<int>(
-                          value: table.id,
-                          child: Text('Meja ${table.number}'),
-                        );
-                      }).toList(),
-                      onChanged: (int? newValue) {
-                        setDialogState(() {
-                          selectedTableId = newValue;
-                        });
-                      },
-                      validator: (value) =>
-                          value == null ? 'Meja harus dipilih' : null,
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Batal'),
-                ),
-                ElevatedButton(
-                  onPressed: (selectedTableId == null || isSubmitting)
-                      ? null
-                      : () async {
-                          if (formKey.currentState!.validate()) {
-                            setDialogState(() {
-                              isSubmitting = true;
-                            });
+        return AlertDialog(
+          title: const Text('Konfirmasi Ubah Status'),
+          content: Text('Ubah status "Meja ${table.number}" menjadi "$newStatusText"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  final updatedTable = await _apiService.updateTableStatus(table.id, newStatus);
+                  
+                  setState(() {
+                    final index = _tables.indexWhere((t) => t.id == table.id);
+                    if (index != -1) {
+                      _tables[index] = updatedTable;
+                    }
+                  });
+                  
+                  if (mounted) {
+                    Navigator.of(dialogContext).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Status Meja ${table.number} berhasil diubah!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    Navigator.of(dialogContext).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Gagal update: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Ubah'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  
+  // --- HELPER BARU UNTUK REQ 2, 3, 4, 6, 7 ---
+  
+  // BARU: Fungsi baru untuk Req 4: Buat Nota
+  void _printReceipt(
+    BuildContext context,
+    CartProvider cart,
+    String customerName,
+    int? tableId,
+    String? paymentMethod,
+    double received,
+  ) {
+    if (tableId == null || paymentMethod == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih meja dan metode pembayaran dulu.')),
+      );
+      return;
+    }
+    
+    final String tableName = _tables.firstWhere((t) => t.id == tableId).number;
+    final double change = (received > cart.total) ? received - cart.total : 0;
 
-                            try {
-                              // 1. Buat data order
-                              final orderData = cart.createOrderJson(selectedTableId!);
-                              
-                              // 2. Kirim ke API
-                              await _apiService.createOrder(orderData);
-                              
-                              // 3. Jika sukses
-                              if (mounted) {
-                                Navigator.of(dialogContext).pop(); // Tutup dialog
-                                cart.clearCart(); // Kosongkan keranjang
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Pesanan berhasil dibuat!'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              }
-                            } catch (e) {
-                              // 4. Jika gagal
-                              if (mounted) {
-                                Navigator.of(dialogContext).pop(); // Tutup dialog
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Gagal: ${e.toString().replaceFirst("Exception: ", "")}'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            } finally {
-                              setDialogState(() {
-                                isSubmitting = false;
-                              });
-                            }
-                          }
-                        },
-                  child: isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: kBackgroundColor,
-                          ),
-                        )
-                      : const Text('Buat Pesanan'),
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Nota Pesanan'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Nama: $customerName'),
+                Text('Meja: $tableName'),
+                const Divider(),
+                ...cart.items.map((item) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(child: Text('${item.quantity}x ${item.menu.name}')),
+                      Text('Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}'),
+                    ],
+                  ),
+                )),
+                const Divider(),
+                _buildSummaryRow('Subtotal', 'Rp ${cart.subtotal.toStringAsFixed(0)}'),
+                _buildSummaryRow('Tax 10%', 'Rp ${(cart.subtotal * cart.taxPercent / 100).toStringAsFixed(0)}'),
+                _buildSummaryRow('Tip', 'Rp 500'), // Hardcoded
+                const Divider(),
+                _buildSummaryRow('Total', 'Rp ${cart.total.toStringAsFixed(0)}', isTotal: true),
+                const Divider(),
+                _buildSummaryRow('Metode', paymentMethod.toUpperCase()),
+                _buildSummaryRow('Diterima', 'Rp ${received.toStringAsFixed(0)}'),
+                if (change > 0 && paymentMethod == 'cash')
+                  _buildSummaryRow('Kembali', 'Rp ${change.toStringAsFixed(0)}', isChange: true),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Tutup'),
+            ),
+            ElevatedButton(
+              onPressed: () { 
+                // TODO: Tambahkan logika print sesungguhnya (misal: pakai package 'printing')
+                Navigator.of(dialogContext).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Mencetak nota... (simulasi)')),
+                );
+              },
+              child: const Text('Print'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // BARU: Fungsi baru untuk Req 2 & 3: Popup Debit/QRIS
+  Future<bool?> _showPaymentConfirmationDialog(BuildContext context, String method) async {
+    final bool isDebit = method == 'debit';
+    final String title = isDebit ? 'Pembayaran Debit' : 'Pembayaran E-Wallet';
+    // Gunakan Icon sebagai placeholder gambar
+    final Widget imageWidget = isDebit
+        ? const Icon(Icons.credit_card, size: 100, color: kPrimaryColor)
+        : const Icon(Icons.qr_code_2, size: 100, color: kPrimaryColor); // Simbol QRIS
+        
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false, // User harus memilih
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(title),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              imageWidget,
+              const SizedBox(height: 16),
+              Text(
+                isDebit 
+                  ? 'Silakan gesek kartu debit. Tekan "Selesai" jika berhasil.'
+                  : 'Silakan pindai QRIS. Tekan "Selesai" jika berhasil.',
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false), // 'Tidak'
+              child: const Text('Batalkan'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true), // 'Selesai'
+              child: const Text('Selesai'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // BARU: Fungsi baru untuk popup sukses (iPad Pro 12.9_ - 12.jpg)
+  void _showSuccessOrderDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Container(
+            width: 500,
+            height: 350,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: kPrimaryColor, // Background oranye
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Pesanan Berhasil!',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    color: kPrimaryColor,
+                    size: 80,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: kPrimaryColor,
+                    padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                  ),
+                  child: const Text(
+                    'Lanjutkan Transaksi', // Sesuai gambar
+                    style: TextStyle(fontSize: 18),
+                  ),
                 ),
               ],
-            );
-          },
+            ),
+          ),
         );
       },
     );

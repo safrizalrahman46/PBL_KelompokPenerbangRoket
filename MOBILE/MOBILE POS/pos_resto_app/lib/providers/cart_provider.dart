@@ -125,21 +125,49 @@ class CartProvider with ChangeNotifier {
 
   // --- FUNGSI BARU UNTUK API ---
   
-  Map<String, dynamic> createOrderJson(int tableId) {
-    // Ubah daftar items menjadi format List<Map>
-    List<Map<String, dynamic>> itemsJson = _items.values.map((cartItem) {
-      return {
-        'menu_id': cartItem.menu.id,
-        'quantity': cartItem.quantity,
-        'price': cartItem.menu.price, // Kirim harga saat itu
-      };
-    }).toList();
+  // Map<String, dynamic> createOrderJson(int tableId) {
+  //   // Ubah daftar items menjadi format List<Map>
+  //   List<Map<String, dynamic>> itemsJson = _items.values.map((cartItem) {
+  //     return {
+  //       'menu_id': cartItem.menu.id,
+  //       'quantity': cartItem.quantity,
+  //       'price': cartItem.menu.price, // Kirim harga saat itu
+  //     };
+  //   }).toList();
 
-    // Kembalikan Map lengkap sesuai ekspektasi Laravel
+  //   // Kembalikan Map lengkap sesuai ekspektasi Laravel
+  //   return {
+  //     'resto_table_id': tableId, // atau 'table_id' sesuai API Anda
+  //     'total_price': total,
+  //     'items': itemsJson,
+  //   };
+  // }
+  // lib/providers/cart_provider.dart
+
+// --- FUNGSI BARU UNTUK API ---
+
+Map<String, dynamic> createOrderJson({
+  required int tableId,
+  required String paymentMethod,
+  String? customerName,
+}) {
+  // Ubah daftar items menjadi format List<Map>
+  List<Map<String, dynamic>> itemsJson = _items.values.map((cartItem) {
     return {
-      'resto_table_id': tableId, // atau 'table_id' sesuai API Anda
-      'total_price': total,
-      'items': itemsJson,
+      'menu_id': cartItem.menu.id,
+      'quantity': cartItem.quantity,
+      'price': cartItem.menu.price,
     };
-  }
+  }).toList();
+
+  // Kembalikan Map lengkap sesuai ekspektasi Laravel
+  return {
+    'resto_table_id': tableId,
+    'total_price': total,
+    'items': itemsJson,
+    'payment_method': paymentMethod, // <-- BARU
+    'customer_name': customerName,   // <-- BARU
+    'status': 'paid', // <-- BARU (Asumsi 'Bayar Sekarang' = Lunas)
+  };
+}
 }

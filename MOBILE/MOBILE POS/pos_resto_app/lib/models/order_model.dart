@@ -1,3 +1,4 @@
+// lib/models/order_model.dart
 import 'dart:convert';
 import 'menu_model.dart'; // <-- Pastikan import ini benar
 
@@ -16,9 +17,9 @@ class Order {
   final double totalPrice;
   final String status;
   final String? customerName;
-  final RestoTable? restoTable; // Relasi ke RestoTable
+  final RestoTable? restoTable;
   final List<OrderItem> orderItems;
-  final DateTime createdAt; // Untuk tracking waktu
+  final DateTime createdAt;
 
   Order({
     required this.id,
@@ -30,11 +31,12 @@ class Order {
     required this.createdAt,
   });
 
+  // --- FACTORY YANG DIPERBAIKI (AMAN DARI NULL) ---
   factory Order.fromJson(Map<String, dynamic> json) => Order(
-        id: json["id"],
+        id: json["id"] ?? 0, // Aman
         totalPrice:
             double.tryParse(json["total_price"]?.toString() ?? '0.0') ?? 0.0,
-        status: json["status"],
+        status: json["status"] ?? 'unknown', // Aman
         customerName: json["customer_name"],
         restoTable: json["resto_table"] == null
             ? null
@@ -43,7 +45,9 @@ class Order {
             ? []
             : List<OrderItem>.from(
                 json["order_items"].map((x) => OrderItem.fromJson(x))),
-        createdAt: DateTime.parse(json["created_at"]),
+        createdAt: json["created_at"] == null // Aman
+            ? DateTime.now()
+            : DateTime.parse(json["created_at"]),
       );
 }
 
@@ -53,21 +57,27 @@ class OrderItem {
   final int id;
   final int quantity;
   final double priceAtTime;
-  final Menu menu; // Relasi ke Menu
+  final Menu menu;
 
-  OrderItem({
-    required this.id, 
-    required this.quantity, 
-    required this.priceAtTime,
-    required this.menu
-  });
+  OrderItem(
+      {required this.id,
+      required this.quantity,
+      required this.priceAtTime,
+      required this.menu});
 
+  // --- FACTORY YANG DIPERBAIKI (AMAN DARI NULL) ---
   factory OrderItem.fromJson(Map<String, dynamic> json) => OrderItem(
-        id: json["id"],
-        quantity: json["quantity"],
-        priceAtTime: double.tryParse(json["price_at_time"]?.toString() ?? '0.0') ?? 0.0,
+        id: json["id"] ?? 0, // Aman
+        quantity: json["quantity"] ?? 0, // Aman
+        priceAtTime:
+            double.tryParse(json["price_at_time"]?.toString() ?? '0.0') ?? 0.0,
         menu: json["menu"] == null
-            ? Menu(id: 0, name: 'Menu Dihapus', price: 0, stock: 0) // Fallback
+            ? Menu( // Fallback aman
+                id: 0,
+                name: 'Menu Dihapus',
+                price: 0,
+                stock: 0,
+                categoryId: 0) // <-- Termasuk perbaikan 'categoryId'
             : Menu.fromJson(json["menu"]),
       );
 }
@@ -76,8 +86,8 @@ class OrderItem {
 
 class RestoTable {
   final int id;
-  final String number;
-  final String status; // misal: 'available', 'occupied'
+  final String number; // Sesuai model Anda
+  final String status;
 
   RestoTable({
     required this.id,
@@ -85,9 +95,10 @@ class RestoTable {
     required this.status,
   });
 
+  // --- FACTORY YANG DIPERBAIKI (AMAN DARI NULL) ---
   factory RestoTable.fromJson(Map<String, dynamic> json) => RestoTable(
-        id: json["id"],
-        number: json["number"],
-        status: json["status"],
+        id: json["id"] ?? 0, // Aman
+        number: json["name"] ?? '??', // Membaca "name" dari API, aman
+        status: json["status"] ?? 'unknown', // Aman
       );
 }

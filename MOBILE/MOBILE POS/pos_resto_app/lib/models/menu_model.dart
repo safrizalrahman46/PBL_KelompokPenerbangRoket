@@ -14,6 +14,7 @@ class Menu {
   final String? description;
   final String? imageUrl;
   final Category? category;
+  final int categoryId; // <-- 1. TAMBAHKAN INI
 
   Menu({
     required this.id,
@@ -23,11 +24,14 @@ class Menu {
     this.description,
     this.imageUrl,
     this.category,
+    required this.categoryId, // <-- 2. TAMBAHKAN INI
   });
 
   factory Menu.fromJson(Map<String, dynamic> json) => Menu(
-        id: json["id"],
-        name: json["name"],
+        // id: json["id"],
+        // name: json["name"],
+        id: json["id"] ?? 0,
+        name: json["name"] ?? 'Nama Menu Error',
         price: double.tryParse(json["price"]?.toString() ?? '0.0') ?? 0.0,
         stock: json["stock"] ?? 0,
         description: json["description"],
@@ -35,6 +39,7 @@ class Menu {
         category: json["category"] == null
             ? null
             : Category.fromJson(json["category"]),
+        categoryId: json["category_id"] ?? 0, // <-- 3. TAMBAHKAN INI
       );
 }
 
@@ -47,8 +52,10 @@ class Category {
   Category({required this.id, required this.name, this.menusCount});
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
-        id: json["id"],
-        name: json["name"],
+        // id: json["id"],
+        // name: json["name"],
+        id: json["id"] ?? 0,
+        name: json["name"] ?? 'Nama Kategori Error',
         menusCount: json["menus_count"],
       );
 }
