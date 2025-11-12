@@ -3,7 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; // untuk format waktu
+import 'package:intl/intl.dart';
 
 import '../../models/order_model.dart';
 import '../../services/api_service.dart';
@@ -32,7 +32,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     super.initState();
     _loadOrdersFuture = _fetchOrders();
 
-    // Auto-refresh tiap 30 detik agar tampilan dapur selalu update
+    // Auto-refresh tiap 30 detik
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
         _fetchOrders();
@@ -46,26 +46,23 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     super.dispose();
   }
 
-  // Fungsi utama untuk mengambil data pesanan (VERSI BARU YANG DIPERBAIKI)
   Future<void> _fetchOrders() async {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       final userId = authService.user?.id;
 
-      if (userId == null) {
-        throw Exception("User tidak terautentikasi.");
-      }
+      if (userId == null) throw Exception("User tidak terautentikasi.");
 
-      // Ambil semua order dari API
-      final List<Order> allOrders = await _apiService.fetchOrders(userId.toString());
+      final List<Order> allOrders =
+          await _apiService.fetchOrders(userId.toString());
 
-      final List<Order> pending = [];
-      final List<Order> preparing = [];
-      final List<Order> ready = [];
+      final pending = <Order>[];
+      final preparing = <Order>[];
+      final ready = <Order>[];
 
       for (var order in allOrders) {
         final status = order.status.toLowerCase();
-        if (status == 'paid' || status == 'pending') {
+        if (status == 'pending' || status == 'paid') {
           pending.add(order);
         } else if (status == 'preparing') {
           preparing.add(order);
@@ -90,7 +87,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     }
   }
 
-  // Update status pesanan
   Future<void> _updateOrderStatus(int orderId, String newStatus) async {
     try {
       await _apiService.updateOrderStatus(orderId, newStatus);
@@ -115,7 +111,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     }
   }
 
-  // Logout
   void _logout() async {
     final authService = Provider.of<AuthService>(context, listen: false);
     await authService.logout();
@@ -160,7 +155,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          // UI utama
           return RefreshIndicator(
             onRefresh: _fetchOrders,
             color: kPrimaryColor,
@@ -184,7 +178,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                 _buildOrdersColumn(
                   title: 'Selesai',
                   orders: _readyOrders,
-                  nextStatus: 'completed',
+                  nextStatus: '',
                   buttonText: '',
                   buttonColor: const Color(0xFFFF9800),
                 ),
@@ -260,7 +254,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     required String buttonText,
     required Color buttonColor,
   }) {
-    final bool isCompletedColumn = nextStatus == 'completed';
+    final bool isCompletedColumn = nextStatus.isEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16.0),
@@ -278,6 +272,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           Container(
             padding: const EdgeInsets.all(12.0),
             child: Row(
@@ -322,6 +317,8 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
               ],
             ),
           ),
+
+          // Detail Item
           Container(
             margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             padding: const EdgeInsets.all(12),
@@ -337,53 +334,41 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                       flex: 1,
                       child: Text(
                         'Qty',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+                        style:
+                            TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     ),
                     Expanded(
                       flex: 3,
                       child: Text(
                         'Items',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+                        style:
+                            TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     ),
                   ],
                 ),
                 const Divider(height: 16),
-                ...order.orderItems.map((item) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 1,
-                          child: Text(
-                            item.quantity.toString().padLeft(2, '0'),
-                            style: const TextStyle(fontSize: 14),
+                ...order.orderItems.map((item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Text(item.quantity.toString().padLeft(2, '0')),
                           ),
-                        ),
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            item.menu.name,
-                            style: const TextStyle(fontSize: 14),
+                          Expanded(
+                            flex: 3,
+                            child: Text(item.menu.name),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                        ],
+                      ),
+                    )),
               ],
             ),
           ),
 
-          // Tombol aksi hanya jika bukan kolom selesai
+          // Tombol aksi
           if (!isCompletedColumn)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -391,15 +376,12 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                 width: double.infinity,
                 height: 45,
                 child: ElevatedButton(
-                  onPressed: () {
-                    _updateOrderStatus(order.id, nextStatus);
-                  },
+                  onPressed: () => _updateOrderStatus(order.id, nextStatus),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: buttonColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25.0),
                     ),
-                    elevation: 0,
                   ),
                   child: Text(
                     buttonText,
