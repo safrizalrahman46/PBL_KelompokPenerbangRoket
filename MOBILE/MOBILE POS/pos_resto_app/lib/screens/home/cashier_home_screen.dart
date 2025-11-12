@@ -5,6 +5,18 @@ import 'package:provider/provider.dart';
 
 import '../../models/menu_model.dart';
 import '../../models/order_model.dart';
+
+// --- TAMBAHKAN IMPOR INI ---
+import 'dart:typed_data'; // Diperlukan untuk Uint8List
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+// --- SELESAI PENAMBAHAN ---
+
+import 'package:flutter_tts/flutter_tts.dart';
+
+import '../../models/menu_model.dart';
+
 // BARU: Impor model Transaction
 import '../../models/transactions_model.dart';
 import '../../providers/cart_provider.dart';
@@ -23,6 +35,8 @@ class CashierHomeScreen extends StatefulWidget {
 class _CashierHomeScreenState extends State<CashierHomeScreen> {
   late Future<void> _loadDataFuture;
   final ApiService _apiService = ApiService();
+
+  final FlutterTts _flutterTts = FlutterTts();
 
   List<Menu> _menus = [];
   List<Category> _categories = [];
@@ -819,96 +833,169 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   }
 
   // Helper untuk status di Order Card
+  // Map<String, dynamic> _getStatusInfo(String status) {
+  //   switch (status.toLowerCase()) {
+  //     case 'ready':
+  //     case 'ready to serve':
+  //       return {'text': 'Ready to serve', 'icon': Icons.check_circle, 'color': Colors.green};
+  //     case 'cooking':
+  //     case 'cooking now':
+  //       return {'text': 'Cooking Now', 'icon': Icons.fireplace, 'color': Colors.orange};
+  //     case 'in process':
+  //     case 'in the kitchen':
+  //       return {'text': 'In the Kitchen', 'icon': Icons.kitchen, 'color': Colors.pink};
+  //     case 'completed':
+  //     case 'paid':
+  //       return {'text': 'Completed', 'icon': Icons.check, 'color': Colors.blue};
+  //     default:
+  //       return {'text': 'Pending', 'icon': Icons.pending, 'color': Colors.grey};
+  //   }
+  // }
+
   Map<String, dynamic> _getStatusInfo(String status) {
-    switch (status.toLowerCase()) {
-      case 'ready':
-      case 'ready to serve':
-        return {'text': 'Ready to serve', 'icon': Icons.check_circle, 'color': Colors.green};
-      case 'cooking':
-      case 'cooking now':
-        return {'text': 'Cooking Now', 'icon': Icons.fireplace, 'color': Colors.orange};
-      case 'in process':
-      case 'in the kitchen':
-        return {'text': 'In the Kitchen', 'icon': Icons.kitchen, 'color': Colors.pink};
-      case 'completed':
-      case 'paid':
-        return {'text': 'Completed', 'icon': Icons.check, 'color': Colors.blue};
-      default:
-        return {'text': 'Pending', 'icon': Icons.pending, 'color': Colors.grey};
+    status = status.toLowerCase();
+    if (status == 'pending') {
+      return {'text': 'Pending', 'icon': Icons.hourglass_empty, 'color': Colors.orange.shade300};
     }
+    if (status == 'preparing') {
+      return {'text': 'Disiapkan', 'icon': Icons.kitchen, 'color': Colors.blue.shade300};
+    }
+    if (status == 'ready') {
+      return {'text': 'Siap', 'icon': Icons.check_circle, 'color': Colors.green.shade300};
+    }
+    return {'text': status.toUpperCase(), 'icon': Icons.help_outline, 'color': Colors.grey.shade300};
   }
+
+  // Widget _buildStatusChip(String text, IconData icon, Color color) {
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  //     decoration: BoxDecoration(
+  //       color: color.withOpacity(0.2),
+  //       borderRadius: BorderRadius.circular(20),
+  //     ),
+  //     child: Row(
+  //       children: [
+  //         Icon(icon, color: color, size: 14),
+  //         const SizedBox(width: 4),
+  //         Text(text, style: TextStyle(color: color, fontSize: 11)),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildStatusChip(String text, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.0),
+        border: Border.all(color: color, width: 1),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 14),
           const SizedBox(width: 4),
-          Text(text, style: TextStyle(color: color, fontSize: 11)),
+          Text(
+            text,
+            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+          ),
         ],
       ),
     );
   }
 
   // Helper untuk tombol aksi di Order Card
-  Widget _buildOrderActionButtons(Order order) {
-    // Logika tombol berdasarkan status
-    switch (order.status.toLowerCase()) {
-      case 'pending':
-        return SizedBox(
-          width: double.infinity,
-          height: 40,
-          child: ElevatedButton(
-            onPressed: () { /* TODO: API call untuk update status ke 'cooking' */ },
-            style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
-            child: const Text('Confirm', style: TextStyle(color: kBackgroundColor)),
-          ),
-        );
-      case 'ready':
-      case 'ready to serve':
-      case 'cooking':
-      case 'cooking now':
-      case 'in process':
-      case 'in the kitchen':
-        return Row(
-          children: [
-            IconButton(onPressed: () {}, icon: const Icon(Icons.edit, color: kPrimaryColor)),
-            IconButton(onPressed: () {}, icon: const Icon(Icons.delete, color: Colors.red)),
-            const Spacer(),
-            Expanded(
-              flex: 2,
-              child: SizedBox(
-                height: 40,
-                child: ElevatedButton(
-                  onPressed: () { /* TODO: API call untuk update status 'completed' atau langsung bayar */ },
-                  style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
-                  child: const Text('Pay Bill', style: TextStyle(color: kBackgroundColor)),
-                ),
-              ),
+  // Widget _buildOrderActionButtons(Order order) {
+  //   // Logika tombol berdasarkan status
+  //   switch (order.status.toLowerCase()) {
+  //     case 'pending':
+  //       return SizedBox(
+  //         width: double.infinity,
+  //         height: 40,
+  //         child: ElevatedButton(
+  //           onPressed: () { /* TODO: API call untuk update status ke 'cooking' */ 
+            
+  //           },
+  //           style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
+  //           child: const Text('Confirm', style: TextStyle(color: kBackgroundColor)),
+  //         ),
+  //       );
+  //     case 'ready':
+  //     case 'ready to serve':
+  //     case 'cooking':
+  //     case 'cooking now':
+  //     case 'in process':
+  //     case 'in the kitchen':
+  //       return Row(
+  //         children: [
+  //           IconButton(onPressed: () {}, icon: const Icon(Icons.edit, color: kPrimaryColor)),
+  //           IconButton(onPressed: () {}, icon: const Icon(Icons.delete, color: Colors.red)),
+  //           const Spacer(),
+  //           Expanded(
+  //             flex: 2,
+  //             child: SizedBox(
+  //               height: 40,
+  //               child: ElevatedButton(
+  //                 onPressed: () { /* TODO: API call untuk update status 'completed' atau langsung bayar */ },
+  //                 style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
+  //                 child: const Text('Pay Bill', style: TextStyle(color: kBackgroundColor)),
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       );
+  //     case 'completed':
+  //     case 'paid':
+  //       return SizedBox(
+  //         width: double.infinity,
+  //         height: 40,
+  //         child: ElevatedButton(
+  //           onPressed: null, // Sudah dibayar
+  //           style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+  //           child: const Text('Bill Paid', style: TextStyle(color: kBackgroundColor)),
+  //         ),
+  //       );
+  //     default:
+  //       return const SizedBox.shrink();
+  //   }
+  // }
+
+Widget _buildOrderActionButtons(Order order) {
+    String status = order.status.toLowerCase();
+    
+    // REQUEST 2: Tampilkan tombol HANYA jika status 'ready'
+    if (status == 'ready') {
+      return SizedBox(
+        width: double.infinity,
+        height: 44, // Sesuaikan tinggi tombol
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: kPrimaryColor, // Warna primer Anda
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
             ),
-          ],
-        );
-      case 'completed':
-      case 'paid':
-        return SizedBox(
-          width: double.infinity,
-          height: 40,
-          child: ElevatedButton(
-            onPressed: null, // Sudah dibayar
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
-            child: const Text('Bill Paid', style: TextStyle(color: kBackgroundColor)),
           ),
-        );
-      default:
-        return const SizedBox.shrink();
+          onPressed: () {
+            // REQUEST 3: Panggil popup audio
+            _showReadyOrderPopup(order); 
+          },
+          child: const Text(
+            'Konfirmasi', 
+            style: TextStyle(
+              color: kBackgroundColor, // Asumsi teks tombol kontras
+              fontWeight: FontWeight.bold,
+              fontSize: 16
+            ),
+          ),
+        ),
+      );
+    } else {
+      // REQUEST 2: Tidak ada tombol untuk 'pending' atau 'preparing'
+      // Beri SizedBox agar tinggi card tetap konsisten
+      return const SizedBox(height: 44); 
     }
   }
-
 
   // --- SIDEBAR KERANJANG & PEMBAYARAN ---
 
@@ -1122,6 +1209,9 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   }
 
   // --- TAMPILAN PEMBAYARAN (DIUBAH) ---
+// GANTI FUNGSI INI DI cashier_home_screen.dart
+
+  // --- TAMPILAN PEMBAYARAN (Req 1, 2, 3, 4, 5, 9) ---
   Future<void> _showPaymentScreen(CartProvider cart) async {
     int? selectedTableId;
     String? selectedPaymentMethod;
@@ -1146,23 +1236,46 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
         builder: (context) => StatefulBuilder(
           builder: (context, setPaymentState) {
             double received = double.tryParse(receivedController.text) ?? 0;
-            // REQ 1: Pastikan kembalian tidak negatif
             double change = (received > cart.total) ? received - cart.total : 0;
 
             return Scaffold(
               backgroundColor: kBackgroundColor,
-              body: Row(
+
+            //Penamabahan tombol kembali
+            // appBar: AppBar(
+            //         leading: IconButton(
+            //           icon: const Icon(Icons.arrow_back, color: kSecondaryColor),
+            //           onPressed: () => Navigator.of(context).pop(),
+            //         ),
+            //         title: const Text(
+            //           'Detail Pembayaran',
+            //           style: TextStyle(color: kSecondaryColor, fontWeight: FontWeight.bold),
+            //         ),
+            //         backgroundColor: kBackgroundColor,
+            //         elevation: 0,
+            //       ),
+
+
+
+              body: Stack(
                 children: [
+
+                  Row(
+                    children: [
                   // KOLOM KIRI - Order Details
                   Expanded(
                     flex: 2,
                     child: Container(
                       color: kLightGreyColor.withOpacity(0.3),
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.only(
+                        top: 24.0,    // <-- Padding atas tetap
+                        left: 72.0,   // <-- Geser ke kanan untuk memberi ruang tombol
+                        right: 24.0, 
+                        bottom: 24.0,
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // ... (Header Meja & Pelanggan - tidak berubah) ...
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -1204,6 +1317,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                               IconButton(
                                 icon: const Icon(Icons.edit, color: kPrimaryColor, size: 28),
                                 onPressed: () {
+                                  // Memanggil dialog yang memfilter meja (Req 2)
                                   _showTableSelectionDialog(
                                     context,
                                     selectedTableId,
@@ -1219,7 +1333,6 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                           ),
                           const SizedBox(height: 24),
                           
-                          // ... (Daftar item pesanan - tidak berubah) ...
                           Expanded(
                             child: ListView.builder(
                               itemCount: cart.items.length,
@@ -1291,7 +1404,6 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                           
                           const SizedBox(height: 16),
                           
-                          // DIUBAH: Summary (Req 1: Kembalian)
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
@@ -1307,7 +1419,6 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                                 _buildSummaryRow('Tip', 'Rp 500'), // Hardcoded
                                 const Divider(height: 24, thickness: 1),
                                 _buildSummaryRow('Total', 'Rp ${cart.total.toStringAsFixed(0)}', isTotal: true),
-                                // REQ 1: Tampilkan Kembalian
                                 if (change > 0 && selectedPaymentMethod == 'cash')
                                   Padding(
                                     padding: const EdgeInsets.only(top: 12.0),
@@ -1323,7 +1434,6 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                           
                           const SizedBox(height: 16),
                           
-                          // ... (Payment Method - tidak berubah) ...
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
@@ -1394,7 +1504,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                           
                           const SizedBox(height: 16),
                           
-                          // DIUBAH: Order Completed Button (Req 2, 3, 9)
+                          // --- PERBAIKAN POIN 3 ADA DI SINI ---
                           SizedBox(
                             width: double.infinity,
                             height: 56,
@@ -1405,45 +1515,57 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                                           isSubmitting)
                                   ? null
                                   : () async {
-                                      // REQ 2 & 3: Cek metode pembayaran
                                       if (selectedPaymentMethod == 'debit' || selectedPaymentMethod == 'qris') {
                                         final bool? isConfirmed = await _showPaymentConfirmationDialog(
-                                          context, // 'context' dari StatefulBuilder
+                                          context, 
                                           selectedPaymentMethod!,
                                         );
                                         
                                         if (isConfirmed != true) {
-                                          return; // Batalkan jika user menekan 'Tidak'
+                                          return; 
                                         }
                                       }
 
-                                      // --- Lanjut jika 'Cash' atau 'Debit/QRIS' dikonfirmasi ---
                                       setPaymentState(() {
                                         isSubmitting = true;
                                       });
 
                                       try {
+
                                         final orderData = cart.createOrderJson(
                                           tableId: selectedTableId!,
                                           paymentMethod: selectedPaymentMethod!,
                                           customerName: customerNameController.text, 
                                         );
                                         
-                                        // PERBAIKAN: API Call (Req 9)
-                                        // 1. Buat Order (API Anda void)
-                                        await _apiService.createOrder(orderData);
+                                        // --- PERBAIKAN POIN 3 DIMULAI ---
+                                        // Ini adalah perbaikan untuk Poin 3 Anda.
+                                        // Ini mengasumsikan ApiService Anda sudah diubah:
+                                        // 1. createOrder() me-return 'Order'
+                                        // 2. createTransaction() sudah ada
                                         
-                                        // 2. Buat Transaksi (DIHAPUS, API tidak ada)
+                                        // 1. Buat Order dan DAPATKAN ID-nya
+                                        final Order newOrder = await _apiService.createOrder(orderData);
+                                        
+                                        // 2. Buat Transaksi menggunakan ID order
+                                        await _apiService.createTransaction({
+                                          'order_id': newOrder.id,
+                                          'payment_method': selectedPaymentMethod!,
+                                          'amount_paid': received > 0 ? received : cart.total,
+                                        });
+                                        
+
+                                        // 3. BARU: UPDATE STATUS MEJA MENJADI 'occupied'
+                                        //    Tombol 'Order Completed' sudah memastikan selectedTableId != null
+                                        await _apiService.updateTableStatus(selectedTableId!, 'occupied');
+                                        // --- PERBAIKAN POIN 3 SELESAI ---
 
                                         // --- LOGIKA SUKSES ---
                                         cart.clearCart();
                                         Navigator.of(context).pop(); 
-                                        
-                                        // Tampilkan Popup Sukses
                                         _showSuccessOrderDialog(homeScreenContext);
-
-                                        // REQ 6 & 7: Refresh data di home screen
-                                        _refreshData(); // Panggil _refreshData
+                                        
+                                        _refreshData(); 
                                         
                                       } catch (e) {
                                         if (mounted) {
@@ -1489,7 +1611,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                     ),
                   ),
                   
-                  // KOLOM KANAN - Calculator & Payment
+                  // KOLOM KANAN
                   Expanded(
                     flex: 1,
                     child: Container(
@@ -1497,7 +1619,6 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                       padding: const EdgeInsets.all(24),
                       child: Column(
                         children: [
-                          // ... (Display Uang - tidak berubah) ...
                           const Text(
                             'Uang Pembayaran',
                             style: TextStyle(
@@ -1507,6 +1628,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                             ),
                           ),
                           const SizedBox(height: 24),
+                          
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(24),
@@ -1527,7 +1649,6 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                           
                           const SizedBox(height: 24),
                           
-                          // ... (Calculator - tidak berubah) ...
                           Expanded(
                             child: GridView.count(
                               crossAxisCount: 3,
@@ -1552,13 +1673,11 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                           
                           const SizedBox(height: 24),
                           
-                          // DIUBAH: Buat Nota & Apply Buttons (Req 4, 5)
                           Row(
                             children: [
                               Expanded(
                                 child: TextButton(
                                   onPressed: () {
-                                    // REQ 4: Panggil fungsi buat nota
                                     _printReceipt(
                                       context,
                                       cart,
@@ -1590,7 +1709,6 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                                 child: ElevatedButton(
                                   onPressed: () {
                                     setPaymentState(() {
-                                      // REQ 5: Set uang diterima = total
                                       receivedController.text = cart.total.toStringAsFixed(0);
                                     });
                                   },
@@ -1619,6 +1737,22 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                   ),
                 ],
               ),
+              Positioned(
+            top: 16.0,
+            left: 16.0,
+            child: Container(
+              decoration: BoxDecoration(
+                color: kBackgroundColor.withOpacity(0.7),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: kSecondaryColor, size: 28),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ),
+                ],
+              ),
             );
           },
         ),
@@ -1629,6 +1763,88 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
     customerNameController.dispose();
   }
 
+  // --- FUNGSI BARU UNTUK REQUEST 3 ---
+
+  // Fungsi 1: Untuk tombol "Tandai Selesai"
+  Future<void> _updateOrderStatus(int orderId, String newStatus) async {
+    try {
+      await _apiService.updateOrderStatus(orderId, newStatus);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Pesanan #${orderId} diperbarui ke $newStatus'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      // Ambil ulang data agar UI ter-update (pesanan hilang dari tab 'Siap')
+      await _refreshData();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal update status: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  // Fungsi 2: Untuk tombol "Panggil Pelanggan" (Audio)
+  Future<void> _speak(String text) async {
+    try {
+      await _flutterTts.setLanguage("id-ID"); // Set bahasa Indonesia
+      await _flutterTts.setPitch(1.0);
+      await _flutterTts.speak(text);
+    } catch (e) {
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memutar audio: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  // Fungsi 3: Popup dialog
+  void _showReadyOrderPopup(Order order) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text('Konfirmasi Pesanan Siap'),
+          content: Text('Pilih tindakan untuk Meja #${order.restoTable?.number ?? '??'}'),
+          actions: [
+            TextButton(
+              child: const Text('Batal', style: TextStyle(color: kSecondaryColor)),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+              child: const Text('Panggil Pelanggan', style: TextStyle(color: kBackgroundColor)),
+              onPressed: () {
+                // Panggil audio
+                String customerName = order.customerName ?? 'Pelanggan';
+                String tableNumber = order.restoTable?.number ?? '';
+                
+                // Teks yang akan diucapkan
+                _speak('Atas nama $customerName, di Meja $tableNumber, pesanan anda sudah siap diambil.');
+                
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
+              child: const Text('Tandai Selesai', style: TextStyle(color: kBackgroundColor)),
+              onPressed: () {
+                // Update status jadi 'completed'
+                Navigator.of(dialogContext).pop();
+                _updateOrderStatus(order.id, 'completed');
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+  // --- SELESAI FUNGSI BARU ---
 
   Widget _buildCalculatorButton(
     // ... (Fungsi ini tidak berubah) ...
@@ -1720,15 +1936,26 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) {
+
+        // --- TAMBAHKAN INI ---
+        // 1. Buat daftar baru yang HANYA berisi meja 'available'
+        final List<RestoTable> availableTables = _tables
+            .where((t) => t.status.toLowerCase() == 'available')
+            .toList();
+        // --- SELESAI PENAMBAHAN ---
+
         return AlertDialog(
           title: const Text('Pilih Meja'),
           content: SizedBox(
             width: 300,
             height: 400,
             child: ListView.builder(
-              itemCount: _tables.length,
+              // itemCount: _tables.length, lama
+              itemCount: availableTables.length,
               itemBuilder: (context, index) {
-                final table = _tables[index];
+
+                // final table = _tables[index]; Lama
+                final table = availableTables[index];
                 final isSelected = table.id == currentTableId;
                 return ListTile(
                   leading: Icon(
@@ -1807,10 +2034,19 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   }
 
   // DIUBAH: _buildTableCard (Req 8: Kuning & Merah)
+ // DIUBAH: _buildTableCard (Sesuai gambar: Abu-abu & Merah)
+ // DIUBAH: _buildTableCard (Sesuai gambar: Abu-abu & Merah)
   Widget _buildTableCard(RestoTable table) {
-    // REQ 8: "kuning masih kosong", "merah sudah terisi"
+    // Sesuai gambar: "Kosong" (Abu-abu), "Telah diisi" (Merah)
     final bool isAvailable = table.status.toLowerCase() == 'available';
-    final Color cardColor = isAvailable ? Colors.orange.shade600 : Colors.red.shade600; // KUNING/MERAH
+    
+    // WARNA KARTU: Abu-abu jika tersedia (Kosong), Merah jika terisi (Telah diisi)
+    final Color cardColor = isAvailable ? Colors.grey.shade500 : Colors.red.shade600; 
+    
+    // WARNA TEKS: Gelap di atas abu-abu, Terang di atas merah
+    final Color textColor = isAvailable ? kSecondaryColor : Colors.white;
+    final Color statusColor = isAvailable ? kSecondaryColor.withOpacity(0.8) : Colors.white.withOpacity(0.8);
+    
     final String statusText = isAvailable ? 'Tersedia' : 'Terisi';
 
     return GestureDetector(
@@ -1819,7 +2055,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
       },
       child: Card(
         elevation: 4,
-        color: cardColor,
+        color: cardColor, // Warna dinamis
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Center(
           child: Column(
@@ -1827,10 +2063,10 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
             children: [
               Text(
                 table.number, // Tampilkan nomor saja
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: textColor, // Warna teks dinamis
                 ),
               ),
               const SizedBox(height: 4),
@@ -1838,7 +2074,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
                 statusText,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.8),
+                  color: statusColor, // Warna teks dinamis
                 ),
               ),
             ],
@@ -1908,6 +2144,91 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   
   // --- HELPER BARU UNTUK REQ 2, 3, 4, 6, 7 ---
   
+  // HELPER BARU UNTUK PDF (Letakkan di atas _printReceipt)
+  pw.Widget _buildPdfSummaryRow(String label, String value, {bool isTotal = false, bool isChange = false}) {
+    final style = pw.TextStyle(
+      fontWeight: (isTotal || isChange) ? pw.FontWeight.bold : pw.FontWeight.normal,
+      fontSize: (isTotal || isChange) ? 12 : 10,
+    );
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 2.0),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text(label, style: style),
+          pw.Text(value, style: style),
+        ],
+      ),
+    );
+  }
+
+  // HELPER BARU UNTUK PDF (Letakkan di atas _printReceipt)
+  Future<Uint8List> _generatePdfReceipt(
+    CartProvider cart,
+    String customerName,
+    String tableName,
+    String paymentMethod,
+    double received,
+    double change,
+  ) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      // Ukuran kertas nota (thermal) kecil, misal 80mm
+      // Ubah ke PdfPageFormat.a4 jika ingin ukuran A4
+      pw.Page(
+        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, double.infinity, marginAll: 5 * PdfPageFormat.mm),
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Center(
+                child: pw.Text('Eat.o Nota', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Text('Nama: $customerName'),
+              pw.Text('Meja: $tableName'),
+              pw.Divider(height: 15),
+              // Daftar Item
+              for (final item in cart.items)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(vertical: 2.0),
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('${item.quantity}x ${item.menu.name}'),
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.end,
+                        children: [
+                          pw.Text('Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}'),
+                        ]
+                      )
+                    ],
+                  ),
+                ),
+              pw.Divider(height: 15),
+              // Ringkasan
+              _buildPdfSummaryRow('Subtotal', 'Rp ${cart.subtotal.toStringAsFixed(0)}'),
+              _buildPdfSummaryRow('Tax 10%', 'Rp ${(cart.subtotal * cart.taxPercent / 100).toStringAsFixed(0)}'),
+              _buildPdfSummaryRow('Tip', 'Rp 500'), // Hardcoded
+              pw.Divider(),
+              _buildPdfSummaryRow('Total', 'Rp ${cart.total.toStringAsFixed(0)}', isTotal: true),
+              pw.Divider(),
+              _buildPdfSummaryRow('Metode', paymentMethod.toUpperCase()),
+              _buildPdfSummaryRow('Diterima', 'Rp ${received.toStringAsFixed(0)}'),
+              if (change > 0 && paymentMethod == 'cash')
+                _buildPdfSummaryRow('Kembali', 'Rp ${change.toStringAsFixed(0)}', isChange: true),
+              pw.SizedBox(height: 20),
+              pw.Center(child: pw.Text('Terima kasih!')),
+            ],
+          );
+        },
+      ),
+    );
+
+    return pdf.save();
+  }
+
   // BARU: Fungsi baru untuk Req 4: Buat Nota
   void _printReceipt(
     BuildContext context,
@@ -1969,16 +2290,51 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
               onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Tutup'),
             ),
+            // ElevatedButton(
+            //   onPressed: () { 
+            //     // TODO: Tambahkan logika print sesungguhnya (misal: pakai package 'printing')
+            //     Navigator.of(dialogContext).pop();
+            //     ScaffoldMessenger.of(context).showSnackBar(
+            //       const SnackBar(content: Text('Mencetak nota... (simulasi)')),
+            //     );
+            //   },
+            //   child: const Text('Print'),
+            // ),
+            // ... (di dalam _printReceipt, di dalam actions:)
             ElevatedButton(
-              onPressed: () { 
-                // TODO: Tambahkan logika print sesungguhnya (misal: pakai package 'printing')
-                Navigator.of(dialogContext).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Mencetak nota... (simulasi)')),
-                );
+              onPressed: () async { // <-- 1. Jadikan 'async'
+                try {
+                  // 2. Panggil fungsi generator PDF yang baru
+                  final Uint8List pdfData = await _generatePdfReceipt(
+                    cart,
+                    customerName,
+                    tableName,
+                    paymentMethod,
+                    received,
+                    change,
+                  );
+                  
+                  // 3. Panggil dialog print dari package 'printing'
+                  // Ini akan membuka dialog print di browser/OS
+                  await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdfData);
+                  
+                  if (mounted) {
+                     Navigator.of(dialogContext).pop();
+                  }
+                  
+                } catch (e) {
+                  // 4. Tangani jika ada error
+                  if (mounted) {
+                    Navigator.of(dialogContext).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Gagal membuat PDF: $e')),
+                    );
+                  }
+                }
               },
               child: const Text('Print'),
             ),
+// ...
           ],
         );
       },
