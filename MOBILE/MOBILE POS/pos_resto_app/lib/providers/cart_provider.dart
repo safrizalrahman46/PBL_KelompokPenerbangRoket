@@ -167,7 +167,7 @@ Map<String, dynamic> createOrderJson({
     'items': itemsJson,
     'payment_method': paymentMethod, // <-- BARU
     'customer_name': customerName,   // <-- BARU
-    'status': 'paid', // <-- BARU (Asumsi 'Bayar Sekarang' = Lunas)
+    'status': 'pending', // <-- BARU (Asumsi 'Bayar Sekarang' = Lunas)
   };
 }
 }

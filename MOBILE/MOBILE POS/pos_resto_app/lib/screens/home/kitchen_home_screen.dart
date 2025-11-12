@@ -32,7 +32,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     super.initState();
     _loadOrdersFuture = _fetchOrders();
 
-    // Auto-refresh tiap 30 detik
+    // Auto-refresh tiap 30 detik agar tampilan dapur selalu update
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
         _fetchOrders();
@@ -46,20 +46,39 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     super.dispose();
   }
 
-  // Ambil data pesanan
+  // Fungsi utama untuk mengambil data pesanan (VERSI BARU YANG DIPERBAIKI)
   Future<void> _fetchOrders() async {
     try {
-      final results = await Future.wait([
-        _apiService.fetchOrders('status=pending'),
-        _apiService.fetchOrders('status=preparing'),
-        _apiService.fetchOrders('status=ready'),
-      ]);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = authService.user?.id;
+
+      if (userId == null) {
+        throw Exception("User tidak terautentikasi.");
+      }
+
+      // Ambil semua order dari API
+      final List<Order> allOrders = await _apiService.fetchOrders(userId.toString());
+
+      final List<Order> pending = [];
+      final List<Order> preparing = [];
+      final List<Order> ready = [];
+
+      for (var order in allOrders) {
+        final status = order.status.toLowerCase();
+        if (status == 'paid' || status == 'pending') {
+          pending.add(order);
+        } else if (status == 'preparing') {
+          preparing.add(order);
+        } else if (status == 'ready') {
+          ready.add(order);
+        }
+      }
 
       if (mounted) {
         setState(() {
-          _pendingOrders = results[0];
-          _preparingOrders = results[1];
-          _readyOrders = results[2];
+          _pendingOrders = pending;
+          _preparingOrders = preparing;
+          _readyOrders = ready;
         });
       }
     } catch (e) {
@@ -148,7 +167,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Kolom 1: Pesanan Baru
                 _buildOrdersColumn(
                   title: 'Pesanan Baru',
                   orders: _pendingOrders,
@@ -156,7 +174,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                   buttonText: 'Mulai Memasak',
                   buttonColor: const Color(0xFFFF9800),
                 ),
-                // Kolom 2: Sedang Dimasak
                 _buildOrdersColumn(
                   title: 'Sedang Dimasak',
                   orders: _preparingOrders,
@@ -164,7 +181,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                   buttonText: 'Selesaikan',
                   buttonColor: const Color(0xFFFF9800),
                 ),
-                // Kolom 3: Selesai (tanpa tombol)
                 _buildOrdersColumn(
                   title: 'Selesai',
                   orders: _readyOrders,
@@ -180,7 +196,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     );
   }
 
-  // Reusable kolom
   Widget _buildOrdersColumn({
     required String title,
     required List<Order> orders,
@@ -191,7 +206,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     return Expanded(
       child: Column(
         children: [
-          // Header kolom
           Container(
             width: double.infinity,
             margin: const EdgeInsets.all(16.0),
@@ -210,8 +224,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
               ),
             ),
           ),
-
-          // Daftar pesanan
           Expanded(
             child: orders.isEmpty
                 ? Center(
@@ -242,14 +254,13 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     );
   }
 
-  // Reusable card pesanan
   Widget _buildOrderCard({
     required Order order,
     required String nextStatus,
     required String buttonText,
     required Color buttonColor,
   }) {
-    final bool isCompletedColumn = nextStatus == 'completed'; //Kolom Selesai akan menampilkan kartu pesanan tanpa tombol di bawahnya.
+    final bool isCompletedColumn = nextStatus == 'completed';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16.0),
@@ -267,7 +278,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header pesanan
           Container(
             padding: const EdgeInsets.all(12.0),
             child: Row(
@@ -292,9 +302,9 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Udean',
-                      style: TextStyle(
+                    Text(
+                      order.customerName ?? 'Tanpa Nama',
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF5D4037),
@@ -312,8 +322,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
               ],
             ),
           ),
-
-          // Isi pesanan
           Container(
             margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             padding: const EdgeInsets.all(12),
@@ -375,7 +383,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
             ),
           ),
 
-          // Tombol aksi (hanya jika bukan kolom selesai)
+          // Tombol aksi hanya jika bukan kolom selesai
           if (!isCompletedColumn)
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),

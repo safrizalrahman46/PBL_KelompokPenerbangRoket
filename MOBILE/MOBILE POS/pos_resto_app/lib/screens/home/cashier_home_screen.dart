@@ -639,10 +639,13 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   // --- HALAMAN ORDER (BARU - REQ 7) ---
   Widget _buildOrderPage() {
     // Tampilkan order yang BELUM selesai
-    final activeOrders = _orders.where((o) {
-      final status = o.status.toLowerCase();
-      return status != 'completed' && status != 'paid';
-    }).toList();
+    // Tampilkan SEMUA order
+    final activeOrders = _orders.toList(); // <-- HAPUS FILTERNYA
+    // final activeOrders = _orders.where((o) {
+    //   final status = o.status.toLowerCase();
+    //   return status != 'completed' && status != 'paid';
+    // }).toList();
+    
 
     return Container(
       color: kBackgroundColor,
@@ -1545,6 +1548,7 @@ Widget _buildOrderActionButtons(Order order) {
                                         // 2. createTransaction() sudah ada
                                         
                                         // 1. Buat Order dan DAPATKAN ID-nya
+                                        // final Order newOrder = await _apiService.createOrder(orderData);
                                         final Order newOrder = await _apiService.createOrder(orderData);
                                         
                                         // 2. Buat Transaksi menggunakan ID order
@@ -1553,6 +1557,7 @@ Widget _buildOrderActionButtons(Order order) {
                                           'payment_method': selectedPaymentMethod!,
                                           'amount_paid': received > 0 ? received : cart.total,
                                         });
+                                        
                                         
 
                                         // 3. BARU: UPDATE STATUS MEJA MENJADI 'occupied'
@@ -2428,6 +2433,9 @@ Widget _buildOrderActionButtons(Order order) {
                 ElevatedButton(
                   onPressed: () {
                     Navigator.of(dialogContext).pop();
+
+                    // 2. TAMBAHKAN BLOK INI (untuk reload data)
+                    _refreshData(); // Panggil fungsi refresh yang lebih ringan
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
