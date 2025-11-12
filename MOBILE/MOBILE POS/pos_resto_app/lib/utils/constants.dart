@@ -8,7 +8,8 @@ import 'dart:io';
 String getBaseUrl() {
   if (kIsWeb) {
     // Flutter Web
-    return 'http://localhost:8000';
+    // return 'http://localhost:8000';
+     return 'http://192.168.57.65:8000';
   }
 
   if (Platform.isAndroid) {
@@ -39,7 +40,8 @@ String getBaseUrl() {
 /// Endpoint utama API Laravel
 // final String API_URL = '${getBaseUrl()}/api/v1';
 
-final String API_URL = 'http://192.168.75.16:8000/api/v1';
+// final String API_URL = 'http://192.168.75.16:8000/api/v1';
+final String API_URL = '${getBaseUrl()}/api/v1';
 
 
 /// URL dasar untuk gambar yang disimpan di Laravel storage
