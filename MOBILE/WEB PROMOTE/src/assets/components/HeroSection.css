@@ -1,93 +1,152 @@
+/* ===== Layout utama ===== */
 .hero {
-    /* Padding atas sangat penting agar konten tidak tertutup Navbar fixed. */
-    /* Sesuaikan nilai padding-top jika tinggi navbar Anda lebih besar dari 80px */
-    padding-top: 100px; 
-    padding-bottom: 80px;
-    background-color: #ffffff; /* Latar belakang abu-abu muda */
-    min-height: 85vh; /* Memastikan Hero Section cukup tinggi */
-    display: flex;
-    align-items: center; /* Memastikan konten berada di tengah vertikal */
+  background-color: #fff;
+  padding: 100px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 90vh;
 }
 
 .hero-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    /* Konten terpusat, sama lebarnya dengan konten navbar */
-    max-width: 1100px; 
-    margin: 0 auto;
-    padding: 0 30px;
-    width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 60px;
+  width: 100%;
 }
 
+/* ===== Kiri: Teks ===== */
 .hero-text {
-    width: 50%; /* Mengambil setengah lebar */
-    padding-right: 50px;
+  width: 45%;
+  animation: fadeInLeft 1s ease forwards;
 }
 
-.hero-headline {
-    font-size: 52px;
-    font-weight: 800; /* Super tebal */
-    color: #333;
-    line-height: 1.2;
-    margin-bottom: 20px;
+.hero-title {
+  font-size: 54px;
+  font-weight: 800;
+  color: #222;
+  line-height: 1.2;
+  margin-bottom: 20px;
 }
 
-.hero-subheadline {
-    font-size: 18px;
-    color: #666;
-    line-height: 1.6;
-    margin-bottom: 30px;
+.hero-subtitle {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 30px;
+  line-height: 1.6;
 }
 
-.hero-cta-button {
-    /* Gaya tombol oranye solid */
-    background-color: #FFA500;
-    color: white; 
-    border: none;
-    padding: 15px 35px;
-    border-radius: 8px;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
-    /* Memberikan efek bayangan agar menonjol */
-    box-shadow: 0 5px 15px rgba(255, 165, 0, 0.4); 
+.hero-btn {
+  background-color: #ff9d00;
+  color: #fff;
+  border: none;
+  padding: 14px 40px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255, 157, 0, 0.4);
+  transition: transform 0.2s, background-color 0.3s;
 }
 
-.hero-cta-button:hover {
-    background-color: #CC8400;
-    transform: translateY(-2px);
+.hero-btn:hover {
+  transform: translateY(-3px);
+  background-color: #e88b00;
 }
 
+/* ===== Kanan: Visual mockup ===== */
 .hero-visual {
-    width: 45%; /* Mengambil setengah lebar lainnya */
-    display: flex;
-    justify-content: center;
+  width: 55%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.mockup-image {
-    max-width: 100%;
-    height: auto;
-    transform: rotateZ(-5deg); /* Sedikit rotasi agar dinamis */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    border-radius: 25px;
+.mockup-top {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-bottom: 40px;
 }
 
-/* Media Queries untuk Responsif (Tampilan Mobile/Tablet) */
+.mockup-bottom {
+  display: flex;
+  justify-content: center;
+}
+
+/* ===== Gaya Gambar ===== */
+.hero-img {
+  width: 320px;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+
+  /* gabungan animasi slide-in dan float */
+  animation: slideInRight 1s ease forwards, float 5s ease-in-out infinite;
+  animation-delay: 0s, 1s;
+
+  /* trick supaya hover dan animasi tidak bentrok */
+  transform-origin: center center;
+  transition: transform 0.8s ease, box-shadow 0.8s ease;
+  will-change: transform;
+}
+
+/* Efek hover smooth (terpisah dari animasi float) */
+.hero-img:hover {
+  scale: 1.07;
+  rotate: 1deg;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+}
+
+/* Delay individual */
+.hero-img.delay1 { animation-delay: 0s, 1s; }
+.hero-img.delay2 { animation-delay: 0.3s, 1.3s; }
+.hero-img.delay3 { animation-delay: 0.6s, 1.6s; }
+
+/* ===== ANIMASI TEKS ===== */
+@keyframes fadeInLeft {
+  0% { opacity: 0; transform: translateX(-40px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* ===== ANIMASI GAMBAR MASUK (slide kanan) ===== */
+@keyframes slideInRight {
+  0% { opacity: 0; transform: translateX(80px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* ===== ANIMASI MELAYANG ===== */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+/* ===== RESPONSIF ===== */
 @media (max-width: 992px) {
-    .hero-content {
-        flex-direction: column;
-        text-align: center;
-    }
-    .hero-text, .hero-visual {
-        width: 100%;
-        padding-right: 0;
-    }
-    .hero-visual {
-        margin-top: 40px;
-    }
-    .hero-headline {
-        font-size: 44px;
-    }
+  .hero-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .hero-text {
+    width: 100%;
+  }
+
+  .hero-visual {
+    width: 100%;
+    margin-top: 40px;
+  }
+
+  .mockup-top {
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .hero-img {
+    width: 80%;
+  }
 }
