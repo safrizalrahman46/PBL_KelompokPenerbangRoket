@@ -1,6 +1,6 @@
 # PBL: Ekosistem POS Kelompok Penerbang Roket
 
-## Dokumentasi untuk WBS (Work Breakdown system), Penajuan IDE
+## Dokumentasi untuk WBS (Work Breakdown system), Pengajuan IDE
 
 <img width="1600" height="1200" alt="Image" src="https://github.com/user-attachments/assets/05f64f9b-5727-4b2b-8b95-d559ca617515" />
 
@@ -154,30 +154,36 @@ Proyek ini adalah **monorepo** yang mengintegrasikan tiga aplikasi utama untuk m
 
 backend/
 ├── app/
-│   ├── Filament/               # (Logika Admin Panel)
-│   │   ├── Resources/          # (CRUD Pages: Menu, Order, User)
-│   │   └── Widgets/            # (Dashboard Widgets: Charts, Stats)
+│   ├── Filament/                     # Logika untuk Admin Panel
+│   │   ├── Resources/                # CRUD Pages: Menu, Order, User
+│   │   └── Widgets/                  # Dashboard Widgets: Charts, Stats
 │   ├── Http/
 │   │   └── Controllers/
 │   │       ├── Api/
-│   │       │   └── V1/         # (Kontroler REST API untuk Flutter/React)
+│   │       │   └── V1/               # REST API untuk Flutter / React
 │   │       │       ├── AuthController.php
 │   │       │       ├── CategoryController.php
 │   │       │       ├── MenuController.php
 │   │       │       └── OrderController.php
 │   │       └── Controller.php
-│   ├── Models/                 # (Model Eloquent: User, Order, Menu)
+│   ├── Models/                       # Model Eloquent: User, Order, Menu
 │   └── Providers/
 │       └── Filament/
-│           └── AdminPanelProvider.php # (Konfigurasi Panel Admin)
-├── config/                     # (File Konfigurasi)
+│           └── AdminPanelProvider.php # Konfigurasi Filament Admin Panel
+│
+├── config/                           # File konfigurasi aplikasi
 ├── database/
-│   ├── migrations/
-│   └── seeders/
+│   ├── migrations/                   # Struktur tabel database
+│   └── seeders/                      # Data awal (dummy / default)
+│
 ├── routes/
-│   ├── api.php                 # (Definisi rute /api/v1)
-│   └── web.php                 # (Definisi rute /admin)
-└── ...
+│   ├── api.php                       # Definisi rute API (/api/v1)
+│   └── web.php                       # Definisi rute Web (/admin)
+│
+├── storage/                          # File upload dan cache Laravel
+├── tests/                            # Unit dan feature tests
+└── composer.json                     # Dependensi backend (Laravel)
+
 
 2.  **`mobile` (Aplikasi Kasir / POS)**
 
@@ -185,26 +191,33 @@ backend/
 
 mobile/
 ├── lib/
-│   ├── main.dart             # Titik awal aplikasi
-│   ├── models/               # Model data (Menu, Order, User)
-│   ├── providers/            # State management (Provider/Bloc)
-│   ├── screens/              # Halaman UI (Login, Home, POS)
-│   ├── services/             # Logika bisnis & pemanggilan API
-│   └── widgets/              # Komponen UI kustom
-└── pubspec.yaml            # Dependensi Flutter
+│   ├── main.dart                     # Titik awal aplikasi Flutter
+│   ├── models/                       # Model data (Menu, Order, User)
+│   ├── providers/                    # State management (Provider / Bloc)
+│   ├── screens/                      # Halaman UI (Login, Home, POS)
+│   ├── services/                     # Logika bisnis & pemanggilan API
+│   └── widgets/                      # Komponen UI kustom (Button, Card)
+│
+├── assets/                           # Gambar, ikon, font, dsb.
+├── pubspec.yaml                      # Daftar dependensi Flutter
+└── analysis_options.yaml             # Aturan linting & analisis kode
+
 
 3.  **`web` (Web Promosi & Langganan)**
 
 web/
-├── public/
+├── public/                           # File publik (index.html, favicon)
 ├── src/
-│   ├── assets/               # Gambar, font
-│   ├── components/           # Komponen UI (Button, Navbar)
-│   ├── pages/                # Halaman (Home, Register, Pricing)
-│   ├── services/             # Pemanggilan API (Axios)
-│   ├── App.js
-│   └── index.js
-└── package.json            # Dependensi Node.js
+│   ├── assets/                       # Gambar, ikon, dan font
+│   ├── components/                   # Komponen UI (Button, Navbar, Card)
+│   ├── pages/                        # Halaman (Home, Register, Pricing)
+│   ├── services/                     # Pemanggilan API (Axios)
+│   ├── App.js                        # Entry utama React
+│   └── index.js                      # Inisialisasi aplikasi React
+│
+├── package.json                      # Dependensi Node.js / React
+└── vite.config.js                    # Konfigurasi build (jika pakai Vite)
+
 
 
 ---
@@ -231,14 +244,29 @@ web/
 
 ---
 
-## 📸 Galeri / Tampilan
+## 📸 Galeri / Tampilan UI MOBILE DAN APPS
 
+### Splash Screen UI TAB/IPAD VERSION
+<img width="856" height="416" alt="Image" src="https://github.com/user-attachments/assets/30c146a1-35f4-4683-ab22-5b4f2a8028c3" />
 
-Tambahkan *screenshot* proyek Anda di sini untuk membuatnya lebih menarik.
+### Login Dan register UI TAB/IPAD VERSION
+<img width="859" height="380" alt="Image" src="https://github.com/user-attachments/assets/3e2965f8-0274-40c6-94b6-07be901e1f8b" />
 
-| Panel Admin (Filament) | Aplikasi Mobile (Flutter) | Web Promosi (React) |
-| :---: | :---: | :---: |
-|  |  |  |
+### Layout halaman Kasir UI TAB/IPAD VERSION
+<img width="1367" height="1025" alt="Image" src="https://github.com/user-attachments/assets/4067e80c-82b8-4682-a755-6061fa425b7c" />
+<img width="1367" height="1025" alt="Image" src="https://github.com/user-attachments/assets/39a22e60-7a85-47d0-9b87-9ff12fac27dd" />
+<img width="1367" height="1025" alt="Image" src="https://github.com/user-attachments/assets/f0f2edff-c27c-42d3-bc45-a55d83dc768c" />
+<img width="1367" height="1025" alt="Image" src="https://github.com/user-attachments/assets/9f999991-2b70-443d-b475-eb90b691411a" />
+<img width="1367" height="1025" alt="Image" src="https://github.com/user-attachments/assets/0282c582-a564-4d89-adba-2f1bb6212118" />
+<img width="1367" height="1025" alt="Image" src="https://github.com/user-attachments/assets/62d895e6-afd2-4466-a21c-e8791ae7ad97" />
+<img width="1367" height="1025" alt="Image" src="https://github.com/user-attachments/assets/cae2c690-d4c5-40f5-b82c-217c877edc0c" />
+<img width="1367" height="1025" alt="Image" src="https://github.com/user-attachments/assets/8955f29f-cfed-4a1b-bf3c-1edb0a69b3dd" />
+<img width="1367" height="1025" alt="Image" src="https://github.com/user-attachments/assets/9cc36d3e-8f40-453a-8a6d-5e86cf278294" />
+<img width="1367" height="1025" alt="Image" src="https://github.com/user-attachments/assets/2f53832f-e162-427c-b70b-0a856f483679" />
+<img width="1367" height="1025" alt="Image" src="https://github.com/user-attachments/assets/f7e72293-c73b-490a-bf97-8682843db095" />
+
+### Layout halaman Dapur UI TAB/IPAD VERSION
+<img width="832" height="428" alt="Image" src="https://github.com/user-attachments/assets/9e87603e-086f-4949-b328-39231fe23cf3" />
 
 ---
 
