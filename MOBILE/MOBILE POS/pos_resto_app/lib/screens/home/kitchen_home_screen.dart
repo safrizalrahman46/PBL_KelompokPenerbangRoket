@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart'; // Dibutuhkan untuk format waktu
 
+
+
 import '../../models/order_model.dart'; // Import model Order Anda
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
@@ -25,6 +27,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
 
   List<Order> _pendingOrders = [];
   List<Order> _preparingOrders = [];
+  List<Order> _readyOrders = [];
 
   @override
   void initState() {
@@ -33,7 +36,9 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     
     // Siapkan auto-refresh setiap 30 detik agar dapur selalu update
     _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      _fetchOrders();
+      if (mounted) {
+        _fetchOrders();
+      }
     });
   }
 
@@ -50,12 +55,14 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
       final results = await Future.wait([
         _apiService.fetchOrders('status=pending'),
         _apiService.fetchOrders('status=preparing'),
+        _apiService.fetchOrders('status=ready'),
       ]);
       
       if (mounted) {
         setState(() {
           _pendingOrders = results[0];
           _preparingOrders = results[1];
+          _readyOrders = results[2];
         });
       }
     } catch (e) {
@@ -71,12 +78,14 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
   Future<void> _updateOrderStatus(int orderId, String newStatus) async {
     try {
       await _apiService.updateOrderStatus(orderId, newStatus);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Pesanan #${orderId} diperbarui ke $newStatus'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Pesanan #${orderId} diperbarui ke $newStatus'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
       // Ambil ulang data agar UI ter-update
       await _fetchOrders();
     } catch (e) {
@@ -144,10 +153,19 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                 const VerticalDivider(width: 2, color: kSecondaryColor),
                 // Kolom 2: Sedang Disiapkan (Preparing)
                 _buildOrdersColumn(
-                  title: 'Sedang Disiapkan',
+                  title: 'Sedang Dimasak',
                   orders: _preparingOrders,
-                  nextStatus: 'completed',
+                  nextStatus: 'ready', // Harusnya 'ready' atau 'completed'? Sesuai kode Anda 'completed'
                   buttonText: 'Selesai',
+                  buttonColor: Colors.green,
+                ),
+                const VerticalDivider(width: 2, color: kSecondaryColor),
+
+                _buildOrdersColumn(
+                  title: 'Selesai',
+                  orders: _preparingOrders,
+                  nextStatus: 'completed', // Harusnya 'ready' atau 'completed'? Sesuai kode Anda 'completed'
+                  buttonText: 'Tandai Selesai',
                   buttonColor: Colors.green,
                 ),
               ],
@@ -231,9 +249,9 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                //   'Meja #${order.table.number}',
-                //'Meja #${order.restoTable?.number ?? '??'}', // Asumsi order punya obj 'table'
-                'Meja #${order.restoTable?.number ?? '??'}',
+                  // 'Meja #${order.table.number}',
+                  // 'Meja #${order.restoTable?.number ?? '??'}', // Asumsi order punya obj 'table'
+                  'Meja #${order.restoTable?.number ?? '??'}',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -241,7 +259,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                   ),
                 ),
                 Text(
-                  // Format waktu, misal: 11:30 AM
+                  // Format waktu, misal: 11:30
                   DateFormat('HH:mm').format(order.createdAt),
                   style: const TextStyle(
                     fontSize: 16,
@@ -271,7 +289,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          item.menu.name, // Asumsi item punya 'menuName'
+                          item.menu.name, // Asumsi item punya 'menu'
                           style: const TextStyle(fontSize: 18),
                         ),
                       ),

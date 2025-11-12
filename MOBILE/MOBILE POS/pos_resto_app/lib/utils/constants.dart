@@ -2,60 +2,42 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'dart:io';
 
-/// 🔍 Fungsi deteksi BASE_URL sesuai platform / device
-String getBaseUrl() {
-  if (kIsWeb) {
-    // Flutter Web
-    return 'http://localhost:8000';
-  }
+/// 🔍 Deteksi otomatis platform
+/// - Web → kIsWeb == true
+/// - Android emulator → pakai 10.0.2.2
+/// - iOS simulator → pakai 127.0.0.1
+/// - HP fisik → perlu ubah IP manual sesuai jaringan laptop
+const bool isWeb = kIsWeb;
 
-  if (Platform.isAndroid) {
-    // Cek apakah ini emulator atau HP fisik
-    // Emulator Android biasanya memiliki IP 10.0.2.2 untuk host machine
-    // HP fisik harus pakai IP lokal laptop
-    // Sederhananya, jika kita ingin otomatis, kita bisa pakai 10.0.2.2 untuk emulator
-    // dan ganti manual ke IP lokal untuk HP fisik jika diperlukan
-    // (tidak ada cara 100% otomatis mendeteksi emulator vs fisik di Dart)
-    
-    // Ganti IP ini sesuai IP laptop kamu saat testing di HP fisik
-    const String localLaptopIP = '192.168.75.16';
-    
-    // Gunakan 10.0.2.2 untuk emulator
-    return 'http://10.0.2.2:8000'; // default emulator
-    // Kalau HP fisik: return 'http://$localLaptopIP:8000';
-  }
+/// 🖥️ BASE_URL dinamis agar tidak perlu ubah manual terus
+///
+/// Gunakan pola ini:
+/// - Flutter Web (Chrome/Edge): http://localhost:8000
+/// - Android Emulator: http://10.0.2.2:8000
+/// - iOS Simulator: http://127.0.0.1:8000
+/// - HP fisik: ganti dengan IP laptop kamu (cek `ipconfig`)
+const String BASE_URL = kIsWeb
+    ? 'http://localhost:8000' // Flutter Web
+    : 'http://10.0.2.2:8000'; // Android Emulator (default)
 
-  if (Platform.isIOS) {
-    // iOS simulator
-    return 'http://127.0.0.1:8000';
-  }
+// ⚙️ Endpoint utama API Laravel
+const String API_URL = '$BASE_URL/api/v1';
 
-  // fallback
-  return 'http://192.168.75.16:8000';
-}
+// 📦 URL dasar untuk gambar yang disimpan di Laravel storage
+const String IMAGE_URL = '$BASE_URL/storage/';
 
-/// Endpoint utama API Laravel
-// final String API_URL = '${getBaseUrl()}/api/v1';
-
-final String API_URL = 'http://192.168.75.16:8000/api/v1';
-
-
-/// URL dasar untuk gambar yang disimpan di Laravel storage
-final String IMAGE_URL = '${getBaseUrl()}/storage/';
-
-/// 🌈 Warna utama tema aplikasi POS
+// 🌈 Warna utama tema aplikasi POS
 const kPrimaryColor = Color(0xFFF9A825); // Kuning/Oranye Utama
 const kSecondaryColor = Color(0xFF212121); // Abu-abu Gelap
 const kLightGreyColor = Color(0xFFF5F5F5); // Abu Cerah untuk Input Field
 const kBackgroundColor = Color(0xFFFFFFFF); // Putih Umum
 
-/// 🌟 Warna khusus Splash Screen
+// 🌟 Warna khusus Splash Screen
 const kSplashBackgroundColor = Color(0xFFFEE8B7); // Kuning lembut
 const kSplashCircleColor = Color(0xFFFDCB6F); // Kuning agak gelap
 
-/// 🔤 Gaya teks umum
+// 🔤 Gaya teks umum (opsional, bisa kamu pakai di seluruh app)
 const TextStyle kHeadingStyle = TextStyle(
   fontSize: 24,
   fontWeight: FontWeight.bold,
@@ -67,6 +49,6 @@ const TextStyle kSubTextStyle = TextStyle(
   color: kSecondaryColor,
 );
 
-/// 🧱 Padding dan radius standar
+// 🧱 Padding dan radius standar
 const double kDefaultPadding = 16.0;
 const double kDefaultRadius = 12.0;
