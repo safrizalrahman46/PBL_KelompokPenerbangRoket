@@ -73,7 +73,9 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
         _apiService.fetchTables(),
         // PERBAIKAN: Ubah int userId menjadi String
         _apiService.fetchOrders(userId.toString()), 
-        Future.value(<Transaction>[]), 
+        // Future.value(<Transaction>[]), 
+        // _apiService.fetchTransactions(userId.toString()),
+        Future.value(<Transaction>[]),
       ]);
 
       setState(() {
@@ -110,6 +112,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
         _apiService.fetchTables(),
         // PERBAIKAN: Ubah int userId menjadi String
         _apiService.fetchOrders(userId.toString()),
+        // _apiService.fetchTransactions(userId.toString()),
       ]);
       setState(() {
         _tables = results[0] as List<RestoTable>;
@@ -483,10 +486,22 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   // --- HALAMAN TRANSAKSI (BARU - REQ 6) ---
   Widget _buildTransactionPage() {
     // Tampilkan order yang sudah 'completed' atau 'paid'
+    // final paidOrders = _orders.where((order) {
+    //   final status = order.status.toLowerCase();
+    //   return status == 'completed' || status == 'paid';
+    // }).toList();
+    // final transactions = _transactions;
     final paidOrders = _orders.where((order) {
-      final status = order.status.toLowerCase();
-      return status == 'completed' || status == 'paid';
-    }).toList();
+ final status = order.status.toLowerCase();
+ // PERBAIKAN: Tampilkan SEMUA status KECUALI 'pending'
+ return status != 'pending';
+ 
+ // ATAU, JIKA ANDA INGIN LEBIH SPESIFIK:
+ // return status == 'paid' || 
+ //   status == 'preparing' || 
+ //   status == 'ready' || 
+ //   status == 'completed';
+ }).toList();
 
     return Container(
       color: kBackgroundColor,

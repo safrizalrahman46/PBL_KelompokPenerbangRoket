@@ -71,7 +71,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
       // 4. Filter semua order secara manual (in-app), sama seperti di kasir
       for (var order in allOrders) {
         final status = order.status.toLowerCase();
-       if ( status == 'paid') { 
+       if (status == 'pending' || status == 'paid') {
           pending.add(order);
         } else if (status == 'preparing') {
           preparing.add(order);
@@ -219,8 +219,8 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                 _buildOrdersColumn(
                   title: 'Selesai',
                   orders: _readyOrders,
-                  nextStatus: 'completed',
-                  buttonText: 'Selesai',
+                  nextStatus: '',
+                  buttonText: '',
                   buttonColor: const Color(0xFFFF9800),
                 ),
               ],
@@ -430,6 +430,11 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
             ),
           ),
 
+
+            if (buttonText.isEmpty)
+              // Beri jarak agar card tetap sama tinggi
+              const SizedBox(height: 45 + 12) // (tinggi tombol + padding bawah)
+              else
           // Tombol Aksi dengan border radius penuh
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
