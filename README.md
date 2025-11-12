@@ -9,6 +9,18 @@
 ## Video Web Progress
 
 ## Video APPS Progress
+.
+├─ lib/
+│  ├─ main.dart              # App entrypoint
+│  ├─ src/                   # (recommended) your app modules
+│  │  ├─ features/
+│  │  ├─ common/
+│  │  └─ core/
+├─ test/                     # Unit & widget tests
+├─ android/ ios/ macos/      # Native platform configs
+├─ linux/ windows/ web/      # Desktop & web targets
+├─ pubspec.yaml              # Dependencies & assets
+└─ analysis_options.yaml     # Lints & static analysis
 
 
 ## Dokumentasi untuk WBS (Work Breakdown system), Pengajuan IDE
