@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart'; // Dibutuhkan untuk format waktu
 
-
-
 import '../../models/order_model.dart'; // Import model Order Anda
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
@@ -51,7 +49,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
   // Fungsi utama untuk mengambil data pesanan
   Future<void> _fetchOrders() async {
     try {
-      // Ambil 2 jenis pesanan secara bersamaan
+      // Ambil 3 jenis pesanan secara bersamaan
       final results = await Future.wait([
         _apiService.fetchOrders('status=pending'),
         _apiService.fetchOrders('status=preparing'),
@@ -81,7 +79,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Pesanan #${orderId} diperbarui ke $newStatus'),
+            content: Text('Pesanan #$orderId diperbarui ke $newStatus'),
             backgroundColor: Colors.green,
           ),
         );
@@ -113,10 +111,10 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kLightGreyColor.withOpacity(0.5),
+      backgroundColor: const Color(0xFFFFF8E1), // Background krem seperti di gambar
       appBar: AppBar(
         title: const Text('Dapur Eat.o', style: TextStyle(color: kSecondaryColor, fontWeight: FontWeight.bold)),
-        backgroundColor: kSplashBackgroundColor, // Warna kuning cerah
+        backgroundColor: kSplashBackgroundColor,
         elevation: 0,
         actions: [
           IconButton(
@@ -147,26 +145,24 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                   title: 'Pesanan Baru',
                   orders: _pendingOrders,
                   nextStatus: 'preparing',
-                  buttonText: 'Mulai Siapkan',
-                  buttonColor: kPrimaryColor,
+                  buttonText: 'Mulai Memasak',
+                  buttonColor: const Color(0xFFFF9800),
                 ),
-                const VerticalDivider(width: 2, color: kSecondaryColor),
                 // Kolom 2: Sedang Disiapkan (Preparing)
                 _buildOrdersColumn(
                   title: 'Sedang Dimasak',
                   orders: _preparingOrders,
-                  nextStatus: 'ready', // Harusnya 'ready' atau 'completed'? Sesuai kode Anda 'completed'
-                  buttonText: 'Selesai',
-                  buttonColor: Colors.green,
+                  nextStatus: 'ready',
+                  buttonText: 'Selesaikan',
+                  buttonColor: const Color(0xFFFF9800),
                 ),
-                const VerticalDivider(width: 2, color: kSecondaryColor),
-
+                // Kolom 3: Selesai (Ready)
                 _buildOrdersColumn(
                   title: 'Selesai',
-                  orders: _preparingOrders,
-                  nextStatus: 'completed', // Harusnya 'ready' atau 'completed'? Sesuai kode Anda 'completed'
-                  buttonText: 'Tandai Selesai',
-                  buttonColor: Colors.green,
+                  orders: _readyOrders,
+                  nextStatus: 'completed',
+                  buttonText: 'Selesai',
+                  buttonColor: const Color(0xFFFF9800),
                 ),
               ],
             ),
@@ -187,18 +183,22 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     return Expanded(
       child: Column(
         children: [
-          // Judul Kolom
+          // Judul Kolom dengan styling baru
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16.0),
-            color: kBackgroundColor,
+            margin: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFF9800), // Orange sesuai gambar
+              borderRadius: BorderRadius.circular(30.0), // Border radius melengkung
+            ),
             child: Text(
-              '$title (${orders.length})',
+              title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 24,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: kSecondaryColor,
+                color: Colors.white, // Text putih
               ),
             ),
           ),
@@ -207,10 +207,16 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
           Expanded(
             child: orders.isEmpty
                 ? Center(
-                    child: Text('Tidak ada pesanan', style: TextStyle(fontSize: 18, color: kSecondaryColor.withOpacity(0.5))),
+                    child: Text(
+                      'Tidak ada pesanan', 
+                      style: TextStyle(
+                        fontSize: 18, 
+                        color: kSecondaryColor.withOpacity(0.5)
+                      )
+                    ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     itemCount: orders.length,
                     itemBuilder: (context, index) {
                       final order = orders[index];
@@ -235,75 +241,139 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     required String buttonText,
     required Color buttonColor,
   }) {
-    return Card(
-      elevation: 4,
+    return Container(
       margin: const EdgeInsets.only(bottom: 16.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Kartu
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3CD), // Background kuning muda
+        borderRadius: BorderRadius.circular(12.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header dengan badge orange
+          Container(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
               children: [
-                Text(
-                  // 'Meja #${order.table.number}',
-                  // 'Meja #${order.restoTable?.number ?? '??'}', // Asumsi order punya obj 'table'
-                  'Meja #${order.restoTable?.number ?? '??'}',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: kPrimaryColor,
+                // Badge nomor orange
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF9800),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    order.restoTable?.number.toString().padLeft(2, '0') ?? '01',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
-                Text(
-                  // Format waktu, misal: 11:30
-                  DateFormat('HH:mm').format(order.createdAt),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: kSecondaryColor,
-                  ),
+                const SizedBox(width: 12),
+                // Info order
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Udean',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF5D4037),
+                      ),
+                    ),
+                    Text(
+                      'Order #${order.id}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const Divider(height: 20),
+          ),
 
-            // Daftar Item Pesanan
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: order.orderItems.map((item) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Row(
-                    children: [
-                      Text(
-                        '${item.quantity}x',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          item.menu.name, // Asumsi item punya 'menu'
-                          style: const TextStyle(fontSize: 18),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
+          // Container putih untuk items dengan table layout
+          Container(
+            margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(height: 16),
-            
-            // Tombol Aksi
-            SizedBox(
+            child: Column(
+              children: [
+                // Header table
+                Row(
+                  children: const [
+                    Expanded(
+                      flex: 1,
+                      child: Text(
+                        'Qty',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        'Items',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 16),
+                // Items list
+                ...order.orderItems.map((item) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: Text(
+                            item.quantity.toString().padLeft(2, '0'),
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            item.menu.name,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
+            ),
+          ),
+          
+          // Tombol Aksi dengan border radius penuh
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+            child: SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 45,
               child: ElevatedButton(
                 onPressed: () {
                   _updateOrderStatus(order.id, nextStatus);
@@ -311,21 +381,22 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: buttonColor,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+                    borderRadius: BorderRadius.circular(25.0), // Border radius melengkung penuh
                   ),
+                  elevation: 0,
                 ),
                 child: Text(
                   buttonText,
                   style: const TextStyle(
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: kBackgroundColor,
+                    color: Colors.white,
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
