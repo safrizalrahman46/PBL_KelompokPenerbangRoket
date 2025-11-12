@@ -31,9 +31,9 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
   void initState() {
     super.initState();
     _loadOrdersFuture = _fetchOrders(); // Muat data saat pertama kali
-    
+
     // Siapkan auto-refresh setiap 30 detik agar dapur selalu update
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (mounted) {
         _fetchOrders();
       }
@@ -47,20 +47,45 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
   }
 
   // Fungsi utama untuk mengambil data pesanan
+  // Fungsi utama untuk mengambil data pesanan (VERSI BARU YANG DIPERBAIKI)
   Future<void> _fetchOrders() async {
     try {
-      // Ambil 3 jenis pesanan secara bersamaan
-      final results = await Future.wait([
-        _apiService.fetchOrders('status=pending'),
-        _apiService.fetchOrders('status=preparing'),
-        _apiService.fetchOrders('status=ready'),
-      ]);
-      
+      // 1. Ambil ID pengguna/restoran, sama seperti di CashierHomeScreen
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userId = authService.user?.id;
+
+      if (userId == null) {
+        throw Exception("User tidak terautentikasi.");
+      }
+
+      // 2. Ambil SEMUA order untuk user/restoran ini (HANYA 1 PANGGILAN API)
+      final List<Order> allOrders = await _apiService.fetchOrders(
+        userId.toString(),
+      );
+
+      // 3. Siapkan list-list baru (kosong)
+      final List<Order> pending = [];
+      final List<Order> preparing = [];
+      final List<Order> ready = [];
+
+      // 4. Filter semua order secara manual (in-app), sama seperti di kasir
+      for (var order in allOrders) {
+        final status = order.status.toLowerCase();
+       if ( status == 'paid') { 
+          pending.add(order);
+        } else if (status == 'preparing') {
+          preparing.add(order);
+        } else if (status == 'ready') {
+          ready.add(order);
+        }
+      }
+
       if (mounted) {
         setState(() {
-          _pendingOrders = results[0];
-          _preparingOrders = results[1];
-          _readyOrders = results[2];
+          // 5. Update state dengan list yang sudah difilter
+          _pendingOrders = pending;
+          _preparingOrders = preparing;
+          _readyOrders = ready;
         });
       }
     } catch (e) {
@@ -71,6 +96,30 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
       }
     }
   }
+  // Future<void> _fetchOrders() async {
+  //   try {
+  //     // Ambil 3 jenis pesanan secara bersamaan
+  //     final results = await Future.wait([
+  //       _apiService.fetchOrders('status=pending'),
+  //       _apiService.fetchOrders('status=preparing'),
+  //       _apiService.fetchOrders('status=ready'),
+  //     ]);
+
+  //     if (mounted) {
+  //       setState(() {
+  //         _pendingOrders = results[0];
+  //         _preparingOrders = results[1];
+  //         _readyOrders = results[2];
+  //       });
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Gagal mengambil data pesanan: $e')),
+  //       );
+  //     }
+  //   }
+  // }
 
   // Fungsi untuk update status (dipanggil oleh tombol)
   Future<void> _updateOrderStatus(int orderId, String newStatus) async {
@@ -89,7 +138,10 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal update status: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Gagal update status: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -111,9 +163,14 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF8E1), // Background krem seperti di gambar
+      backgroundColor: const Color(
+        0xFFFFF8E1,
+      ), // Background krem seperti di gambar
       appBar: AppBar(
-        title: const Text('Dapur Eat.o', style: TextStyle(color: kSecondaryColor, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Dapur Eat.o',
+          style: TextStyle(color: kSecondaryColor, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: kSplashBackgroundColor,
         elevation: 0,
         actions: [
@@ -128,7 +185,9 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
         future: _loadOrdersFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
+            return const Center(
+              child: CircularProgressIndicator(color: kPrimaryColor),
+            );
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
@@ -190,7 +249,9 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             decoration: BoxDecoration(
               color: const Color(0xFFFF9800), // Orange sesuai gambar
-              borderRadius: BorderRadius.circular(30.0), // Border radius melengkung
+              borderRadius: BorderRadius.circular(
+                30.0,
+              ), // Border radius melengkung
             ),
             child: Text(
               title,
@@ -202,17 +263,17 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
               ),
             ),
           ),
-          
+
           // Daftar Pesanan
           Expanded(
             child: orders.isEmpty
                 ? Center(
                     child: Text(
-                      'Tidak ada pesanan', 
+                      'Tidak ada pesanan',
                       style: TextStyle(
-                        fontSize: 18, 
-                        color: kSecondaryColor.withOpacity(0.5)
-                      )
+                        fontSize: 18,
+                        color: kSecondaryColor.withOpacity(0.5),
+                      ),
                     ),
                   )
                 : ListView.builder(
@@ -264,7 +325,10 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
               children: [
                 // Badge nomor orange
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF9800),
                     borderRadius: BorderRadius.circular(20),
@@ -283,9 +347,10 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Udean',
-                      style: TextStyle(
+                    Text(
+                      // 'Udean',
+                      order.customerName ?? 'Tanpa Nama', // D
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF5D4037),
@@ -293,10 +358,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                     ),
                     Text(
                       'Order #${order.id}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -367,7 +429,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
               ],
             ),
           ),
-          
+
           // Tombol Aksi dengan border radius penuh
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -381,7 +443,9 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: buttonColor,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25.0), // Border radius melengkung penuh
+                    borderRadius: BorderRadius.circular(
+                      25.0,
+                    ), // Border radius melengkung penuh
                   ),
                   elevation: 0,
                 ),
