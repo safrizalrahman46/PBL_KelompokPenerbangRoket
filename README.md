@@ -1,5 +1,16 @@
 # PBL: Ekosistem POS Kelompok Penerbang Roket
 
+# 🚀 Tim Kami
+* Ahmad Hayyin Baihaqi (Manajemen Proyek)
+* M Nazril Nur Rahman (flutter IOS version)
+* M Faruq Burhanuddin (UI UX, Flutter Slicing)
+* Safrizal Rahman (Web Backend, Flutter Android version, Project Manager)
+
+## Video Web Progress
+
+## Video APPS Progress
+
+
 ## Dokumentasi untuk WBS (Work Breakdown system), Pengajuan IDE
 
 <img width="1600" height="1200" alt="Image" src="https://github.com/user-attachments/assets/05f64f9b-5727-4b2b-8b95-d559ca617515" />
@@ -106,11 +117,6 @@ Pelacakan Pemasukan: Dasbor admin Filament [cite: PosStatsOverview.php] secara c
 
 Riwayat Transaksi: Backend memiliki resource Transaction [cite: TransactionResource.php] yang berfungsi sebagai log "Hanya-Baca" [cite: ListTransactions.php], kemungkinan besar dibuat secara otomatis saat pesanan dibayar.
 
-## 🚀 Tim Kami
-* Hayyin
-* Nazril
-* Faruq
-* Safrizal
 
 ---
 
