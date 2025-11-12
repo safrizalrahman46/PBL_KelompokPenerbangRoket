@@ -9,7 +9,8 @@ String getBaseUrl() {
   if (kIsWeb) {
     // Flutter Web
     // return 'http://localhost:8000';
-    return 'http://192.168.57.65:8000';
+    //return 'http://192.168.57.65:8000';
+    return 'http://192.168.70.238:8000';
   }
 
   if (Platform.isAndroid) {
