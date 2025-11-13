@@ -70,21 +70,21 @@ class ApiService {
   }
 
   // API untuk KASIR & DAPUR
-  Future<List<Order>> fetchOrders(String statusQuery) async {
-    try {
-      // Rute publik, tidak perlu header
-      final response = await http.get(
-        Uri.parse('$API_URL/orders?$statusQuery'),
-      );
-      if (response.statusCode == 200) {
-        return orderFromJson(response.body);
-      } else {
-        throw Exception('Gagal memuat pesanan');
-      }
-    } catch (e) {
-      throw Exception('Error koneksi: $e');
+  Future<List<Order>> fetchOrders([String statusQuery = '']) async {
+  try {
+    final response = await http.get(
+      Uri.parse('$API_URL/orders${statusQuery.isNotEmpty ? '?$statusQuery' : ''}'),
+    );
+    if (response.statusCode == 200) {
+      return orderFromJson(response.body);
+    } else {
+      throw Exception('Gagal memuat pesanan');
     }
+  } catch (e) {
+    throw Exception('Error koneksi: $e');
   }
+}
+
 
   // API untuk DAPUR & KASIR
   Future<void> updateOrderStatus(int orderId, String newStatus) async {
