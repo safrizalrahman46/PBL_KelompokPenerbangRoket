@@ -1,10 +1,11 @@
 // lib/screens/auth/register_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:pos_resto_app/screens/home/cashier/cashier_home_screen.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../utils/constants.dart';
-import '../home/cashier_home_screen.dart';
+// import '../home/cashier/cashier_menu_screen.dart';
 import '../home/kitchen_home_screen.dart';
 import 'login_screen.dart';
 
@@ -22,87 +23,80 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
   String? _selectedRole;
-  // Ubah daftar role agar label ≠ value
   final List<Map<String, String>> _roles = [
     {'label': 'Kasir', 'value': 'cashier'},
     {'label': 'Dapur', 'value': 'kitchen'},
     {'label': 'Admin', 'value': 'admin'},
   ];
 
+  void _showSnack(String message, {Color? color}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color ?? kPrimaryColor,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   void _submitRegister() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedRole == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Silakan pilih Role'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showSnack('Silakan pilih Role', color: Colors.red);
         return;
       }
 
       final authService = Provider.of<AuthService>(context, listen: false);
-
-      print('🟡 [REGISTER] Memulai proses registrasi...');
-      print('📧 Email: ${_emailController.text}');
-      print('👤 Username: ${_nameController.text}');
-      print('🔑 Password: ${_passwordController.text}');
-      print('🎭 Role dipilih: $_selectedRole');
+      _showSnack('Memproses registrasi...');
 
       try {
-        // Kirim request ke API
         await authService.register(
           name: _nameController.text,
           email: _emailController.text,
           password: _passwordController.text,
-          role: _selectedRole!, // Sudah dalam format API
+          role: _selectedRole!,
         );
 
-        print('✅ [REGISTER] Respons dari server: ${authService.user}');
         if (!mounted) return;
+        _showSnack('Registrasi berhasil! Selamat datang 👋',
+            color: Colors.green);
 
-        // Arahkan ke halaman sesuai role
-        print('🚀 [NAVIGASI] Mengarahkan berdasarkan role: ${authService.user!.role}');
         _navigateBasedOnRole(authService.user!.role);
       } catch (e) {
-        print('❌ [REGISTER ERROR] $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e.toString().replaceFirst('Exception: ', ''),
-            ),
-            backgroundColor: Colors.red,
-          ),
+        _showSnack(
+          e.toString().replaceFirst('Exception: ', ''),
+          color: Colors.red,
         );
       }
+    } else {
+      _showSnack('Form tidak valid, periksa kembali input Anda',
+          color: Colors.orange);
     }
   }
 
   void _navigateBasedOnRole(String role) {
     Widget homeScreen;
-    print('🧭 [ROLE CHECK] Role terdeteksi: $role');
 
     switch (role.toLowerCase()) {
       case 'cashier':
+        _showSnack('Masuk sebagai Kasir...');
         homeScreen = const CashierHomeScreen();
-        print('➡️ Navigasi ke CashierHomeScreen');
         break;
       case 'kitchen':
+        _showSnack('Masuk sebagai Dapur...');
         homeScreen = const KitchenHomeScreen();
-        print('➡️ Navigasi ke KitchenHomeScreen');
         break;
       case 'admin':
-        homeScreen = const LoginScreen(); // nanti ganti halaman admin kalau sudah ada
-        print('➡️ Navigasi sementara ke LoginScreen (Admin belum dibuat)');
+        _showSnack('Masuk sebagai Admin (sementara ke halaman login)');
+        homeScreen = const LoginScreen(); // nanti ganti kalau halaman admin sudah ada
         break;
       default:
+        _showSnack('Role tidak dikenali, kembali ke Login', color: Colors.red);
         homeScreen = const LoginScreen();
-        print('⚠️ Role tidak dikenali, kembali ke LoginScreen');
     }
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => homeScreen),
-    );
+    Navigator.of(context)
+        .pushReplacement(MaterialPageRoute(builder: (_) => homeScreen));
   }
 
   @override
@@ -138,7 +132,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   "Akun Baru Untuk Restoranmu",
                   style: TextStyle(
                     fontSize: 18,
-                    color: kSecondaryColor.withOpacity(0.7),
+                    color: kSecondaryColor.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 48),
@@ -178,7 +172,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Username Field
+                // Username
                 TextFormField(
                   controller: _nameController,
                   decoration: InputDecoration(
@@ -201,7 +195,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Email Field
+                // Email
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -228,7 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Password Field
+                // Password
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
