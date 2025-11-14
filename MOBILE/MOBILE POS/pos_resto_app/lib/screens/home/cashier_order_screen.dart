@@ -24,10 +24,21 @@ class CashierOrderScreen extends StatefulWidget {
 
 class _CashierOrderScreenState extends State<CashierOrderScreen> {
   final FlutterTts _flutterTts = FlutterTts();
+  String _selectedFilter = 'Semua'; // Default filter
+
+  // List filter options
+  final List<String> _filterOptions = [
+    'Semua',
+    'Pending',
+    'Disiapkan', 
+    'Siap',
+    'Selesai'
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final activeOrders = widget.orders;
+    // Filter orders berdasarkan status yang dipilih
+    final filteredOrders = _filterOrders(widget.orders);
 
     return Container(
       color: kBackgroundColor,
@@ -43,10 +54,34 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
               color: kSecondaryColor,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          
+          // Filter Chip Bar
+          _buildFilterChipBar(),
+          
+          const SizedBox(height: 16),
           Expanded(
-            child: activeOrders.isEmpty
-                ? const Center(child: Text('Belum ada order aktif.'))
+            child: filteredOrders.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.receipt_long,
+                          size: 64,
+                          color: kSecondaryColor.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _getEmptyStateText(),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: kSecondaryColor.withOpacity(0.7),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
                 : GridView.builder(
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
@@ -55,15 +90,103 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                       crossAxisSpacing: 20,
                       mainAxisSpacing: 20,
                     ),
-                    itemCount: activeOrders.length,
+                    itemCount: filteredOrders.length,
                     itemBuilder: (context, index) {
-                      return _buildOrderCard(activeOrders[index]);
+                      return _buildOrderCard(filteredOrders[index]);
                     },
                   ),
           ),
         ],
       ),
     );
+  }
+
+  // Widget untuk filter chip bar
+  Widget _buildFilterChipBar() {
+    return SizedBox(
+      height: 50,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _filterOptions.length,
+        itemBuilder: (context, index) {
+          final filter = _filterOptions[index];
+          final bool isSelected = _selectedFilter == filter;
+          
+          return Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(
+                filter,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : kSecondaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              selected: isSelected,
+              backgroundColor: kLightGreyColor,
+              selectedColor: kPrimaryColor,
+              checkmarkColor: Colors.white,
+              onSelected: (selected) {
+                setState(() {
+                  _selectedFilter = filter;
+                });
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // Fungsi untuk memfilter orders berdasarkan status
+  List<Order> _filterOrders(List<Order> orders) {
+    switch (_selectedFilter) {
+      case 'Pending':
+        return orders.where((order) {
+          final status = order.status.toLowerCase();
+          // Pending termasuk status: pending, paid (sudah bayar tapi belum diproses)
+          return status == 'pending' || status == 'paid';
+        }).toList();
+      
+      case 'Disiapkan':
+        return orders.where((order) {
+          final status = order.status.toLowerCase();
+          return status == 'preparing' || status == 'cooking';
+        }).toList();
+      
+      case 'Siap':
+        return orders.where((order) {
+          final status = order.status.toLowerCase();
+          return status == 'ready' || status == 'ready to serve';
+        }).toList();
+      
+      case 'Selesai':
+        return orders.where((order) {
+          final status = order.status.toLowerCase();
+          return status == 'completed' || status == 'done' || status == 'finished';
+        }).toList();
+      
+      case 'Semua':
+      default:
+        return orders;
+    }
+  }
+
+  // Fungsi untuk teks empty state berdasarkan filter
+  String _getEmptyStateText() {
+    switch (_selectedFilter) {
+      case 'Pending':
+        return 'Tidak ada order pending';
+      case 'Disiapkan':
+        return 'Tidak ada order yang sedang disiapkan';
+      case 'Siap':
+        return 'Tidak ada order yang siap disajikan';
+      case 'Selesai':
+        return 'Tidak ada order yang selesai';
+      case 'Semua':
+      default:
+        return 'Belum ada order aktif';
+    }
   }
 
   Widget _buildOrderCard(Order order) {
@@ -211,16 +334,42 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
 
   Map<String, dynamic> _getStatusInfo(String status) {
     status = status.toLowerCase();
-    if (status == 'pending') {
-      return {'text': 'Pending', 'icon': Icons.hourglass_empty, 'color': Colors.orange.shade300};
+    
+    // Mapping status yang lebih komprehensif
+    if (status == 'pending' || status == 'paid') {
+      return {
+        'text': 'Pending', 
+        'icon': Icons.hourglass_empty, 
+        'color': Colors.orange.shade300
+      };
     }
-    if (status == 'preparing') {
-      return {'text': 'Disiapkan', 'icon': Icons.kitchen, 'color': Colors.blue.shade300};
+    if (status == 'preparing' || status == 'cooking') {
+      return {
+        'text': 'Disiapkan', 
+        'icon': Icons.kitchen, 
+        'color': Colors.blue.shade300
+      };
     }
-    if (status == 'ready') {
-      return {'text': 'Siap', 'icon': Icons.check_circle, 'color': Colors.green.shade300};
+    if (status == 'ready' || status == 'ready to serve') {
+      return {
+        'text': 'Siap', 
+        'icon': Icons.check_circle, 
+        'color': Colors.green.shade300
+      };
     }
-    return {'text': status.toUpperCase(), 'icon': Icons.help_outline, 'color': Colors.grey.shade300};
+    if (status == 'completed' || status == 'done' || status == 'finished') {
+      return {
+        'text': 'Selesai', 
+        'icon': Icons.done_all, 
+        'color': Colors.grey.shade300
+      };
+    }
+    
+    return {
+      'text': status.toUpperCase(), 
+      'icon': Icons.help_outline, 
+      'color': Colors.grey.shade300
+    };
   }
 
   Widget _buildStatusChip(String text, IconData icon, Color color) {
@@ -248,7 +397,8 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
   Widget _buildOrderActionButtons(Order order) {
     String status = order.status.toLowerCase();
     
-    if (status == 'ready') {
+    // Tombol aksi berdasarkan status
+    if (status == 'ready' || status == 'ready to serve') {
       return SizedBox(
         width: double.infinity,
         height: 44,
@@ -272,7 +422,58 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
           ),
         ),
       );
-    } else {
+    } 
+    else if (status == 'pending' || status == 'paid') {
+      return SizedBox(
+        width: double.infinity,
+        height: 44,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue.shade600,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+          onPressed: () {
+            _updateOrderStatus(order.id, 'preparing');
+          },
+          child: const Text(
+            'Mulai Siapkan', 
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16
+            ),
+          ),
+        ),
+      );
+    }
+    else if (status == 'preparing' || status == 'cooking') {
+      return SizedBox(
+        width: double.infinity,
+        height: 44,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green.shade600,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+          ),
+          onPressed: () {
+            _updateOrderStatus(order.id, 'ready');
+          },
+          child: const Text(
+            'Tandai Siap', 
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16
+            ),
+          ),
+        ),
+      );
+    }
+    else {
       return const SizedBox(height: 44);
     }
   }
@@ -283,7 +484,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Pesanan #${orderId} diperbarui ke $newStatus'),
+            content: Text('Pesanan #$orderId diperbarui ke $newStatus'),
             backgroundColor: Colors.green,
           ),
         );
@@ -292,7 +493,10 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal update status: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Gagal update status: $e'), 
+            backgroundColor: Colors.red
+          ),
         );
       }
     }
@@ -306,7 +510,10 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     } catch (e) {
        if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memutar audio: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Gagal memutar audio: $e'), 
+            backgroundColor: Colors.red
+          ),
         );
       }
     }
