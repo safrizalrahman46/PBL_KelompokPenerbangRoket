@@ -3,9 +3,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; // Dibutuhkan untuk format waktu
+import 'package:intl/intl.dart';
 
-import '../../models/order_model.dart'; // Import model Order Anda
+import '../../models/order_model.dart';
 import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 import '../../utils/constants.dart';
@@ -30,10 +30,10 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadOrdersFuture = _fetchOrders(); // Muat data saat pertama kali
+    _loadOrdersFuture = _fetchOrders();
 
-    // Siapkan auto-refresh setiap 30 detik agar dapur selalu update
-    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+    // Auto-refresh tiap 30 detik
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
       if (mounted) {
         _fetchOrders();
       }
@@ -42,36 +42,27 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
 
   @override
   void dispose() {
-    _refreshTimer?.cancel(); // Hentikan timer saat halaman ditutup
+    _refreshTimer?.cancel();
     super.dispose();
   }
 
-  // Fungsi utama untuk mengambil data pesanan
-  // Fungsi utama untuk mengambil data pesanan (VERSI BARU YANG DIPERBAIKI)
   Future<void> _fetchOrders() async {
     try {
-      // 1. Ambil ID pengguna/restoran, sama seperti di CashierHomeScreen
       final authService = Provider.of<AuthService>(context, listen: false);
       final userId = authService.user?.id;
 
-      if (userId == null) {
-        throw Exception("User tidak terautentikasi.");
-      }
+      if (userId == null) throw Exception("User tidak terautentikasi.");
 
-      // 2. Ambil SEMUA order untuk user/restoran ini (HANYA 1 PANGGILAN API)
-      final List<Order> allOrders = await _apiService.fetchOrders(
-        userId.toString(),
-      );
+      final List<Order> allOrders =
+          await _apiService.fetchOrders(userId.toString());
 
-      // 3. Siapkan list-list baru (kosong)
-      final List<Order> pending = [];
-      final List<Order> preparing = [];
-      final List<Order> ready = [];
+      final pending = <Order>[];
+      final preparing = <Order>[];
+      final ready = <Order>[];
 
-      // 4. Filter semua order secara manual (in-app), sama seperti di kasir
       for (var order in allOrders) {
         final status = order.status.toLowerCase();
-       if (status == 'pending' || status == 'paid') {
+        if (status == 'pending' || status == 'paid') {
           pending.add(order);
         } else if (status == 'preparing') {
           preparing.add(order);
@@ -82,7 +73,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
 
       if (mounted) {
         setState(() {
-          // 5. Update state dengan list yang sudah difilter
           _pendingOrders = pending;
           _preparingOrders = preparing;
           _readyOrders = ready;
@@ -96,32 +86,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
       }
     }
   }
-  // Future<void> _fetchOrders() async {
-  //   try {
-  //     // Ambil 3 jenis pesanan secara bersamaan
-  //     final results = await Future.wait([
-  //       _apiService.fetchOrders('status=pending'),
-  //       _apiService.fetchOrders('status=preparing'),
-  //       _apiService.fetchOrders('status=ready'),
-  //     ]);
 
-  //     if (mounted) {
-  //       setState(() {
-  //         _pendingOrders = results[0];
-  //         _preparingOrders = results[1];
-  //         _readyOrders = results[2];
-  //       });
-  //     }
-  //   } catch (e) {
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text('Gagal mengambil data pesanan: $e')),
-  //       );
-  //     }
-  //   }
-  // }
-
-  // Fungsi untuk update status (dipanggil oleh tombol)
   Future<void> _updateOrderStatus(int orderId, String newStatus) async {
     try {
       await _apiService.updateOrderStatus(orderId, newStatus);
@@ -133,7 +98,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
           ),
         );
       }
-      // Ambil ulang data agar UI ter-update
       await _fetchOrders();
     } catch (e) {
       if (mounted) {
@@ -147,12 +111,10 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     }
   }
 
-  // Fungsi untuk logout
   void _logout() async {
     final authService = Provider.of<AuthService>(context, listen: false);
     await authService.logout();
     if (mounted) {
-      // Kembali ke login dan hapus semua halaman sebelumnya
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
         (route) => false,
@@ -163,13 +125,14 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFFFF8E1,
-      ), // Background krem seperti di gambar
+      backgroundColor: const Color(0xFFFFF8E1),
       appBar: AppBar(
         title: const Text(
           'Dapur Eat.o',
-          style: TextStyle(color: kSecondaryColor, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: kSecondaryColor,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: kSplashBackgroundColor,
         elevation: 0,
@@ -192,14 +155,12 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          // UI Utama setelah data dimuat
           return RefreshIndicator(
-            onRefresh: _fetchOrders, // Tarik untuk refresh manual
+            onRefresh: _fetchOrders,
             color: kPrimaryColor,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Kolom 1: Pesanan Baru (Pending)
                 _buildOrdersColumn(
                   title: 'Pesanan Baru',
                   orders: _pendingOrders,
@@ -207,7 +168,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                   buttonText: 'Mulai Memasak',
                   buttonColor: const Color(0xFFFF9800),
                 ),
-                // Kolom 2: Sedang Disiapkan (Preparing)
                 _buildOrdersColumn(
                   title: 'Sedang Dimasak',
                   orders: _preparingOrders,
@@ -215,7 +175,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                   buttonText: 'Selesaikan',
                   buttonColor: const Color(0xFFFF9800),
                 ),
-                // Kolom 3: Selesai (Ready)
                 _buildOrdersColumn(
                   title: 'Selesai',
                   orders: _readyOrders,
@@ -231,7 +190,6 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     );
   }
 
-  // Widget untuk membuat satu kolom (Reusable)
   Widget _buildOrdersColumn({
     required String title,
     required List<Order> orders,
@@ -242,16 +200,13 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     return Expanded(
       child: Column(
         children: [
-          // Judul Kolom dengan styling baru
           Container(
             width: double.infinity,
             margin: const EdgeInsets.all(16.0),
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF9800), // Orange sesuai gambar
-              borderRadius: BorderRadius.circular(
-                30.0,
-              ), // Border radius melengkung
+              color: const Color(0xFFFF9800),
+              borderRadius: BorderRadius.circular(30.0),
             ),
             child: Text(
               title,
@@ -259,12 +214,10 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white, // Text putih
+                color: Colors.white,
               ),
             ),
           ),
-
-          // Daftar Pesanan
           Expanded(
             child: orders.isEmpty
                 ? Center(
@@ -295,17 +248,18 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     );
   }
 
-  // Widget untuk membuat satu kartu pesanan
   Widget _buildOrderCard({
     required Order order,
     required String nextStatus,
     required String buttonText,
     required Color buttonColor,
   }) {
+    final bool isCompletedColumn = nextStatus.isEmpty;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3CD), // Background kuning muda
+        color: const Color(0xFFFFF3CD),
         borderRadius: BorderRadius.circular(12.0),
         boxShadow: [
           BoxShadow(
@@ -318,17 +272,14 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header dengan badge orange
+          // Header
           Container(
             padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
-                // Badge nomor orange
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF9800),
                     borderRadius: BorderRadius.circular(20),
@@ -343,13 +294,11 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Info order
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      // 'Udean',
-                      order.customerName ?? 'Tanpa Nama', // D
+                      order.customerName ?? 'Tanpa Nama',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -358,7 +307,10 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                     ),
                     Text(
                       'Order #${order.id}',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
                     ),
                   ],
                 ),
@@ -366,7 +318,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
             ),
           ),
 
-          // Container putih untuk items dengan table layout
+          // Detail Item
           Container(
             margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             padding: const EdgeInsets.all(12),
@@ -376,95 +328,72 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
             ),
             child: Column(
               children: [
-                // Header table
                 Row(
                   children: const [
                     Expanded(
                       flex: 1,
                       child: Text(
                         'Qty',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+                        style:
+                            TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     ),
                     Expanded(
                       flex: 3,
                       child: Text(
                         'Items',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
+                        style:
+                            TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     ),
                   ],
                 ),
                 const Divider(height: 16),
-                // Items list
-                ...order.orderItems.map((item) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 1,
-                          child: Text(
-                            item.quantity.toString().padLeft(2, '0'),
-                            style: const TextStyle(fontSize: 14),
+                ...order.orderItems.map((item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Text(item.quantity.toString().padLeft(2, '0')),
                           ),
-                        ),
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            item.menu.name,
-                            style: const TextStyle(fontSize: 14),
+                          Expanded(
+                            flex: 3,
+                            child: Text(item.menu.name),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                        ],
+                      ),
+                    )),
               ],
             ),
           ),
 
-
-            if (buttonText.isEmpty)
-              // Beri jarak agar card tetap sama tinggi
-              const SizedBox(height: 45 + 12) // (tinggi tombol + padding bawah)
-              else
-          // Tombol Aksi dengan border radius penuh
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: SizedBox(
-              width: double.infinity,
-              height: 45,
-              child: ElevatedButton(
-                onPressed: () {
-                  _updateOrderStatus(order.id, nextStatus);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: buttonColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      25.0,
-                    ), // Border radius melengkung penuh
+          // Tombol aksi
+          if (!isCompletedColumn)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: SizedBox(
+                width: double.infinity,
+                height: 45,
+                child: ElevatedButton(
+                  onPressed: () => _updateOrderStatus(order.id, nextStatus),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: buttonColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25.0),
+                    ),
                   ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  buttonText,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  child: Text(
+                    buttonText,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
