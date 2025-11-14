@@ -128,7 +128,7 @@ class OrderController extends Controller
         $validated = $request->validate([
             'status' => [
                 'required', 'string',
-                Rule::in(['pending', 'preparing', 'ready', 'delivered', 'paid', 'cancelled']),
+                Rule::in(['pending', 'preparing', 'ready', 'delivered', 'paid', 'cancelled', 'completed', 'done']),
             ],
         ]);
 
