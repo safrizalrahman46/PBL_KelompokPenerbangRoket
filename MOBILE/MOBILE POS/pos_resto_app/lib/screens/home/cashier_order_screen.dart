@@ -423,56 +423,6 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
         ),
       );
     } 
-    // else if (status == 'pending' || status == 'paid') {
-    //   return SizedBox(
-    //     width: double.infinity,
-    //     height: 44,
-    //     child: ElevatedButton(
-    //       style: ElevatedButton.styleFrom(
-    //         backgroundColor: Colors.blue.shade600,
-    //         shape: RoundedRectangleBorder(
-    //           borderRadius: BorderRadius.circular(8.0),
-    //         ),
-    //       ),
-    //       onPressed: () {
-    //         _updateOrderStatus(order.id, 'preparing');
-    //       },
-    //       child: const Text(
-    //         'Mulai Siapkan', 
-    //         style: TextStyle(
-    //           color: Colors.white,
-    //           fontWeight: FontWeight.bold,
-    //           fontSize: 16
-    //         ),
-    //       ),
-    //     ),
-    //   );
-    // }
-    // else if (status == 'preparing' || status == 'cooking') {
-    //   return SizedBox(
-    //     width: double.infinity,
-    //     height: 44,
-    //     child: ElevatedButton(
-    //       style: ElevatedButton.styleFrom(
-    //         backgroundColor: Colors.green.shade600,
-    //         shape: RoundedRectangleBorder(
-    //           borderRadius: BorderRadius.circular(8.0),
-    //         ),
-    //       ),
-    //       onPressed: () {
-    //         _updateOrderStatus(order.id, 'ready');
-    //       },
-    //       child: const Text(
-    //         'Tandai Siap', 
-    //         style: TextStyle(
-    //           color: Colors.white,
-    //           fontWeight: FontWeight.bold,
-    //           fontSize: 16
-    //         ),
-    //       ),
-    //     ),
-    //   );
-    // }
     else {
       return const SizedBox(height: 44);
     }
