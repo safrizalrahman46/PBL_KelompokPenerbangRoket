@@ -189,7 +189,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     }
   }
 
-// DIUBAH OLEH SAFRIZAL RAHMAN
+// DIUBAH OLEH SAFRIZAL
  Widget _buildOrderCard(Order order) {
     final statusInfo = _getStatusInfo(order.status);
 

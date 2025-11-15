@@ -182,5 +182,3 @@ class CashierTransactionScreen extends StatelessWidget {
     );
   }
 }
-
-//di UPDATE OLEH SAFRIZAL RAHMAN
