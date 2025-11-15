@@ -9,6 +9,7 @@ import '../../models/order_model.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/constants.dart';
+import 'package:intl/intl.dart'; // Pastikan Anda mengimpor ini
 
 class CashierPaymentScreen extends StatefulWidget {
   final CartProvider cart;
@@ -32,8 +33,13 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
   int? selectedTableId;
   String? selectedPaymentMethod;
   final TextEditingController receivedController = TextEditingController();
-  final TextEditingController customerNameController = TextEditingController(text: 'Udean');
+  // PERUBAHAN: Dikosongkan agar kasir wajib mengisi
+  final TextEditingController customerNameController = TextEditingController(text: '');
   bool isSubmitting = false;
+
+  // --- TAMBAHAN ---
+  String _serviceType = 'meja'; // Pilihan default: 'meja' atau 'self_service'
+  // --- BATAS TAMBAHAN ---
 
   @override
   void dispose() {
@@ -53,6 +59,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
         children: [
           Row(
             children: [
+              // --- PANEL KIRI (refactored) ---
               Expanded(
                 flex: 2,
                 child: Container(
@@ -66,50 +73,137 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                selectedTableId == null
-                                    ? 'Pilih Meja'
-                                    : 'Meja ${_getTableNumber(selectedTableId!)}',
-                                style: const TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: kPrimaryColor,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              SizedBox(
-                                width: 250,
-                                child: TextField(
-                                  controller: customerNameController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Nama Pelanggan',
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.symmetric(vertical: 4.0),
-                                    border: UnderlineInputBorder(),
-                                  ),
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: kSecondaryColor,
-                                  ),
-                                ),
-                              ),
-                            ],
+                      // --- PERUBAHAN: UI Panel Kiri Diatur Ulang ---
+                      
+                      // 1. Nama Pelanggan (Wajib)
+                      const Text(
+                        "Nama Pelanggan (Wajib)",
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: kSecondaryColor,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        width: 300,
+                        child: TextField(
+                          controller: customerNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nama Pelanggan',
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(vertical: 4.0),
+                            border: UnderlineInputBorder(),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: kPrimaryColor, size: 28),
-                            onPressed: () {
-                              _showTableSelectionDialog(context);
-                            },
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: kSecondaryColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // 2. Tipe Layanan (Toggle)
+                      const Text(
+                        "Tipe Layanan",
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: kSecondaryColor,
+                            fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 8),
+                      ToggleButtons(
+                        borderColor: kPrimaryColor.withOpacity(0.5),
+                        selectedBorderColor: kPrimaryColor,
+                        selectedColor: Colors.white,
+                        fillColor: kPrimaryColor,
+                        color: kPrimaryColor,
+                        borderRadius: BorderRadius.circular(8),
+                        constraints: const BoxConstraints(
+                          minHeight: 45.0,
+                          minWidth: 150.0, // Sesuaikan lebar
+                        ),
+                        isSelected: [
+                          _serviceType == 'meja',
+                          _serviceType == 'self_service',
+                        ],
+                        onPressed: (int index) {
+                          setState(() {
+                            _serviceType = (index == 0) ? 'meja' : 'self_service';
+                            // Jika pilih 'self_service', hapus pilihan meja
+                            if (_serviceType == 'self_service') {
+                              selectedTableId = null;
+                            }
+                          });
+                        },
+                        children: const [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Row(
+                              children: [
+                                Icon(Icons.restaurant_menu, size: 18),
+                                SizedBox(width: 8),
+                                Text('Dine-In (Meja)'),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Row(
+                              children: [
+                                Icon(Icons.shopping_bag, size: 18),
+                                SizedBox(width: 8),
+                                Text('Ambil Sendiri'),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 24),
+                      
+                      // 3. Pilihan Meja (Kondisional)
+                      if (_serviceType == 'meja')
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Meja Terpilih",
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      color: kSecondaryColor,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  selectedTableId == null
+                                      ? 'Belum Pilih Meja'
+                                      : 'Meja ${_getTableNumber(selectedTableId!)}',
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: kPrimaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.edit,
+                                  color: kPrimaryColor, size: 28),
+                              onPressed: () {
+                                _showTableSelectionDialog(context);
+                              },
+                            ),
+                          ],
+                        ),
+                      
+                      // Beri spasi jika 'meja' dipilih, agar layout konsisten
+                      if (_serviceType == 'meja') const SizedBox(height: 24),
+
+                      // --- BATAS PERUBAHAN UI ---
+                      
+                      // 4. Daftar Pesanan
                       Expanded(
                         child: ListView.builder(
                           itemCount: widget.cart.items.length,
@@ -145,7 +239,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           item.menu.name,
@@ -158,7 +253,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                                           'x ${item.quantity}',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: kSecondaryColor.withOpacity(0.6),
+                                            color: kSecondaryColor
+                                                .withOpacity(0.6),
                                           ),
                                         ),
                                       ],
@@ -188,12 +284,14 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                   ),
                 ),
               ),
+              // --- PANEL KANAN (Kalkulator) ---
               Expanded(
                 flex: 1,
                 child: _buildCalculatorSection(received, change),
               ),
             ],
           ),
+          // Tombol Back
           Positioned(
             top: 16.0,
             left: 16.0,
@@ -300,12 +398,26 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: (selectedTableId == null ||
+        // --- PERUBAHAN: Validasi Tombol ---
+        onPressed: ((_serviceType == 'meja' && selectedTableId == null) || // <-- Logika diubah
                     selectedPaymentMethod == null ||
                     customerNameController.text.isEmpty ||
                     isSubmitting)
-            ? null
+            ? null // Tombol disable jika validasi gagal
             : () async {
+                // --- Validasi tambahan untuk uang tunai ---
+                final double received = double.tryParse(receivedController.text) ?? 0;
+                if (selectedPaymentMethod == 'cash' && received < widget.cart.total) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Uang tunai yang diterima kurang dari total.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+                // --- Batas validasi uang tunai ---
+                
                 if (selectedPaymentMethod == 'debit' || selectedPaymentMethod == 'qris') {
                   final bool? isConfirmed = await _showPaymentConfirmationDialog(
                     context,
@@ -313,7 +425,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                   );
 
                   if (isConfirmed != true) {
-                    return;
+                    return; // Batalkan jika user menekan 'Batalkan'
                   }
                 }
 
@@ -322,14 +434,20 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                 });
 
                 try {
+                  // --- PERUBAHAN: 'tableId' dibuat nullable ---
                   final orderData = widget.cart.createOrderJson(
-                    tableId: selectedTableId!,
+                    tableId: selectedTableId, // <-- '!' dihapus
                     paymentMethod: selectedPaymentMethod!,
                     customerName: customerNameController.text,
+                    // Pastikan status dikirim dengan benar
+                    status: (selectedPaymentMethod == 'debit' || selectedPaymentMethod == 'qris') 
+                           ? 'pending' // Jika non-tunai, mungkin perlu konfirmasi
+                           : 'paid', // Jika tunai, langsung lunas
                   );
 
                   final Order newOrder = await widget.apiService.createOrder(orderData);
 
+                  // Buat transaksi
                   await widget.apiService.createTransaction({
                     'order_id': newOrder.id,
                     'payment_method': selectedPaymentMethod!,
@@ -338,7 +456,11 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                         : widget.cart.total,
                   });
 
-                  await widget.apiService.updateTableStatus(selectedTableId!, 'occupied');
+                  // --- PERUBAHAN: Update status meja jika 'dine-in' ---
+                  if (selectedTableId != null) {
+                    await widget.apiService.updateTableStatus(selectedTableId!, 'occupied');
+                  }
+                  // --- BATAS PERUBAHAN ---
 
                   widget.cart.clearCart();
                   Navigator.of(context).pop();
@@ -363,6 +485,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+          // Style untuk tombol disabled
+          disabledBackgroundColor: Colors.grey.shade400,
         ),
         child: isSubmitting
             ? const SizedBox(
@@ -434,6 +558,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                 _buildCalculatorButton('7'),
                 _buildCalculatorButton('8'),
                 _buildCalculatorButton('9'),
+                _buildCalculatorButton('000'), // Tambah 000
                 _buildCalculatorButton('0'),
                 _buildCalculatorButton('X', isDelete: true),
               ],
@@ -469,7 +594,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      receivedController.text = widget.cart.total.toStringAsFixed(0);
+                      receivedController.text =
+                          widget.cart.total.toStringAsFixed(0);
                     });
                   },
                   style: ElevatedButton.styleFrom(
@@ -496,11 +622,16 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {bool isTotal = false, bool isChange = false}) {
-    final Color valueColor = isChange ? Colors.blueAccent : (isTotal ? kPrimaryColor : kSecondaryColor);
-    final Color labelColor = isChange ? Colors.blueAccent : kSecondaryColor.withOpacity(0.8);
+  Widget _buildSummaryRow(String label, String value,
+      {bool isTotal = false, bool isChange = false}) {
+    final Color valueColor = isChange
+        ? Colors.blueAccent
+        : (isTotal ? kPrimaryColor : kSecondaryColor);
+    final Color labelColor =
+        isChange ? Colors.blueAccent : kSecondaryColor.withOpacity(0.8);
     final double fontSize = (isTotal || isChange) ? 18 : 16;
-    final FontWeight fontWeight = (isTotal || isChange) ? FontWeight.bold : FontWeight.normal;
+    final FontWeight fontWeight =
+        (isTotal || isChange) ? FontWeight.bold : FontWeight.normal;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -575,7 +706,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
         setState(() {
           if (isDelete) {
             if (receivedController.text.isNotEmpty) {
-              receivedController.text = receivedController.text.substring(0, receivedController.text.length - 1);
+              receivedController.text = receivedController.text
+                  .substring(0, receivedController.text.length - 1);
             }
           } else {
             receivedController.text += value;
@@ -601,13 +733,16 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
   }
 
   String _getTableNumber(int tableId) {
-    return widget.tables.firstWhere((t) => t.id == tableId).number;
+    try {
+      return widget.tables.firstWhere((t) => t.id == tableId).number;
+    } catch (e) {
+      return '??'; // Fallback jika meja tidak ditemukan
+    }
   }
 
   void _showTableSelectionDialog(BuildContext context) {
-    final availableTables = widget.tables
-        .where((t) => t.status.toLowerCase() == 'available')
-        .toList();
+    final availableTables =
+        widget.tables.where((t) => t.status.toLowerCase() == 'available').toList();
 
     showDialog(
       context: context,
@@ -630,7 +765,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                   title: Text(
                     'Meja ${table.number}',
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected ? kPrimaryColor : kSecondaryColor,
                     ),
                   ),
@@ -658,7 +794,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
     );
   }
 
-  Future<bool?> _showPaymentConfirmationDialog(BuildContext context, String method) async {
+  Future<bool?> _showPaymentConfirmationDialog(
+      BuildContext context, String method) async {
     final bool isDebit = method == 'debit';
     final String title = isDebit ? 'Pembayaran Debit' : 'Pembayaran E-Wallet';
     final Widget imageWidget = isDebit
@@ -678,8 +815,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
               const SizedBox(height: 16),
               Text(
                 isDebit
-                  ? 'Silakan gesek kartu debit. Tekan "Selesai" jika berhasil.'
-                  : 'Silakan pindai QRIS. Tekan "Selesai" jika berhasil.',
+                    ? 'Silakan gesek kartu debit. Tekan "Selesai" jika berhasil.'
+                    : 'Silakan pindai QRIS. Tekan "Selesai" jika berhasil.',
                 textAlign: TextAlign.center,
               ),
             ],
@@ -704,7 +841,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
       context: context,
       builder: (dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Container(
             width: 500,
             height: 350,
@@ -746,7 +884,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: kPrimaryColor,
-                    padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 48, vertical: 16),
                   ),
                   child: const Text(
                     'Lanjutkan Transaksi',
@@ -762,14 +901,24 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
   }
 
   void _printReceipt(BuildContext context, double received, double change) {
-    if (selectedTableId == null || selectedPaymentMethod == null) {
+    // --- PERUBAHAN: Validasi diubah ---
+    if ((_serviceType == 'meja' && selectedTableId == null) ||
+        selectedPaymentMethod == null ||
+        customerNameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih meja dan metode pembayaran dulu.')),
+        const SnackBar(
+            content: Text(
+                'Isi Nama, Tipe Layanan, Meja (jika D-In), dan Metode Pembayaran.')),
       );
       return;
     }
+    // --- BATAS PERUBAHAN ---
 
-    final String tableName = _getTableNumber(selectedTableId!);
+    // --- PERUBAHAN: Nama layanan dinamis ---
+    final String serviceName = _serviceType == 'meja'
+        ? 'Meja ${_getTableNumber(selectedTableId!)}'
+        : 'Ambil Sendiri';
+    // --- BATAS PERUBAHAN ---
 
     showDialog(
       context: context,
@@ -782,29 +931,39 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('Nama: ${customerNameController.text}'),
-                Text('Meja: $tableName'),
+                Text('Layanan: $serviceName'), // Diubah
                 const Divider(),
                 ...widget.cart.items.map((item) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(child: Text('${item.quantity}x ${item.menu.name}')),
-                      Text('Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}'),
-                    ],
-                  ),
-                )),
+                      padding: const EdgeInsets.symmetric(vertical: 2.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                              child: Text('${item.quantity}x ${item.menu.name}')),
+                          Text(
+                              'Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}'),
+                        ],
+                      ),
+                    )),
                 const Divider(),
-                _buildSummaryRow('Subtotal', 'Rp ${widget.cart.subtotal.toStringAsFixed(0)}'),
-                _buildSummaryRow('Tax 10%', 'Rp ${(widget.cart.subtotal * widget.cart.taxPercent / 100).toStringAsFixed(0)}'),
+                _buildSummaryRow(
+                    'Subtotal', 'Rp ${widget.cart.subtotal.toStringAsFixed(0)}'),
+                _buildSummaryRow(
+                    'Tax 10%',
+                    'Rp ${(widget.cart.subtotal * widget.cart.taxPercent / 100).toStringAsFixed(0)}'),
                 _buildSummaryRow('Tip', 'Rp 500'),
                 const Divider(),
-                _buildSummaryRow('Total', 'Rp ${widget.cart.total.toStringAsFixed(0)}', isTotal: true),
+                _buildSummaryRow(
+                    'Total', 'Rp ${widget.cart.total.toStringAsFixed(0)}',
+                    isTotal: true),
                 const Divider(),
                 _buildSummaryRow('Metode', selectedPaymentMethod!.toUpperCase()),
-                _buildSummaryRow('Diterima', 'Rp ${received.toStringAsFixed(0)}'),
+                _buildSummaryRow(
+                    'Diterima', 'Rp ${received.toStringAsFixed(0)}'),
                 if (change > 0 && selectedPaymentMethod == 'cash')
-                  _buildSummaryRow('Kembali', 'Rp ${change.toStringAsFixed(0)}', isChange: true),
+                  _buildSummaryRow(
+                      'Kembali', 'Rp ${change.toStringAsFixed(0)}',
+                      isChange: true),
               ],
             ),
           ),
@@ -819,9 +978,10 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                   final Uint8List pdfData = await _generatePdfReceipt(
                     received,
                     change,
-                    tableName,
+                    serviceName, // Kirim nama layanan dinamis
                   );
-                  await Printing.layoutPdf(onLayout: (PdfPageFormat format) async => pdfData);
+                  await Printing.layoutPdf(
+                      onLayout: (PdfPageFormat format) async => pdfData);
                   if (mounted) {
                     Navigator.of(dialogContext).pop();
                   }
@@ -845,23 +1005,27 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
   Future<Uint8List> _generatePdfReceipt(
     double received,
     double change,
-    String tableName,
+    String serviceName, // Diubah dari tableName
   ) async {
     final pdf = pw.Document();
 
     pdf.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, double.infinity, marginAll: 5 * PdfPageFormat.mm),
+        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, double.infinity,
+            marginAll: 5 * PdfPageFormat.mm),
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Center(
-                child: pw.Text('Eat.o Nota', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                child: pw.Text('Eat.o Nota',
+                    style: pw.TextStyle(
+                        fontSize: 16, fontWeight: pw.FontWeight.bold)),
               ),
               pw.SizedBox(height: 10),
+              pw.Text('Tanggal: ${DateFormat('dd/MM/yy HH:mm').format(DateTime.now())}'),
               pw.Text('Nama: ${customerNameController.text}'),
-              pw.Text('Meja: $tableName'),
+              pw.Text('Layanan: $serviceName'), // Diubah
               pw.Divider(height: 15),
               for (final item in widget.cart.items)
                 pw.Padding(
@@ -871,25 +1035,33 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                     children: [
                       pw.Text('${item.quantity}x ${item.menu.name}'),
                       pw.Row(
-                        mainAxisAlignment: pw.MainAxisAlignment.end,
-                        children: [
-                          pw.Text('Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}'),
-                        ]
-                      )
+                          mainAxisAlignment: pw.MainAxisAlignment.end,
+                          children: [
+                            pw.Text(
+                                'Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}'),
+                          ])
                     ],
                   ),
                 ),
               pw.Divider(height: 15),
-              _buildPdfSummaryRow('Subtotal', 'Rp ${widget.cart.subtotal.toStringAsFixed(0)}'),
-              _buildPdfSummaryRow('Tax 10%', 'Rp ${(widget.cart.subtotal * widget.cart.taxPercent / 100).toStringAsFixed(0)}'),
+              _buildPdfSummaryRow(
+                  'Subtotal', 'Rp ${widget.cart.subtotal.toStringAsFixed(0)}'),
+              _buildPdfSummaryRow(
+                  'Tax 10%',
+                  'Rp ${(widget.cart.subtotal * widget.cart.taxPercent / 100).toStringAsFixed(0)}'),
               _buildPdfSummaryRow('Tip', 'Rp 500'),
               pw.Divider(),
-              _buildPdfSummaryRow('Total', 'Rp ${widget.cart.total.toStringAsFixed(0)}', isTotal: true),
+              _buildPdfSummaryRow(
+                  'Total', 'Rp ${widget.cart.total.toStringAsFixed(0)}',
+                  isTotal: true),
               pw.Divider(),
               _buildPdfSummaryRow('Metode', selectedPaymentMethod!.toUpperCase()),
-              _buildPdfSummaryRow('Diterima', 'Rp ${received.toStringAsFixed(0)}'),
+              _buildPdfSummaryRow(
+                  'Diterima', 'Rp ${received.toStringAsFixed(0)}'),
               if (change > 0 && selectedPaymentMethod == 'cash')
-                _buildPdfSummaryRow('Kembali', 'Rp ${change.toStringAsFixed(0)}', isChange: true),
+                _buildPdfSummaryRow(
+                    'Kembali', 'Rp ${change.toStringAsFixed(0)}',
+                    isChange: true),
               pw.SizedBox(height: 20),
               pw.Center(child: pw.Text('Terima kasih!')),
             ],
@@ -901,7 +1073,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
     return pdf.save();
   }
 
-  pw.Widget _buildPdfSummaryRow(String label, String value, {bool isTotal = false, bool isChange = false}) {
+  pw.Widget _buildPdfSummaryRow(String label, String value,
+      {bool isTotal = false, bool isChange = false}) {
     final style = pw.TextStyle(
       fontWeight: (isTotal || isChange) ? pw.FontWeight.bold : pw.FontWeight.normal,
       fontSize: (isTotal || isChange) ? 12 : 10,
