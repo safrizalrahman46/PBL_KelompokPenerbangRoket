@@ -30,7 +30,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
   final List<String> _filterOptions = [
     'Semua',
     'Pending',
-    'Disiapkan', 
+    'Disiapkan',
     'Siap',
     'Selesai'
   ];
@@ -55,10 +55,10 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Filter Chip Bar
           _buildFilterChipBar(),
-          
+
           const SizedBox(height: 16),
           Expanded(
             child: filteredOrders.isEmpty
@@ -111,7 +111,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
         itemBuilder: (context, index) {
           final filter = _filterOptions[index];
           final bool isSelected = _selectedFilter == filter;
-          
+
           return Container(
             margin: const EdgeInsets.only(right: 8),
             child: FilterChip(
@@ -147,25 +147,25 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
           // Pending termasuk status: pending, paid (sudah bayar tapi belum diproses)
           return status == 'pending' || status == 'paid';
         }).toList();
-      
+
       case 'Disiapkan':
         return orders.where((order) {
           final status = order.status.toLowerCase();
           return status == 'preparing' || status == 'cooking';
         }).toList();
-      
+
       case 'Siap':
         return orders.where((order) {
           final status = order.status.toLowerCase();
           return status == 'ready' || status == 'ready to serve';
         }).toList();
-      
+
       case 'Selesai':
         return orders.where((order) {
           final status = order.status.toLowerCase();
           return status == 'completed' || status == 'done' || status == 'finished';
         }).toList();
-      
+
       case 'Semua':
       default:
         return orders;
@@ -189,7 +189,8 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     }
   }
 
-  Widget _buildOrderCard(Order order) {
+// DIUBAH OLEH SAFRIZAL
+ Widget _buildOrderCard(Order order) {
     final statusInfo = _getStatusInfo(order.status);
 
     return Card(
@@ -204,47 +205,55 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: kPrimaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          order.restoTable?.number ?? '??',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold),
+                // Bungkus Row kiri dengan Expanded agar mengambil sisa ruang
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          color: kPrimaryColor,
+                          shape: BoxShape.circle,
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          order.customerName ?? 'Nama Pelanggan',
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          'Order #${order.id}',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 12,
+                        child: Center(
+                          child: Text(
+                            order.restoTable?.number ?? '??',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                      const SizedBox(width: 12),
+                      // Bungkus Column nama dengan Flexible
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              order.customerName ?? 'Nama Pelanggan',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold),
+                              // <-- Baris 'overflow' sudah dihapus dari sini
+                            ),
+                            Text(
+                              'Order #${order.id}',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8), // Beri jarak
                 _buildStatusChip(
                     statusInfo['text']!, statusInfo['icon']!, statusInfo['color']!),
               ],
@@ -261,7 +270,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                   ),
                 ),
                 Text(
-                  '${order.createdAt.hour.toString().padLeft(2,'0')}:${order.createdAt.minute.toString().padLeft(2,'0')}',
+                  '${order.createdAt.hour.toString().padLeft(2, '0')}:${order.createdAt.minute.toString().padLeft(2, '0')}',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.7),
                     fontSize: 12,
@@ -275,14 +284,17 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
               child: Row(
                 children: [
                   Text('Qty',
-                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.7), fontSize: 12)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text('Items',
-                        style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.7), fontSize: 12)),
                   ),
                   Text('Price',
-                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.7), fontSize: 12)),
                 ],
               ),
             ),
@@ -301,7 +313,8 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(item.menu.name,
-                              style: const TextStyle(color: Colors.white, fontSize: 13)),
+                              style:
+                                  const TextStyle(color: Colors.white, fontSize: 13)),
                         ),
                         Text('Rp ${item.priceAtTime.toStringAsFixed(0)}',
                             style: const TextStyle(color: Colors.white, fontSize: 13)),
@@ -334,40 +347,40 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
 
   Map<String, dynamic> _getStatusInfo(String status) {
     status = status.toLowerCase();
-    
+
     // Mapping status yang lebih komprehensif
     if (status == 'pending' || status == 'paid') {
       return {
-        'text': 'Pending', 
-        'icon': Icons.hourglass_empty, 
+        'text': 'Pending',
+        'icon': Icons.hourglass_empty,
         'color': Colors.orange.shade300
       };
     }
     if (status == 'preparing' || status == 'cooking') {
       return {
-        'text': 'Disiapkan', 
-        'icon': Icons.kitchen, 
+        'text': 'Disiapkan',
+        'icon': Icons.kitchen,
         'color': Colors.blue.shade300
       };
     }
     if (status == 'ready' || status == 'ready to serve') {
       return {
-        'text': 'Siap', 
-        'icon': Icons.check_circle, 
+        'text': 'Siap',
+        'icon': Icons.check_circle,
         'color': Colors.green.shade300
       };
     }
     if (status == 'completed' || status == 'done' || status == 'finished') {
       return {
-        'text': 'Selesai', 
-        'icon': Icons.done_all, 
+        'text': 'Selesai',
+        'icon': Icons.done_all,
         'color': Colors.grey.shade300
       };
     }
-    
+
     return {
-      'text': status.toUpperCase(), 
-      'icon': Icons.help_outline, 
+      'text': status.toUpperCase(),
+      'icon': Icons.help_outline,
       'color': Colors.grey.shade300
     };
   }
@@ -396,7 +409,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
 
   Widget _buildOrderActionButtons(Order order) {
     String status = order.status.toLowerCase();
-    
+
     // Tombol aksi berdasarkan status
     if (status == 'ready' || status == 'ready to serve') {
       return SizedBox(
@@ -413,18 +426,17 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
             _showReadyOrderPopup(order);
           },
           child: const Text(
-            'Konfirmasi', 
+            'Konfirmasi',
             style: TextStyle(
-              color: kBackgroundColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 16
-            ),
+                color: kBackgroundColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 16),
           ),
         ),
       );
-    } 
-   
-   // dibuang oleh safrizal
+    }
+
+    // dibuang oleh safrizal
     else {
       return const SizedBox(height: 44);
     }
@@ -446,9 +458,8 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal update status: $e'), 
-            backgroundColor: Colors.red
-          ),
+              content: Text('Gagal update status: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -460,12 +471,11 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
       await _flutterTts.setPitch(1.0);
       await _flutterTts.speak(text);
     } catch (e) {
-       if (mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Gagal memutar audio: $e'), 
-            backgroundColor: Colors.red
-          ),
+              content: Text('Gagal memutar audio: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -478,29 +488,45 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
         return AlertDialog(
           title: const Text('Konfirmasi Pesanan Siap'),
           content: Text('Pilih tindakan untuk Meja #${order.restoTable?.number ?? '??'}'),
+          // --- PERBAIKAN RENDERFLEX (Mulai) ---
+          // Bungkus tombol dengan Wrap agar tidak overflow
           actions: [
-            TextButton(
-              child: const Text('Batal', style: TextStyle(color: kSecondaryColor)),
-              onPressed: () => Navigator.of(dialogContext).pop(),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-              child: const Text('Panggil Pelanggan', style: TextStyle(color: kBackgroundColor)),
-              onPressed: () {
-                String customerName = order.customerName ?? 'Pelanggan';
-                String tableNumber = order.restoTable?.number ?? '';
-                _speak('Atas nama $customerName, di Meja $tableNumber, pesanan anda sudah siap diambil.');
-                Navigator.of(dialogContext).pop();
-              },
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
-              child: const Text('Tandai Selesai', style: TextStyle(color: kBackgroundColor)),
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                _updateOrderStatus(order.id, 'completed');
-              },
-            ),
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 8.0,
+              runSpacing: 4.0,
+              children: [
+                TextButton(
+                  child:
+                      const Text('Batal', style: TextStyle(color: kSecondaryColor)),
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                ),
+                ElevatedButton(
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+                  child: const Text('Panggil Pelanggan',
+                      style: TextStyle(color: kBackgroundColor)),
+                  onPressed: () {
+                    String customerName = order.customerName ?? 'Pelanggan';
+                    String tableNumber = order.restoTable?.number ?? '';
+                    _speak(
+                        'Atas nama $customerName, di Meja $tableNumber, pesanan anda sudah siap diambil.');
+                    Navigator.of(dialogContext).pop();
+                  },
+                ),
+                ElevatedButton(
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
+                  child: const Text('Tandai Selesai',
+                      style: TextStyle(color: kBackgroundColor)),
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    _updateOrderStatus(order.id, 'completed');
+                  },
+                ),
+              ],
+            )
+            // --- PERBAIKAN RENDERFLEX (Selesai) ---
           ],
         );
       },
