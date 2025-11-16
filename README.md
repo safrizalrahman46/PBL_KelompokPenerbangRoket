@@ -6,21 +6,17 @@
 * M Faruq Burhanuddin (UI UX, Flutter Slicing)
 * Safrizal Rahman (Web Backend, Flutter Android version, Project Manager)
 
-## Video Web Progress
+## 🔧 Laravel Web Backend Progress
+[![Watch the video](https://i.sstatic.net/Vp2cE.png)](https://youtu.be/Zz_vo05khe0)
+*(klik gambar untuk membuka video)*
 
-## Video APPS Progress
-.
-├─ lib/
-│  ├─ main.dart              # App entrypoint
-│  ├─ src/                   # (recommended) your app modules
-│  │  ├─ features/
-│  │  ├─ common/
-│  │  └─ core/
-├─ test/                     # Unit & widget tests
-├─ android/ ios/ macos/      # Native platform configs
-├─ linux/ windows/ web/      # Desktop & web targets
-├─ pubspec.yaml              # Dependencies & assets
-└─ analysis_options.yaml     # Lints & static analysis
+---
+
+## 📱 Flutter POS Apps Progress
+[![Watch the video](https://i.sstatic.net/Vp2cE.png)](https://youtu.be/rhiaAwGf0dw)
+*(klik gambar untuk membuka video)*
+
+---
 
 
 ## Dokumentasi untuk WBS (Work Breakdown system), Pengajuan IDE
