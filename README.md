@@ -7,13 +7,13 @@
 * Safrizal Rahman (Web Backend, Flutter Android version, Project Manager)
 
 ## 🔧 Laravel Web Backend Progress
-[![Watch the video](https://i.sstatic.net/Vp2cE.png)](https://youtu.be/Zz_vo05khe0)
+[![Watch the video](https://img.youtube.com/vi/Zz_vo05khe0/maxresdefault.jpg)](https://youtu.be/Zz_vo05khe0)
 *(klik gambar untuk membuka video)*
 
 ---
 
 ## 📱 Flutter POS Apps Progress
-[![Watch the video](https://i.sstatic.net/Vp2cE.png)](https://youtu.be/rhiaAwGf0dw)
+[![Watch the video](https://img.youtube.com/vi/rhiaAwGf0dw/maxresdefault.jpg)](https://youtu.be/rhiaAwGf0dw)
 *(klik gambar untuk membuka video)*
 
 ---
