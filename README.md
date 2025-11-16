@@ -31,100 +31,120 @@
   <img src="https://img.shields.io/badge/Tech-React-61DAFB?style=for-the-badge&logo=react" alt="React">
 </p>
 
-## Proyek POS Restoran "Eat.o"
+# 🍽️ Proyek POS Restoran **"Eat.o"**
 
-Sebuah ekosistem Point of Sale (POS) modern yang dirancang untuk restoran, dibangun dengan arsitektur headless yang memisahkan backend API dan frontend aplikasi klien. Proyek ini menyediakan solusi lengkap mulai dari aplikasi kasir tablet, layar monitor dapur, hingga panel admin yang komprehensif.
+Sebuah ekosistem Point of Sale (POS) modern untuk restoran, dibangun dengan arsitektur **headless** yang memisahkan backend API dan aplikasi frontend. Proyek ini menyediakan solusi lengkap untuk **kasir**, **dapur**, serta **panel admin** yang komprehensif.
 
-### 🚀 Teknologi yang Digunakan
+---
 
-Arsitektur proyek ini terbagi menjadi dua bagian utama:
+## 🚀 Teknologi yang Digunakan
 
-#### 1. Backend (Server-Side)
+Proyek ini terbagi menjadi dua bagian utama:
 
-Framework: Laravel 11+
+### **1. Backend (Server-Side)**
+- **Framework:** Laravel 11+
+- **Admin Panel:** Filament 3
+- **Fungsi:** Headless API — menangani logika bisnis, otentikasi, dan manajemen data
+- **Database:** MySQL / PostgreSQL
+- **Autentikasi:** Laravel Sanctum
 
-Admin Panel: Filament 3
+### **2. Frontend (Client-Side)**
+- **Framework:** Flutter
+- **Target Platform:** Web (Chrome) & Tablet (Landscape Mode)
+- **State Management:** Provider (ChangeNotifier)
+- **Providers Utama:**
+  - `AuthService` – mengelola status login & data user
+  - `CartProvider` – mengelola item keranjang kasir
 
-Fungsi: Berfungsi sebagai headless API yang menangani semua logika bisnis, otentikasi, dan manajemen data.
-
-Database (Tersirat): MySQL/PostgreSQL
-
-#### 2. Frontend (Client-Side)
-
-Framework: Flutter
-
-Target Platform: Web (Chrome) / Tablet, dioptimalkan untuk Mode Landscape.
-
-State Management: Provider (ChangeNotifier)
-
-AuthService: Mengelola status login dan data pengguna.
-
-CartProvider: Mengelola keranjang belanja kasir.
+---
 
 ## ✨ Fitur Utama
 
-Proyek ini memiliki alur kerja yang jelas berdasarkan peran pengguna.
+Proyek bekerja berdasarkan sistem peran pengguna (Role-based Access).
 
-Otentikasi & Peran
+---
 
-Registrasi Kustom: Pengguna mendaftar melalui endpoint API Filament (/admin/register) [cite: Register.php]
+# 🔐 Otentikasi & Role
 
-Login API: Otentikasi token (Sanctum) melalui endpoint /api/v1/login [cite: api.php].
+- **Registrasi**: Endpoint custom Filament → `/admin/register`
+- **Login API**: Token-based (Sanctum) → `/api/v1/login`
+- **Role User**:
+  - `cashier` (Kasir)
+  - `kitchen` (Dapur)
 
-Berbasis Peran: Aplikasi memiliki dua peran utama: cashier (Kasir) dan kitchen (Dapur) [cite: UserResource.php].
+---
 
-### 1. Aplikasi Kasir (Role: cashier)
+# 🧾 1. Aplikasi Kasir (Role: cashier)
 
-Antarmuka utama untuk kasir, dirancang sebagai dasbor 3-kolom [cite: iPad Pro 12.9_ - 4.jpg]:
+Antarmuka kasir dirancang dengan layout **3 kolom**, responsif dan mudah digunakan.
 
-Navigasi: Sidebar kiri untuk berpindah halaman (Menu, Transaksi, Order, Meja).
+### **Fitur Utama Kasir**
+#### ✔ Navigasi Samping
+Sidebar berisi menu:
+- Menu
+- Transaksi
+- Order
+- Meja
 
-Kolom Menu: Menampilkan semua menu dalam format grid.
+#### ✔ Kolom Menu
+- Menampilkan daftar menu dalam bentuk grid
+- Mendukung **filter kategori** (Makanan, Minuman, dll)
+- Real-time update via API
 
-Filter Kategori: Menu dapat difilter secara real-time berdasarkan kategori (Makanan, Minuman, dll) [cite: image_3662e1.jpg].
+#### ✔ Kolom Keranjang & Pembayaran
+- Tambah/kurangi/hapus item dari keranjang
+- Mode pembayaran muncul saat menekan **Lanjutkan Transaksi**
+- Input:
+  - Pilih Meja
+  - Metode Pembayaran: Cash / QRIS / Debit
+  - Nama Pelanggan
+- Menekan **Bayar Sekarang** → Mengirim pesanan ke backend
 
-Kolom Keranjang/Pembayaran:
+#### ✔ Manajemen Meja
+- Menampilkan seluruh meja (grid)
+- Status: **Tersedia** / **Terisi**
+- Auto-refresh status meja
+- Kasir dapat mengubah status meja secara manual
 
-Kasir dapat menambah/mengurangi/menghapus item dari keranjang (CartProvider).
+#### ✔ Daftar Order Aktif
+- Menampilkan semua pesanan dengan status:  
+  `pending`, `preparing`, `ready`
+- Auto-refresh tiap interval
 
-Saat "Lanjutkan Transaksi", UI berubah menjadi Mode Pembayaran [cite: iPad Pro 12.9_ - 11.png].
+---
 
-Kasir dapat memilih Meja, Metode Pembayaran (Cash, QRIS, Debit), dan memasukkan Nama Pelanggan.
+# 🍳 2. Aplikasi Dapur (Role: kitchen)
 
-Menekan "Bayar Sekarang" akan mengirim pesanan ke backend.
+Aplikasi dapur dirancang seperti **Kanban Board** yang sederhana dan cepat diakses.
 
-Manajemen Meja:
+### **Fitur Utama Dapur**
+#### ✔ Kolom Pesanan
+- Kolom "Pesanan Baru" (pending)
+- Kolom "Sedang Disiapkan" (preparing)
 
-Menampilkan status semua meja (Tersedia / Terisi) dalam format grid [cite: halaman meja.png].
+#### ✔ Sistem Auto-Refresh
+- Menarik pesanan baru setiap 30 detik
 
-Status meja diperbarui secara real-time via auto-refresh timer.
+#### ✔ Update Status Pesanan
+- **Mulai Siapkan** → `preparing`
+- **Selesai** → `completed`
 
-Kasir dapat secara manual mengubah status meja dengan menekannya.
+---
 
-Daftar Order Aktif:
+# 🧠 3. Logika Bisnis Backend
 
-Menampilkan daftar semua pesanan yang sedang berjalan (pending, preparing, ready) [cite: image_158569.png].
+### ✔ Manajemen Stok Real-time
+- Ketika kasir membuat pesanan baru → stok berkurang otomatis.
 
-Status pesanan diperbarui secara real-time via auto-refresh timer.
+### ✔ Pelepasan Meja Otomatis
+- Jika dapur menekan **Selesai**, backend otomatis mengubah status meja menjadi **available**.
 
-#### 2. Aplikasi Dapur (Role: kitchen)
+### ✔ Pelacakan Pemasukan
+- Dasbor Filament hanya menghitung pesanan dengan status **paid**.
 
-UI Kanban: Layar Dapur menampilkan dua kolom: "Pesanan Baru" (pending) dan "Sedang Disiapkan" (preparing) [cite: kitchen_home_screen.dart].
-
-Auto-Refresh: Layar otomatis me-refresh setiap 30 detik untuk menarik pesanan baru dari kasir.
-
-Update Status: Koki dapat menekan tombol "Mulai Siapkan" (mengubah status ke preparing) atau "Selesai" (mengubah status ke completed).
-
-#### 3. Logika Bisnis (Backend)
-
-Manajemen Stok Real-time: Endpoint API (dan panel Filament [cite: CreateOrder.php]) secara otomatis mengecek dan mengurangi stok menu setiap kali pesanan baru dibuat.
-
-Pelepasan Meja Otomatis: Saat Dapur menekan "Selesai" (status completed), backend secara otomatis dipanggil untuk mengubah status meja terkait menjadi available [cite: kitchen_home_screen.dart].
-
-Pelacakan Pemasukan: Dasbor admin Filament [cite: PosStatsOverview.php] secara cerdas hanya menghitung pemasukan dari pesanan yang statusnya sudah paid.
-
-Riwayat Transaksi: Backend memiliki resource Transaction [cite: TransactionResource.php] yang berfungsi sebagai log "Hanya-Baca" [cite: ListTransactions.php], kemungkinan besar dibuat secara otomatis saat pesanan dibayar.
-
+### ✔ Riwayat Transaksi
+- Tersedia resource **Transaction** sebagai log historis berstatus read-only.
+- Dibuat otomatis setiap kali transaksi dibayar.
 
 ---
 
@@ -166,72 +186,19 @@ Proyek ini adalah **monorepo** yang mengintegrasikan tiga aplikasi utama untuk m
 
 #### backend/
 
-backend/
-├── app/
-│   ├── Filament/                     # Logika untuk Admin Panel
-│   │   ├── Resources/                # CRUD Pages: Menu, Order, User
-│   │   └── Widgets/                  # Dashboard Widgets: Charts, Stats
-│   ├── Http/
-│   │   └── Controllers/
-│   │       ├── Api/
-│   │       │   └── V1/               # REST API untuk Flutter / React
-│   │       │       ├── AuthController.php
-│   │       │       ├── CategoryController.php
-│   │       │       ├── MenuController.php
-│   │       │       └── OrderController.php
-│   │       └── Controller.php
-│   ├── Models/                       # Model Eloquent: User, Order, Menu
-│   └── Providers/
-│       └── Filament/
-│           └── AdminPanelProvider.php # Konfigurasi Filament Admin Panel
-│
-├── config/                           # File konfigurasi aplikasi
-├── database/
-│   ├── migrations/                   # Struktur tabel database
-│   └── seeders/                      # Data awal (dummy / default)
-│
-├── routes/
-│   ├── api.php                       # Definisi rute API (/api/v1)
-│   └── web.php                       # Definisi rute Web (/admin)
-│
-├── storage/                          # File upload dan cache Laravel
-├── tests/                            # Unit dan feature tests
-└── composer.json                     # Dependensi backend (Laravel)
+<img width="445" height="544" alt="Image" src="https://github.com/user-attachments/assets/9ba2f352-de19-491e-ab57-aaeb4c93d159" />
 
 
 2.  **`mobile` (Aplikasi Kasir / POS)**
 
 #### backend/
 
-mobile/
-├── lib/
-│   ├── main.dart                     # Titik awal aplikasi Flutter
-│   ├── models/                       # Model data (Menu, Order, User)
-│   ├── providers/                    # State management (Provider / Bloc)
-│   ├── screens/                      # Halaman UI (Login, Home, POS)
-│   ├── services/                     # Logika bisnis & pemanggilan API
-│   └── widgets/                      # Komponen UI kustom (Button, Card)
-│
-├── assets/                           # Gambar, ikon, font, dsb.
-├── pubspec.yaml                      # Daftar dependensi Flutter
-└── analysis_options.yaml             # Aturan linting & analisis kode
+<img width="431" height="217" alt="Image" src="https://github.com/user-attachments/assets/fb1779df-6eb7-4f15-9b57-b27dd47f9caf" />
 
 
 3.  **`web` (Web Promosi & Langganan)**
 
-web/
-├── public/                           # File publik (index.html, favicon)
-├── src/
-│   ├── assets/                       # Gambar, ikon, dan font
-│   ├── components/                   # Komponen UI (Button, Navbar, Card)
-│   ├── pages/                        # Halaman (Home, Register, Pricing)
-│   ├── services/                     # Pemanggilan API (Axios)
-│   ├── App.js                        # Entry utama React
-│   └── index.js                      # Inisialisasi aplikasi React
-│
-├── package.json                      # Dependensi Node.js / React
-└── vite.config.js                    # Konfigurasi build (jika pakai Vite)
-
+<img width="472" height="233" alt="Image" src="https://github.com/user-attachments/assets/7947362c-8cd1-41fd-9643-a5175777ed60" />
 
 
 ---
