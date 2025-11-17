@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 // PENTING: Gunakan 10.0.2.2 untuk Android Emulator
 // Ganti dengan IP asli laptop Anda (cek di cmd 'ipconfig') jika pakai HP fisik
 // const String BASE_URL = 'http://10.0.2.2:8000';
-const String BASE_URL = 'http://192.168.1.62:8000';
+const String BASE_URL = 'https://nonpertinent-unfenestral-reece.ngrok-free.dev';
 const String API_URL = '$BASE_URL/api/v1';
 
 // Warna Tema dari Desain Anda
