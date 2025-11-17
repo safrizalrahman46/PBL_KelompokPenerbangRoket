@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:pos_resto_app/screens/home/cashier_home_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:pos_resto_app/services/auth_service.dart';
 import 'package:pos_resto_app/utils/constants.dart';
-import 'package:pos_resto_app/screens/home/cashier/cashier_home_screen.dart'; // PASTIKAN IMPORT INI
 import 'package:pos_resto_app/screens/home/kitchen_home_screen.dart';
 import 'register_screen.dart';
 
@@ -21,9 +21,10 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showSnack(String message, {Color? color}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(message,  style: const TextStyle(fontWeight: FontWeight.bold,  color: Colors.white, fontSize: 16)
+        ),
         backgroundColor: color ?? kPrimaryColor,
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 7),
       ),
     );
   }
@@ -61,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
     switch (role.toLowerCase()) {
       case 'cashier':
         _showSnack('Mengalihkan ke halaman kasir...');
-        homeScreen = const CashierHomeScreen(); // ✅ PASTIKAN INI
+        homeScreen = const CashierHomeScreen(); 
         break;
       case 'kitchen':
         _showSnack('Mengalihkan ke halaman dapur...');
@@ -178,31 +179,37 @@ class _LoginScreenState extends State<LoginScreen> {
                 Consumer<AuthService>(
                   builder: (context, authService, child) {
                     return SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: authService.isLoading ? null : _submitLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: authService.isLoading
-                            ? const CircularProgressIndicator(
-                                color: kBackgroundColor,
-                              )
-                            : const Text(
-                                'Login',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: kBackgroundColor,
-                                ),
-                              ),
-                      ),
-                    );
+  width: double.infinity,
+  child: ElevatedButton(
+    onPressed: authService.isLoading ? null : _submitLogin,
+    style: ElevatedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(vertical: 18), 
+      backgroundColor: kPrimaryColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      elevation: 0,
+    ),
+    child: authService.isLoading
+        ? const SizedBox(
+            height: 22,
+            width: 22,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: kBackgroundColor,
+            ),
+          )
+        : const Text(
+            'Login',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: kBackgroundColor,
+            ),
+          ),
+  ),
+);
+
                   },
                 ),
                 const SizedBox(height: 24),

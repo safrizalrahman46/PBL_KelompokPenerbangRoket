@@ -1,7 +1,7 @@
 // lib/screens/auth/register_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:pos_resto_app/screens/home/cashier/cashier_home_screen.dart';
+import 'package:pos_resto_app/screens/home/cashier_home_screen.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../utils/constants.dart';
@@ -254,11 +254,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   builder: (context, authService, child) {
                     return SizedBox(
                       width: double.infinity,
-                      height: 56,
+                      height: 62,
                       child: ElevatedButton(
                         onPressed:
                             authService.isLoading ? null : _submitRegister,
-                        style: ElevatedButton.styleFrom(
+                        style: ElevatedButton.styleFrom( padding: const EdgeInsets.symmetric(vertical: 18), 
                           backgroundColor: kPrimaryColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

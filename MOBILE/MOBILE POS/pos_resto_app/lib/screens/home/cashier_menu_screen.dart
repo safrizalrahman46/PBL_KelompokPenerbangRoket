@@ -48,12 +48,14 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
             ),
           ),
           const SizedBox(height: 16),
+
+          /// GRID MENU
           Expanded(
             child: GridView.builder(
               padding: EdgeInsets.zero,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.8,
+                crossAxisCount: 2,
+                childAspectRatio: 1, // <-- FIX OVERFLOW
                 crossAxisSpacing: 20,
                 mainAxisSpacing: 20,
               ),
@@ -68,6 +70,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
     );
   }
 
+  // CATEGORY BAR
   Widget _buildCategoryFilterBar() {
     List<Category> allCategories = [
       Category(id: -1, name: "All", menusCount: widget.menus.length),
@@ -87,13 +90,11 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
           IconData icon;
           switch (category.name.toLowerCase()) {
             case 'main course':
+            case 'makanan':
               icon = Icons.restaurant;
               break;
             case 'snack':
               icon = Icons.fastfood;
-              break;
-            case 'makanan':
-              icon = Icons.restaurant;
               break;
             case 'minuman':
               icon = Icons.local_cafe;
@@ -141,7 +142,9 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                           "${category.menusCount ?? 0} Items",
                           style: TextStyle(
                             fontSize: 14,
-                            color: isSelected ? kBackgroundColor.withOpacity(0.8) : kSecondaryColor.withOpacity(0.6),
+                            color: isSelected
+                                ? kBackgroundColor.withOpacity(0.8)
+                                : kSecondaryColor.withOpacity(0.6),
                           ),
                         ),
                       ],
@@ -156,6 +159,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
     );
   }
 
+  // MENU CARD
   Widget _buildMenuCard(Menu menu) {
     final cart = Provider.of<CartProvider>(context, listen: false);
     final int itemCountInCart = context.watch<CartProvider>().getItemQuantity(menu.id);
@@ -186,6 +190,8 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                     child: const Icon(Icons.image_not_supported, color: kSecondaryColor),
                   ),
                 ),
+
+          // CONTENT
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: Column(
@@ -198,13 +204,17 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
+
                 Text(
                   menu.description ?? 'Tidak ada deskripsi',
                   style: TextStyle(fontSize: 12, color: kSecondaryColor.withOpacity(0.6)),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+
                 const SizedBox(height: 8),
+
+                // PRICE + BUTTONS
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -216,15 +226,14 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                         color: kPrimaryColor,
                       ),
                     ),
+
                     Row(
                       children: [
                         IconButton(
                           icon: const Icon(Icons.remove_circle, color: kPrimaryColor),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          onPressed: () {
-                            cart.decreaseItem(menu.id);
-                          },
+                          onPressed: () => cart.decreaseItem(menu.id),
                           iconSize: 22,
                         ),
                         Text(
@@ -235,9 +244,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                           icon: const Icon(Icons.add_circle, color: kPrimaryColor),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          onPressed: () {
-                            cart.addItem(menu);
-                          },
+                          onPressed: () => cart.addItem(menu),
                           iconSize: 22,
                         ),
                       ],

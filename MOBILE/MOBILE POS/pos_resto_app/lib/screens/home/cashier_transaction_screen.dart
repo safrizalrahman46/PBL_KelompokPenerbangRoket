@@ -31,24 +31,25 @@ class CashierTransactionScreen extends StatelessWidget {
           const SizedBox(height: 24),
           Expanded(
             child: orders.isEmpty
-                ? const Center(child: Text('Belum ada transaksi selesai.'))
-                // --- PERUBAHAN DIMULAI DI SINI ---
+                ? const Center(
+                    child: Text(
+                      'Belum ada transaksi selesai.',
+                      style: TextStyle(color: kSecondaryColor),
+                    ),
+                  )
                 : GridView.builder(
-                    padding: EdgeInsets.zero,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, // Menampilkan 2 kolom
-                      crossAxisSpacing: 20, // Spasi horizontal antar kartu
-                      mainAxisSpacing: 20, // Spasi vertikal antar kartu
-                      childAspectRatio:
-                          1.2, // Rasio Lebar/Tinggi. Sesuaikan jika perlu
+                    padding: const EdgeInsets.only(bottom: 20),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 20,
+                      mainAxisSpacing: 20,
+                      childAspectRatio: 1.2, // Adjusted aspect ratio
                     ),
                     itemCount: orders.length,
                     itemBuilder: (context, index) {
                       return _buildTransactionCard(orders[index]);
                     },
                   ),
-            // --- PERUBAHAN BERAKHIR DI SINI ---
           ),
         ],
       ),
@@ -56,22 +57,21 @@ class CashierTransactionScreen extends StatelessWidget {
   }
 
   Widget _buildTransactionCard(Order order) {
-    // --- PERUBAHAN: Menghapus 'Align' ---
     return Card(
       color: const Color(0xFF2D2D2D),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      // --- PERUBAHAN: Menghapus 'margin' ---
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        // --- PERUBAHAN: Menghapus 'SizedBox(width: 450, ...)' ---
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
+            // HEADER SECTION
             Row(
               children: [
                 Container(
-                  width: 50,
-                  height: 50,
+                  width: 40,
+                  height: 40,
                   decoration: const BoxDecoration(
                     color: kPrimaryColor,
                     shape: BoxShape.circle,
@@ -80,99 +80,172 @@ class CashierTransactionScreen extends StatelessWidget {
                     child: Text(
                       order.restoTable?.number ?? '??',
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      order.customerName ?? 'Nama Pelanggan',
-                      style: const TextStyle(
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order.customerName ?? 'Nama Pelanggan',
+                        style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      'Order #${order.id}',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                      Text(
+                        'Order #${order.id}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            
+            const SizedBox(height: 12),
+            
+            // DATE
             Text(
               '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
-                fontSize: 14,
+                fontSize: 12,
               ),
             ),
-            const Divider(color: Colors.grey, height: 32),
+            
+            const SizedBox(height: 12),
+            const Divider(color: Colors.grey, height: 1),
+            const SizedBox(height: 12),
+
+            // TABLE HEADER
             Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
               child: Row(
                 children: [
-                  Text('Qty',
-                      style: TextStyle(color: Colors.white.withOpacity(0.7))),
-                  const SizedBox(width: 16),
+                  SizedBox(
+                    width: 25,
+                    child: Text(
+                      'Qty',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   Expanded(
-                      child: Text('Items',
-                          style:
-                              TextStyle(color: Colors.white.withOpacity(0.7)))),
-                  Text('Price',
-                      style: TextStyle(color: Colors.white.withOpacity(0.7))),
+                    child: Text(
+                      'Items',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Price',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 11,
+                    ),
+                  ),
                 ],
               ),
             ),
-            // Kita bungkus daftar item dengan Flexible agar tidak overflow
-            // jika itemnya sangat banyak dalam mode Grid
-            Flexible(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: order.orderItems
-                      .map((item) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Row(
-                              children: [
-                                Text('${item.quantity}'.padLeft(2, '0'),
-                                    style: const TextStyle(color: Colors.white)),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Text(item.menu.name,
-                                      style:
-                                          const TextStyle(color: Colors.white)),
+
+            // ORDER ITEMS - FLEXIBLE SPACE
+            Expanded(
+              child: order.orderItems.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No items',
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const ClampingScrollPhysics(),
+                      itemCount: order.orderItems.length,
+                      itemBuilder: (context, index) {
+                        final item = order.orderItems[index];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 6.0),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 25,
+                                child: Text(
+                                  '${item.quantity}'.padLeft(2, '0'),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                  ),
                                 ),
-                                Text(
-                                    'Rp ${item.priceAtTime.toStringAsFixed(0)}',
-                                    style: const TextStyle(color: Colors.white)),
-                              ],
-                            ),
-                          ))
-                      .toList(),
-                ),
-              ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  item.menu.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                'Rp ${item.priceAtTime.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
             ),
-            const Divider(color: Colors.grey, height: 32),
+
+            const SizedBox(height: 8),
+            const Divider(color: Colors.grey, height: 1),
+            const SizedBox(height: 8),
+
+            // TOTAL PRICE
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('SubTotal',
-                    style: TextStyle(color: Colors.white, fontSize: 16)),
+                const Text(
+                  'SubTotal',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
                 Text(
                   'Rp ${order.totalPrice.toStringAsFixed(0)}',
                   style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold),
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
