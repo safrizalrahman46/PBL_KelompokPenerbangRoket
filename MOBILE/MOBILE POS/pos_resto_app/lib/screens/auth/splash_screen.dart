@@ -1,7 +1,7 @@
 // lib/screens/auth/splash_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:pos_resto_app/screens/home/cashier/cashier_home_screen.dart';
+import 'package:pos_resto_app/screens/home/cashier_home_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
