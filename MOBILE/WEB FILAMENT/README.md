@@ -1,6 +1,11 @@
 # PBL_KelompokPenerbangRoket
-Anggota Kelompok hayyin, nazril, faruq, safrizal
+### SAFRIZAL RAHMAN JOBDESK WEB BACKEND API
 
+## 🔧 Laravel Web Backend Progress
+[![Watch the video](https://img.youtube.com/vi/Zz_vo05khe0/maxresdefault.jpg)](https://youtu.be/Zz_vo05khe0)
+*(klik gambar untuk membuka video)*
+
+---
 
 ### ⚡ LOGIN API 
 <!-- ![Splash](https://github.com/user-attachments/assets/04c8c8ed-9965-479e-9164-47780d05c6a4) -->

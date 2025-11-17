@@ -12,6 +12,9 @@ import 'providers/cart_provider.dart';
 import 'screens/auth/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
+
+// tambahan 
+import 'screens/home/queue_display_screen.dart';
 // Anda tidak perlu import Cashier/Kitchen di sini karena Splash/Login
 // yang akan menanganinya.
 
@@ -107,6 +110,9 @@ class MyApp extends StatelessWidget {
         routes: {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
+
+          // Tambahan safrizal
+          '/queue_display': (context) => const QueueDisplayScreen(),
         },
       ),
     );

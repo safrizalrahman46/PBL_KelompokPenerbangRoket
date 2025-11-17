@@ -233,6 +233,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+
+                // --- TOMBOL LIHAT ANTRIAN (VERSI KECIL) ---
+                    const SizedBox(height: 24), // Memberi jarak dari link register
+                    TextButton.icon(
+                       icon: const Icon(Icons.tv_rounded, size: 18), // Ikon lebih kecil
+                       label: const Text(
+                         'Lihat Layar Antrian',
+                         style: TextStyle(
+                            fontSize: 16, // Font lebih kecil
+                            fontWeight: FontWeight.w600, 
+                            color: kPrimaryColor,
+                         ),
+                       ),
+                       onPressed: () {
+                         // Navigasi ke rute yang sudah didaftarkan di main.dart
+                         Navigator.of(context).pushNamed('/queue_display');
+                       },
+                style: TextButton.styleFrom(
+                         foregroundColor: kPrimaryColor, // Warna teks dan ikon
+                       ),
+                    ),
               ],
             ),
           ),
