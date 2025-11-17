@@ -7,7 +7,9 @@ import '../utils/constants.dart';
 // import '../models/order_model.dart'; // <-- Untuk 'RestoTable'
 
 class AuthService with ChangeNotifier {
-  final String baseUrl = 'http://127.0.0.1:8000/api/v1';
+  // final String baseUrl = 'http://127.0.0.1:8000/api/v1';
+  final String baseUrl = 'http://192.168.1.62:8000/api/v1';
+
   final _storage = const FlutterSecureStorage();
 
   String? _token;
