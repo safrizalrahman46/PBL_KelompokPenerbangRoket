@@ -17,12 +17,12 @@
 
 # 📸  Progress Tim
 
-## 📱 Flutter POS Apps Progress Running With IPAD Ios Gen 10
-
-## 📱 Kasir Login On IOS IPAD
-https://github.com/user-attachments/assets/f009fd6f-0dc9-472c-bcaf-ff5886576a72
+# 📱 Flutter POS Apps Progress Running With IPAD Ios Gen 10
 
 ## 📱 Kitchen Login On IOS IPAD
+https://github.com/user-attachments/assets/f009fd6f-0dc9-472c-bcaf-ff5886576a72
+
+## 📱 Kasir Login On IOS IPAD
 https://github.com/user-attachments/assets/c302f682-6e54-4ab0-ba32-53892d86d221
 
 ---
