@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:pos_resto_app/screens/home/cashier_home_screen.dart';
 import 'package:provider/provider.dart';
-
-import '../../services/auth_service.dart';
-import '../../utils/constants.dart';
-import '../home/cashier_home_screen.dart';
-import '../home/kitchen_home_screen.dart';
+import 'package:pos_resto_app/services/auth_service.dart';
+import 'package:pos_resto_app/utils/constants.dart';
+import 'package:pos_resto_app/screens/home/kitchen_home_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,67 +18,82 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  void _submitLogin() async {
+  void _showSnack(String message, {Color? color}) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        message,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          fontSize: 16,
+        ),
+      ),
+
+      backgroundColor: color ?? kPrimaryColor,
+
+      // 🔥 Membuat SnackBar jadi persegi panjang
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      margin: const EdgeInsets.all(16), // SnackBar terangkat dari bawah
+
+      duration: const Duration(seconds: 7),
+    ),
+  );
+}
+
+
+  Future<void> _submitLogin() async {
     if (_formKey.currentState!.validate()) {
       final authService = Provider.of<AuthService>(context, listen: false);
 
       try {
-        print('🚀 Proses login dimulai...');
-        print('📧 Email: ${_emailController.text}');
-        print('🔑 Password: ${_passwordController.text}');
+        _showSnack('Proses login dimulai...');
 
-        // 🔹 Panggil login DAN TANGKAP role yang dikembalikan
+        // 🔹 Login dan ambil role
         final String role = await authService.login(
           _emailController.text,
           _passwordController.text,
         );
 
-        print('✅ Login berhasil, role dari server: $role');
+        _showSnack('Login berhasil, role: $role', color: Colors.green);
 
         if (!mounted) return;
-
-        // 🔹 Navigasi berdasarkan role
         _navigateBasedOnRole(role);
       } catch (e) {
-        print('❌ Login gagal: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              e.toString().replaceFirst('Exception: ', ''),
-            ),
-            backgroundColor: Colors.red,
-          ),
+        _showSnack(
+          e.toString().replaceFirst('Exception: ', ''),
+          color: Colors.red,
         );
       }
     } else {
-      print('⚠️ Form tidak valid, periksa input');
+      _showSnack('Form tidak valid, periksa input', color: Colors.orange);
     }
   }
 
-  // 🔹 Navigasi berdasarkan role user
   void _navigateBasedOnRole(String role) {
-    print('🧭 Navigasi berdasarkan role: $role');
     Widget homeScreen;
-
     switch (role.toLowerCase()) {
       case 'cashier':
-        print('➡️ Mengarahkan ke halaman kasir');
-        homeScreen = const CashierHomeScreen();
+        _showSnack('Mengalihkan ke halaman kasir...');
+        homeScreen = const CashierHomeScreen(); 
         break;
       case 'kitchen':
-        print('➡️ Mengarahkan ke halaman dapur');
+        _showSnack('Mengalihkan ke halaman dapur...');
         homeScreen = const KitchenHomeScreen();
         break;
       default:
-        print('⚠️ Role tidak dikenal: $role, kembali ke login');
-        homeScreen = const LoginScreen();
+        _showSnack('Role tidak dikenal, kembali ke login', color: Colors.red);
+        return;
     }
 
     if (!mounted) return;
-
-    // 🔁 Gunakan pushReplacement agar tidak bisa kembali ke login
-    Navigator.of(context)
-        .pushReplacement(MaterialPageRoute(builder: (_) => homeScreen));
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => homeScreen),
+      (route) => false,
+    );
   }
 
   @override
@@ -181,31 +195,37 @@ class _LoginScreenState extends State<LoginScreen> {
                 Consumer<AuthService>(
                   builder: (context, authService, child) {
                     return SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton(
-                        onPressed: authService.isLoading ? null : _submitLogin,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: authService.isLoading
-                            ? const CircularProgressIndicator(
-                                color: kBackgroundColor,
-                              )
-                            : const Text(
-                                'Login',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: kBackgroundColor,
-                                ),
-                              ),
-                      ),
-                    );
+  width: double.infinity,
+  child: ElevatedButton(
+    onPressed: authService.isLoading ? null : _submitLogin,
+    style: ElevatedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(vertical: 18), 
+      backgroundColor: kPrimaryColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      elevation: 0,
+    ),
+    child: authService.isLoading
+        ? const SizedBox(
+            height: 22,
+            width: 22,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: kBackgroundColor,
+            ),
+          )
+        : const Text(
+            'Login',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: kBackgroundColor,
+            ),
+          ),
+  ),
+);
+
                   },
                 ),
                 const SizedBox(height: 24),

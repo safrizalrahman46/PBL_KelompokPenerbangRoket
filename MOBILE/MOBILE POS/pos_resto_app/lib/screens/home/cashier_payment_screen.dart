@@ -1,15 +1,16 @@
 // lib/screens/home/cashier_payment_screen.dart
 
+import 'dart:typed_data';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'dart:typed_data';
 import '../../models/order_model.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/constants.dart';
-import 'package:intl/intl.dart'; // Pastikan Anda mengimpor ini
+import 'package:intl/intl.dart'; 
 
 class CashierPaymentScreen extends StatefulWidget {
   final CartProvider cart;
@@ -484,9 +485,18 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                   }
                   // --- BATAS PERUBAHAN ---
 
+                  // Clear cart FIRST, then show splash
                   widget.cart.clearCart();
+
+                  // Show splash burst animation (overlay)
+                  showOrderSuccessSplash(context);
+
+                  // Close the payment screen
                   Navigator.of(context).pop();
+
+                  // Show the success dialog (still using current context)
                   _showSuccessOrderDialog(context);
+
                   widget.onOrderSuccess();
                 } catch (e) {
                   if (mounted) {
@@ -505,6 +515,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
               },
         style: ElevatedButton.styleFrom(
           backgroundColor: kPrimaryColor,
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -1118,5 +1129,162 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
         ],
       ),
     );
+  }
+
+  // -----------------------
+  // SPLASH BURST (Overlay)
+  // -----------------------
+
+  /// Menampilkan overlay animasi cipratan (burst) di tengah layar.
+  void showOrderSuccessSplash(BuildContext context) {
+    final overlayState = Overlay.of(context);
+    if (overlayState == null) return;
+
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (context) {
+        return Positioned.fill(
+          child: IgnorePointer(
+            ignoring: true,
+            child: Center(
+              child: SplashBurst(
+                size: 260,
+                particles: 20,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    overlayState.insert(entry);
+
+    // Hapus setelah durasi animasi selesai
+    Future.delayed(const Duration(milliseconds: 800), () {
+      try {
+        entry.remove();
+      } catch (_) {}
+    });
+  }
+}
+
+/// -----------------------
+/// SPLASHBURST WIDGET
+/// Custom animated burst/cipratan tanpa dependency eksternal
+/// -----------------------
+class SplashBurst extends StatefulWidget {
+  final double size;
+  final int particles;
+
+  const SplashBurst({
+    super.key,
+    this.size = 180,
+    this.particles = 18,
+  });
+
+  @override
+  _SplashBurstState createState() => _SplashBurstState();
+}
+
+class _SplashBurstState extends State<SplashBurst>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late List<_Particle> _particles;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 700),
+      vsync: this,
+    )..forward();
+
+    final random = Random();
+    _particles = List.generate(widget.particles, (index) {
+      return _Particle(
+        angle: random.nextDouble() * 2 * pi,
+        speed: random.nextDouble() * 40 + 40,
+        radius: random.nextDouble() * 6 + 4,
+        color: Colors.primaries[random.nextInt(Colors.primaries.length)]
+            .withOpacity(0.95),
+      );
+    });
+
+    _controller.addListener(() {
+      // Force repaint
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: CustomPaint(
+        painter: _BurstPainter(
+          progress: _controller.value,
+          particles: _particles,
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+class _Particle {
+  final double angle;
+  final double speed;
+  final double radius;
+  final Color color;
+
+  _Particle({
+    required this.angle,
+    required this.speed,
+    required this.radius,
+    required this.color,
+  });
+}
+
+class _BurstPainter extends CustomPainter {
+  final double progress;
+  final List<_Particle> particles;
+
+  _BurstPainter({required this.progress, required this.particles});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
+
+    // Draw a subtle glow circle at center (expanding & fading)
+    final glowPaint = Paint()
+      ..color = Colors.white.withOpacity((1 - progress) * 0.4)
+      ..style = PaintingStyle.fill;
+    final glowRadius = (size.shortestSide / 6) * (1 + progress * 1.6);
+    canvas.drawCircle(center, glowRadius, glowPaint);
+
+    for (var p in particles) {
+      final dx = cos(p.angle) * p.speed * progress;
+      final dy = sin(p.angle) * p.speed * progress;
+
+      final position = Offset(center.dx + dx, center.dy + dy);
+
+      final paint = Paint()
+        ..color = p.color.withOpacity((1 - progress).clamp(0.0, 1.0))
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(position, p.radius * (1 - progress), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BurstPainter oldDelegate) {
+    return oldDelegate.progress != progress || oldDelegate.particles.length != particles.length;
   }
 }

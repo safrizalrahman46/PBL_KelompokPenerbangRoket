@@ -12,9 +12,12 @@ class Menu {
   final double price;
   final int stock;
   final String? description;
-  final String? imageUrl;
+
+  // 🔧 FIX: Tidak lagi final supaya aman saat manipulasi data
+  String? imageUrl;
+
   final Category? category;
-  final int categoryId; // <-- 1. TAMBAHKAN INI
+  final int categoryId;
 
   Menu({
     required this.id,
@@ -24,12 +27,10 @@ class Menu {
     this.description,
     this.imageUrl,
     this.category,
-    required this.categoryId, // <-- 2. TAMBAHKAN INI
+    required this.categoryId,
   });
 
   factory Menu.fromJson(Map<String, dynamic> json) => Menu(
-        // id: json["id"],
-        // name: json["name"],
         id: json["id"] ?? 0,
         name: json["name"] ?? 'Nama Menu Error',
         price: double.tryParse(json["price"]?.toString() ?? '0.0') ?? 0.0,
@@ -39,21 +40,22 @@ class Menu {
         category: json["category"] == null
             ? null
             : Category.fromJson(json["category"]),
-        categoryId: json["category_id"] ?? 0, // <-- 3. TAMBAHKAN INI
+        categoryId: json["category_id"] ?? 0,
       );
 }
 
 class Category {
   final int id;
   final String name;
-  // Kita tambahkan 'menus_count' sesuai API Laravel
-  final int? menusCount; 
+  final int? menusCount;
 
-  Category({required this.id, required this.name, this.menusCount});
+  Category({
+    required this.id,
+    required this.name,
+    this.menusCount,
+  });
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
-        // id: json["id"],
-        // name: json["name"],
         id: json["id"] ?? 0,
         name: json["name"] ?? 'Nama Kategori Error',
         menusCount: json["menus_count"],
