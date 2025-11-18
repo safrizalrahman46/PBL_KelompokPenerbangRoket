@@ -18,6 +18,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\SelectColumn;
+use Illuminate\Support\Facades\Auth;
 
 class RestoTableResource extends Resource
 {
@@ -27,6 +28,15 @@ class RestoTableResource extends Resource
     protected static ?string $navigationGroup = 'Manajemen Restoran'; // Grup di sidebar
     protected static ?string $modelLabel = 'Meja'; // Nama di sidebar
 
+
+        public static function canViewAny(): bool
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user(); // Gunakan Facade Auth::user() lebih aman untuk IDE
+
+        // Pastikan user ada DAN role-nya admin
+        return $user !== null && $user->role === 'admin';
+    }
     public static function form(Form $form): Form
     {
         return $form

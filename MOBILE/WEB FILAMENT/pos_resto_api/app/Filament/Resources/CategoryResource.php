@@ -23,12 +23,23 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 
+use Illuminate\Support\Facades\Auth;
+
 class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    
+     public static function canViewAny(): bool
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user(); // Gunakan Facade Auth::user() lebih aman untuk IDE
+
+        // Pastikan user ada DAN role-nya admin
+        return $user !== null && $user->role === 'admin';
+    }
     public static function form(Form $form): Form
     {
         return $form

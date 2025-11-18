@@ -25,9 +25,13 @@ use App\Filament\Widgets\PosStatsOverview;
 use App\Filament\Widgets\PosSalesChart;
 use App\Filament\Widgets\RecentOrdersTable;
 use App\Filament\Widgets\BestSellingMenusTable; // <-- Ini yang benar (bukan TopSellingMenusChart)
+use App\Filament\Widgets\PosCustomersChart;
 
 // use App\Filament\Pages\Auth\Register;
 use App\Filament\Auth\Register;
+
+// tambahan baru
+// use Filament\Pages\Auth\EditProfile;
 // use App\Filament\Pages\Auth\Login;
 
 
@@ -44,6 +48,9 @@ class AdminPanelProvider extends PanelProvider
 
             // ->login(Login::class)
 
+             // ✅ 1. FITUR EDIT PROFILE & PASSWORD SUDAH DIAKTIFKAN DI SINI
+            ->profile() 
+            // ->profile(EditProfile::class)
 
             // 2. AKTIFKAN REGISTRASI PUBLIK
             ->registration(Register::class)
@@ -116,6 +123,7 @@ class AdminPanelProvider extends PanelProvider
                 // 4. DAFTARKAN 4 WIDGET BARU ANDA
                 PosStatsOverview::class,
                 PosSalesChart::class,
+                PosCustomersChart::class, // Safrrizal Update
                 RecentOrdersTable::class,
                 BestSellingMenusTable::class,
 

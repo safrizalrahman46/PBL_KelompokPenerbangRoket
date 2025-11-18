@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Support\Facades\Auth;
 
 class TransactionResource extends Resource
 {
@@ -26,6 +27,17 @@ class TransactionResource extends Resource
 
     protected static ?string $navigationGroup = 'Pesanan';
     protected static ?string $modelLabel = 'Riwayat Transaksi';
+
+               public static function canViewAny(): bool
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user(); // Gunakan Facade Auth::user() lebih aman untuk IDE
+
+        // Pastikan user ada DAN role-nya admin
+        // return $user !== null && $user->role === ['admin', 'cashier', 'kitchen'];
+        return $user !== null && in_array($user->role, ['admin', 'cashier','kitchen']);
+    }
+
     public static function form(Form $form): Form
     {
         return $form

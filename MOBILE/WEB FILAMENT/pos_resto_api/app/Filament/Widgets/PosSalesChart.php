@@ -21,7 +21,9 @@ class PosSalesChart extends AdvancedChartWidget
     protected static ?string $label = 'Grafik Pemasukan (Lunas)';
 
     // Tampilkan widget ini di urutan kedua
-    protected static ?int $sort = 2;
+    protected static ?int $sort = 1;
+    protected int | string | array $columnSpan = 'full';
+    
 
     // Filter yang bisa dipilih (default-nya 'week')
     public ?string $filter = 'week';
@@ -50,8 +52,8 @@ class PosSalesChart extends AdvancedChartWidget
         $data = [];
         $labels = [];
 
-        // Kita hanya hitung pesanan yang 'paid' (lunas)
-        $query = Order::where('status', 'paid');
+        // Kita hanya hitung pesanan yang 'completed' (lunas)
+        $query = Order::where('status', 'completed');
         $now = Carbon::now();
 
         switch ($filter) {
@@ -152,7 +154,7 @@ class PosSalesChart extends AdvancedChartWidget
     // Fungsi helper untuk total di heading
     private function getTotalSales(string $filter): float
     {
-        $query = Order::where('status', 'paid');
+        $query = Order::where('status', 'completed');
         $now = Carbon::now();
 
         switch ($filter) {
