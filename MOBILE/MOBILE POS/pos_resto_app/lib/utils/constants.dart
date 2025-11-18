@@ -20,7 +20,9 @@ const bool isWeb = kIsWeb;
 // HP fisik: ganti dengan IP laptop kamu (cek `ipconfig`)
 const String BASE_URL = kIsWeb
     ? 'http://localhost:8000' // Flutter Web
-    : 'https://nonpertinent-unfenestral-reece.ngrok-free.dev'; // Ipad
+    // : 'https://nonpertinent-unfenestral-reece.ngrok-free.dev'; // Ipad
+    : 'https://unrecuperative-princeton-postscorbutic.ngrok-free.dev'; // HP fisik
+    
 
 // ⚙️ Endpoint utama API Laravel
 const String API_URL = '$BASE_URL/api/v1';
