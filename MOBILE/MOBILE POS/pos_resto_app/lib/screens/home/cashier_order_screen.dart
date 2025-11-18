@@ -24,20 +24,40 @@ class CashierOrderScreen extends StatefulWidget {
 
 class _CashierOrderScreenState extends State<CashierOrderScreen> {
   final FlutterTts _flutterTts = FlutterTts();
-  String _selectedFilter = 'Semua'; // Default filter
+  String _selectedFilter = 'Semua';
 
-  // List filter options
   final List<String> _filterOptions = [
     'Semua',
     'Pending',
     'Disiapkan',
     'Siap',
-    'Selesai'
+    'Selesai',
   ];
+
+  // 🔥 SNACKBAR FLOATING
+  void _showSnack(String message, {Color? color}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontSize: 16,
+          ),
+        ),
+        backgroundColor: color ?? kPrimaryColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
+        elevation: 6,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Filter orders berdasarkan status yang dipilih
     final filteredOrders = _filterOrders(widget.orders);
 
     return Container(
@@ -55,11 +75,9 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // Filter Chip Bar
           _buildFilterChipBar(),
-
           const SizedBox(height: 16),
+
           Expanded(
             child: filteredOrders.isEmpty
                 ? Center(
@@ -84,12 +102,13 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                   )
                 : GridView.builder(
                     padding: const EdgeInsets.only(bottom: 16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.70,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.70,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
                     itemCount: filteredOrders.length,
                     itemBuilder: (context, index) {
                       return _buildOrderCard(filteredOrders[index]);
@@ -101,7 +120,6 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     );
   }
 
-  // Widget untuk filter chip bar
   Widget _buildFilterChipBar() {
     return SizedBox(
       height: 50,
@@ -138,7 +156,6 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     );
   }
 
-  // Fungsi untuk memfilter orders berdasarkan status
   List<Order> _filterOrders(List<Order> orders) {
     switch (_selectedFilter) {
       case 'Pending':
@@ -162,16 +179,16 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
       case 'Selesai':
         return orders.where((order) {
           final status = order.status.toLowerCase();
-          return status == 'completed' || status == 'done' || status == 'finished';
+          return status == 'completed' ||
+              status == 'done' ||
+              status == 'finished';
         }).toList();
 
-      case 'Semua':
       default:
         return orders;
     }
   }
 
-  // Fungsi untuk teks empty state berdasarkan filter
   String _getEmptyStateText() {
     switch (_selectedFilter) {
       case 'Pending':
@@ -182,7 +199,6 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
         return 'Tidak ada order yang siap disajikan';
       case 'Selesai':
         return 'Tidak ada order yang selesai';
-      case 'Semua':
       default:
         return 'Belum ada order aktif';
     }
@@ -195,16 +211,12 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
       color: const Color(0xFF2D2D2D),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
-        constraints: const BoxConstraints(
-          minHeight: 400,
-          maxHeight: 500,
-        ),
+        constraints: const BoxConstraints(minHeight: 400, maxHeight: 500),
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
           children: [
-            // HEADER SECTION - FIXED HEIGHT
+            // HEADER
             SizedBox(
               height: 60,
               child: Row(
@@ -228,7 +240,9 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                       ),
                     ),
                   ),
+
                   const SizedBox(width: 12),
+
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,16 +268,18 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+
                   _buildStatusChip(
-                      statusInfo['text']!, statusInfo['icon']!, statusInfo['color']!),
+                    statusInfo['text']!,
+                    statusInfo['icon']!,
+                    statusInfo['color']!,
+                  ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 8),
-            
-            // DATE & TIME
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -283,12 +299,12 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 12),
             const Divider(color: Colors.grey, height: 1),
             const SizedBox(height: 8),
 
-            // TABLE HEADER
+            // LABEL TABLE HEADER
             const Padding(
               padding: EdgeInsets.only(bottom: 8.0),
               child: Row(
@@ -327,15 +343,12 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
               ),
             ),
 
-            // ORDER ITEMS - SCROLLABLE dengan FIXED HEIGHT
+            // ITEMS LIST
             Container(
-              constraints: const BoxConstraints(
-                maxHeight: 150,
-                minHeight: 40,
-              ),
+              constraints: const BoxConstraints(maxHeight: 150, minHeight: 40),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
                 color: Colors.black.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: order.orderItems.isEmpty
                   ? const Center(
@@ -345,14 +358,17 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                       ),
                     )
                   : ListView.builder(
-                      physics: const ClampingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                      padding: const EdgeInsets.all(4),
                       itemCount: order.orderItems.length,
                       itemBuilder: (context, index) {
                         final item = order.orderItems[index];
+
                         return Container(
                           margin: const EdgeInsets.only(bottom: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
@@ -401,7 +417,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
             const Divider(color: Colors.grey, height: 1),
             const SizedBox(height: 8),
 
-            // TOTAL PRICE
+            // TOTAL
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -425,8 +441,6 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
             ),
 
             const SizedBox(height: 12),
-
-            // ACTION BUTTONS - YANG SUDAH DIPERBAIKI
             _buildOrderActionButtons(order),
           ],
         ),
@@ -441,35 +455,35 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
       return {
         'text': 'Pending',
         'icon': Icons.hourglass_empty,
-        'color': Colors.orange.shade300
+        'color': Colors.orange.shade300,
       };
     }
     if (status == 'preparing' || status == 'cooking') {
       return {
         'text': 'Disiapkan',
         'icon': Icons.kitchen,
-        'color': Colors.blue.shade300
+        'color': Colors.blue.shade300,
       };
     }
     if (status == 'ready' || status == 'ready to serve') {
       return {
         'text': 'Siap',
         'icon': Icons.check_circle,
-        'color': Colors.green.shade300
+        'color': Colors.green.shade300,
       };
     }
     if (status == 'completed' || status == 'done' || status == 'finished') {
       return {
         'text': 'Selesai',
         'icon': Icons.done_all,
-        'color': Colors.grey.shade300
+        'color': Colors.grey.shade300,
       };
     }
 
     return {
       'text': status.toUpperCase(),
       'icon': Icons.help_outline,
-      'color': Colors.grey.shade300
+      'color': Colors.grey.shade300,
     };
   }
 
@@ -485,32 +499,34 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 14),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
           Text(
             text,
-            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
     );
   }
 
-  // METHOD YANG SUDAH DIPERBAIKI
   Widget _buildOrderActionButtons(Order order) {
     String status = order.status.toLowerCase();
 
-    // Tombol aksi berdasarkan status
     if (status == 'ready' || status == 'ready to serve') {
       return SizedBox(
-        width: double.infinity, // PASTIKAN BUTTON MEMENUHI LEBAR CARD
+        width: double.infinity,
         height: 45,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             backgroundColor: kPrimaryColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8.0),
             ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
           ),
           onPressed: () => _showReadyOrderPopup(order),
           child: const Text(
@@ -531,23 +547,18 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
   Future<void> _updateOrderStatus(int orderId, String newStatus) async {
     try {
       await widget.apiService.updateOrderStatus(orderId, newStatus);
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Pesanan #$orderId diperbarui ke $newStatus'),
-            backgroundColor: Colors.green,
-          ),
+        _showSnack(
+          'Pesanan #$orderId diperbarui ke $newStatus',
+          color: Colors.green,
         );
       }
+
       await widget.onRefresh();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal update status: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showSnack('Gagal update status: $e', color: Colors.red);
       }
     }
   }
@@ -559,30 +570,28 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
       await _flutterTts.speak(text);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal memutar audio: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showSnack('Gagal memutar audio: $e', color: Colors.red);
       }
     }
   }
 
   void _showReadyOrderPopup(Order order) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: const Color(0xFF2D2D2D),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
+  showDialog(
+    context: context,
+    builder: (dialogContext) {
+      return Dialog(
+        backgroundColor: const Color(0xFF2D2D2D),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: 380,   // ❗ BATAS LEBAR POPUP
           ),
           child: Container(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // HEADER
                 Row(
@@ -597,7 +606,6 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                       child: const Icon(
                         Icons.restaurant_menu,
                         color: Colors.white,
-                        size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -605,9 +613,9 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                       child: Text(
                         "Konfirmasi Pesanan Siap",
                         style: TextStyle(
+                          color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -616,12 +624,11 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
 
                 const SizedBox(height: 16),
 
-                // CONTENT
                 Text(
                   'Pesanan untuk Meja #${order.restoTable?.number ?? '??'} sudah siap?',
                   style: TextStyle(
-                    fontSize: 16,
                     color: Colors.white.withOpacity(0.8),
+                    fontSize: 16,
                   ),
                 ),
 
@@ -631,19 +638,19 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                   Text(
                     'Atas nama: ${order.customerName!}',
                     style: TextStyle(
-                      fontSize: 14,
                       color: Colors.white.withOpacity(0.7),
+                      fontSize: 14,
                     ),
                   ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
 
-                // ORDER SUMMARY
+                // DETAIL SUMMARY
                 Container(
-                  padding: const EdgeInsets.all(12.0),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(8.0),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                   child: Column(
                     children: [
@@ -654,20 +661,20 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                             'Total Items:',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.7),
-                              fontSize: 14,
                             ),
                           ),
                           Text(
                             '${order.orderItems.length} items',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 4),
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -675,14 +682,12 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                             'Total Harga:',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.7),
-                              fontSize: 14,
                             ),
                           ),
                           Text(
                             'Rp ${order.totalPrice.toStringAsFixed(0)}',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -692,69 +697,62 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
 
-                // ACTION BUTTONS
+                // BUTTONS
                 Row(
                   children: [
-                    // BATAL BUTTON
+                    // CANCEL
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.white,
                           side: const BorderSide(color: Colors.grey),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
+                            borderRadius: BorderRadius.circular(8),
                           ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        onPressed: () => Navigator.of(dialogContext).pop(),
-                        child: const Text(
-                          'Batal',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        onPressed: () => Navigator.pop(dialogContext),
+                        child: const Text('Batal'),
                       ),
                     ),
 
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
 
-                    // PANGGIL PELANGGAN BUTTON
+                    // CALL CUSTOMER
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blueAccent,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
+                            borderRadius: BorderRadius.circular(8),
                           ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         onPressed: () {
-                          String customerName = order.customerName ?? 'Pelanggan';
-                          String tableNumber = order.restoTable?.number ?? '';
+                          String customer = order.customerName ?? 'Pelanggan';
+                          String table = order.restoTable?.number ?? '';
+
                           _speak(
-                              'Atas nama $customerName, di Meja $tableNumber, pesanan anda sudah siap diambil.');
-                          Navigator.of(dialogContext).pop();
-                          
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Memanggil pelanggan Meja #$tableNumber'),
-                              backgroundColor: Colors.blueAccent,
-                            ),
+                            'Atas nama $customer, di Meja $table, pesanan anda sudah siap.',
+                          );
+                          Navigator.pop(dialogContext);
+
+                          _showSnack(
+                            'Memanggil pelanggan Meja #$table',
+                            color: Colors.blueAccent,
                           );
                         },
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.volume_up, size: 16, color: Colors.white),
-                            SizedBox(width: 6),
+                            Icon(Icons.volume_up, size: 18, color: Colors.white),
+                            SizedBox(width: 8),
                             Text(
                               'Panggil',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -763,32 +761,31 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                       ),
                     ),
 
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
 
-                    // SELESAI BUTTON
+                    // SELESAI
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8.0),
+                            borderRadius: BorderRadius.circular(8),
                           ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         onPressed: () {
-                          Navigator.of(dialogContext).pop();
+                          Navigator.pop(dialogContext);
                           _updateOrderStatus(order.id, 'completed');
                         },
                         child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.check_circle, size: 16, color: Colors.white),
+                            Icon(Icons.check_circle, size: 18, color: Colors.white),
                             SizedBox(width: 6),
                             Text(
                               'Selesai',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -801,8 +798,9 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
               ],
             ),
           ),
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
 }
