@@ -19,15 +19,31 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
   void _showSnack(String message, {Color? color}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message,  style: const TextStyle(fontWeight: FontWeight.bold,  color: Colors.white, fontSize: 16)
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        message,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+          fontSize: 16,
         ),
-        backgroundColor: color ?? kPrimaryColor,
-        duration: const Duration(seconds: 7),
       ),
-    );
-  }
+
+      backgroundColor: color ?? kPrimaryColor,
+
+      // 🔥 Membuat SnackBar jadi persegi panjang
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      margin: const EdgeInsets.all(16), // SnackBar terangkat dari bawah
+
+      duration: const Duration(seconds: 7),
+    ),
+  );
+}
+
 
   Future<void> _submitLogin() async {
     if (_formKey.currentState!.validate()) {
