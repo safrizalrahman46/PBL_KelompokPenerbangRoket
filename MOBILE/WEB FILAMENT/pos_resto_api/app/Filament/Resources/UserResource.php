@@ -17,6 +17,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\BadgeColumn; // Untuk 'role'
 use Illuminate\Support\Facades\Hash; // Untuk enkripsi password
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class UserResource extends Resource
 {
@@ -24,6 +25,17 @@ class UserResource extends Resource
 
     protected static ?string $icon = 'heroicon-o-users';
     protected static ?string $navigationGroup = 'Manajemen Restoran';
+
+    
+   // ⬇️ TAMBAHKAN FUNGSI INI ⬇️
+     public static function canViewAny(): bool
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user(); // Gunakan Facade Auth::user() lebih aman untuk IDE
+
+        // Pastikan user ada DAN role-nya admin
+        return $user !== null && $user->role === 'admin';
+    }
 
     public static function form(Form $form): Form
     {

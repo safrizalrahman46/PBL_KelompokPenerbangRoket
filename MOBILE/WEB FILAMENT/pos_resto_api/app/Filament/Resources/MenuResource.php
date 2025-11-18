@@ -20,6 +20,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
+use Illuminate\Support\Facades\Auth;
 
 class MenuResource extends Resource
 {
@@ -27,6 +28,16 @@ class MenuResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag'; // Icon yang lebih pas
     protected static ?string $navigationGroup = 'Manajemen Menu';
+
+        public static function canViewAny(): bool
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user(); // Gunakan Facade Auth::user() lebih aman untuk IDE
+
+        // Pastikan user ada DAN role-nya admin
+        // return $user !== null && $user->role === ['admin', 'cashier'];
+        return $user !== null && in_array($user->role, ['admin', 'cashier']);
+    }
 
     public static function form(Form $form): Form
     {

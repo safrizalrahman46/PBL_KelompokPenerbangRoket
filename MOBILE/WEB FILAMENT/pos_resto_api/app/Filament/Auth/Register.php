@@ -26,6 +26,7 @@ class Register extends AuthRegister
                     ->options([
                         'cashier' => 'Kasir',
                         'kitchen' => 'Dapur',
+                        'admin' => 'Admin',
                     ])
                     ->required()
                     ->default('cashier'), // Role default saat mendaftar
