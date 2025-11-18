@@ -5,7 +5,6 @@ import 'package:pos_resto_app/screens/home/cashier_home_screen.dart';
 import 'package:provider/provider.dart';
 import '../../services/auth_service.dart';
 import '../../utils/constants.dart';
-// import '../home/cashier/cashier_menu_screen.dart';
 import '../home/kitchen_home_screen.dart';
 import 'login_screen.dart';
 
@@ -29,12 +28,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
     {'label': 'Admin', 'value': 'admin'},
   ];
 
+  // 🔥 SNACKBAR FLOATING PERSEGI PANJANG
   void _showSnack(String message, {Color? color}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontSize: 16,
+          ),
+        ),
         backgroundColor: color ?? kPrimaryColor,
-        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        margin: const EdgeInsets.only(
+          left: 16,
+          right: 16,
+          bottom: 20,
+        ),
+        elevation: 6,
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -69,8 +86,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
       }
     } else {
-      _showSnack('Form tidak valid, periksa kembali input Anda',
-          color: Colors.orange);
+      _showSnack(
+        'Form tidak valid, periksa kembali input Anda',
+        color: Colors.orange,
+      );
     }
   }
 
@@ -87,8 +106,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         homeScreen = const KitchenHomeScreen();
         break;
       case 'admin':
-        _showSnack('Masuk sebagai Admin (sementara ke halaman login)');
-        homeScreen = const LoginScreen(); // nanti ganti kalau halaman admin sudah ada
+        _showSnack('Masuk sebagai Admin (sementara ke login)');
+        homeScreen = const LoginScreen();
         break;
       default:
         _showSnack('Role tidak dikenali, kembali ke Login', color: Colors.red);
@@ -258,7 +277,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: ElevatedButton(
                         onPressed:
                             authService.isLoading ? null : _submitRegister,
-                        style: ElevatedButton.styleFrom( padding: const EdgeInsets.symmetric(vertical: 18), 
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
                           backgroundColor: kPrimaryColor,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
