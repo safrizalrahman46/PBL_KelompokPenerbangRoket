@@ -1,0 +1,195 @@
+/* landing.css - extracted from landing.blade.php */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Custom Orange Palette for consistency */
+.text-orange-600 {
+    color: #ff8c00;
+}
+
+.bg-orange-100 {
+    background-color: #ffe8cc;
+}
+
+.orange-bg {
+    /* Latar belakang hero: gradien putih ke oranye pucat */
+    background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+}
+
+.orange-button {
+    background-color: #ff8c00;
+    color: white;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.orange-button:hover {
+    background-color: #ff7700;
+}
+
+.feature-card {
+    border: 2px solid #ff8c00;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: transform 0.2s;
+    background: white;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+}
+
+.testimonial-card {
+    border: 1px solid #ff8c00;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(255, 140, 0, 0.1);
+}
+
+.faq-item {
+    border: 1px solid #ddd;
+    border-radius: 0.5rem;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+}
+
+.faq-header {
+    background: #f9f9f9;
+    padding: 1rem 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.faq-content {
+    padding: 1rem 1.5rem;
+    background: #fff;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.36s ease, opacity 0.28s ease, padding 0.28s ease;
+}
+
+.faq-content.show {
+    opacity: 1;
+    /* max-height will be set inline via JS to the element's scrollHeight for smooth animation */
+}
+
+.faq-section-container {
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.testimonial-card-new {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    min-width: 320px;
+    flex-shrink: 0;
+}
+
+.scrollable-layer {
+    display: flex;
+    overflow-x: hidden;
+    padding-bottom: 0;
+    gap: 0;
+}
+
+.animated-track {
+    display: flex;
+    gap: 2rem;
+    /* Jarak antar kartu */
+    width: max-content;
+    white-space: nowrap;
+}
+
+/* Keyframes untuk Gerak ke KIRI */
+@keyframes marquee-left {
+    from {
+        transform: translateX(0%);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+/* Keyframes untuk Gerak ke KANAN */
+@keyframes marquee-right {
+    from {
+        transform: translateX(-50%);
+    }
+
+    to {
+        transform: translateX(0%);
+    }
+}
+
+/* Aplikasikan Animasi */
+.track-left {
+    animation: marquee-left 50s linear infinite;
+    /* Kecepatan 50 detik */
+}
+
+.track-right {
+    animation: marquee-right 50s linear infinite;
+    /* Kecepatan 50 detik */
+}
+/* Fade-in on scroll */
+.fade-on-scroll {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    /* stagger support: set --order on element to offset delay */
+    transition-delay: calc(var(--order, 0) * 0.08s);
+    will-change: opacity, transform;
+}
+
+.fade-on-scroll.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* helper: enforce aspect ratio for images previously set inline */
+.aspect-4-3 {
+    aspect-ratio: 4/3;
+}
+
+/* decorative arrows moved from inline styles */
+.panah-kanan {
+    transform: rotate(30deg);
+}
+
+.panah-kiri {
+    transform: rotate(-220deg) scaleX(-1);
+}
+
+/* Slide variants for directional entrance (used for the big panels) */
+.slide-left {
+    transform: translateX(-18px) translateY(20px);
+    transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+    transition-delay: calc(var(--order, 0) * 0.08s);
+}
+
+.slide-left.is-visible {
+    transform: translateX(0) translateY(0);
+}
+
+.slide-right {
+    transform: translateX(18px) translateY(20px);
+    transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+    transition-delay: calc(var(--order, 0) * 0.08s);
+}
+
+.slide-right.is-visible {
+    transform: translateX(0) translateY(0);
+}
