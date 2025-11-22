@@ -30,7 +30,7 @@ class CashierTableScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: kSecondaryColor,
+              color: Color.fromARGB(255, 0, 0, 0),
             ),
           ),
           const SizedBox(height: 16),
@@ -41,7 +41,7 @@ class CashierTableScreen extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 6,
-                  childAspectRatio: 1.1,
+                  childAspectRatio: 1,
                   crossAxisSpacing: 20,
                   mainAxisSpacing: 20,
                 ),
@@ -62,7 +62,7 @@ class CashierTableScreen extends StatelessWidget {
 
   Widget _buildTableCard(RestoTable table, BuildContext context) {
     final bool isAvailable = table.status.toLowerCase() == 'available';
-    final Color cardColor = isAvailable ? Colors.grey.shade500 : Colors.red.shade600;
+    final Color cardColor = isAvailable ? const Color.fromARGB(255, 230, 230, 230) : Colors.red.shade600;
     final Color textColor = isAvailable ? kSecondaryColor : Colors.white;
     final Color statusColor = isAvailable ? kSecondaryColor.withOpacity(0.8) : Colors.white.withOpacity(0.8);
     final String statusText = isAvailable ? 'Tersedia' : 'Terisi';
@@ -74,7 +74,7 @@ class CashierTableScreen extends StatelessWidget {
       child: Card(
         elevation: 4,
         color: cardColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -87,7 +87,7 @@ class CashierTableScreen extends StatelessWidget {
                   color: textColor,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 1),
               Text(
                 statusText,
                 style: TextStyle(
@@ -103,53 +103,146 @@ class CashierTableScreen extends StatelessWidget {
   }
 
   Future<void> _showUpdateStatusDialog(RestoTable table, BuildContext context) async {
-    final bool isAvailable = table.status.toLowerCase() == 'available';
-    final String newStatus = isAvailable ? 'occupied' : 'available';
-    final String newStatusText = isAvailable ? 'Terisi' : 'Tersedia';
+  final bool isAvailable = table.status.toLowerCase() == 'available';
+  final String newStatus = isAvailable ? 'occupied' : 'available';
+  final String newStatusText = isAvailable ? 'Terisi' : 'Tersedia';
 
-    await showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Konfirmasi Ubah Status'),
-          content: Text('Ubah status "Meja ${table.number}" menjadi "$newStatusText"?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  final updatedTable = await apiService.updateTableStatus(table.id, newStatus);
-                  
-                  await onRefresh();
-                  
-                  // PERBAIKAN: Hapus pengecekan mounted, langsung tutup dialog
-                  Navigator.of(dialogContext).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Status Meja ${table.number} berhasil diubah!'),
-                      backgroundColor: Colors.green,
+  await showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (BuildContext dialogContext) {
+      return Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        backgroundColor: kBackgroundColor,
+        child: SizedBox(
+          width: 400, // lebar dialog
+          height: 300, // tinggi dialog
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ICON BULAT
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: kSplashCircleColor,
+                ),
+                child: const Icon(
+                  Icons.info_outline,
+                  size: 40,
+                  color: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // TITLE
+              const Text(
+                'Konfirmasi',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: kPrimaryColor,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // MESSAGE
+              Text(
+                'Ubah status "Meja ${table.number}" menjadi "$newStatusText"?',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              // BUTTONS
+              Row(
+                children: [
+                  // CANCEL BUTTON
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: BorderSide(color: kPrimaryColor, width: 2),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Batal',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: kPrimaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  );
-                  
-                } catch (e) {
-                  // PERBAIKAN: Hapus pengecekan mounted, langsung tutup dialog
-                  Navigator.of(dialogContext).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Gagal update: ${e.toString()}'),
-                      backgroundColor: Colors.red,
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // CONFIRM BUTTON
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        try {
+                          await apiService.updateTableStatus(table.id, newStatus);
+                          await onRefresh();
+
+                          Navigator.of(dialogContext).pop();
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Status Meja ${table.number} berhasil diubah!'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        } catch (e) {
+                          Navigator.of(dialogContext).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Gagal update: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        backgroundColor: kPrimaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Ubah',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
-                  );
-                }
-              },
-              child: const Text('Ubah'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      )
+      );
+    },
+  );
+}
 }

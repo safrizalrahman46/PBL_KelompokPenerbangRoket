@@ -1,5 +1,3 @@
-// lib/screens/home/cashier_navigation_rail.dart
-
 import 'package:flutter/material.dart';
 import '../../utils/constants.dart';
 
@@ -37,8 +35,9 @@ class CashierNavigationRail extends StatelessWidget {
           _buildNavRailItem(Icons.list_alt, "Order", 2),
           _buildNavRailItem(Icons.table_restaurant, "Meja", 3),
           const Spacer(),
+          // Logout Icon sudah menggunakan kPrimaryColor
           IconButton(
-            icon: const Icon(Icons.logout, color: kSecondaryColor, size: 30),
+            icon: const Icon(Icons.logout, color: kPrimaryColor, size: 30),
             onPressed: onLogout,
             tooltip: 'Logout',
           ),
@@ -49,6 +48,11 @@ class CashierNavigationRail extends StatelessWidget {
 
   Widget _buildNavRailItem(IconData icon, String label, int index) {
     final bool isSelected = selectedIndex == index;
+    // Logika warna:
+    // Jika terpilih (isSelected=true) -> Putih (kBackgroundColor)
+    // Jika TIDAK terpilih (isSelected=false) -> Oranye (kPrimaryColor)
+    final Color itemColor = isSelected ? kBackgroundColor : kPrimaryColor;
+    
     return GestureDetector(
       onTap: () => onIndexChanged(index),
       child: Container(
@@ -56,7 +60,7 @@ class CashierNavigationRail extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         width: 80,
         decoration: BoxDecoration(
-          color: isSelected ? kPrimaryColor : Colors.transparent,
+          color: isSelected ? kPrimaryColor : Colors.transparent, // Latar belakang tetap seperti ini
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -64,13 +68,13 @@ class CashierNavigationRail extends StatelessWidget {
             Icon(
               icon,
               size: 30,
-              color: isSelected ? kBackgroundColor : kSecondaryColor,
+              color: itemColor, // Menggunakan warna baru (Oranye jika unselected)
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? kBackgroundColor : kSecondaryColor,
+                color: itemColor, // Menggunakan warna baru (Oranye jika unselected)
                 fontWeight: FontWeight.bold,
               ),
             ),

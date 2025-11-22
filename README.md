@@ -1,146 +1,118 @@
-# PBL: Ekosistem POS Kelompok Penerbang Roket
+# PBL: Ekosistem POS Kelompok 3 Atau Biasa Disebut (Kelompok Penerbang Roket)
 
-# 🚀 Tim Kami
-* Ahmad Hayyin Baihaqi (Manajemen Proyek)
-* M Nazril Nur Rahman (flutter IOS version)
-* M Faruq Burhanuddin (UI UX, Flutter Slicing)
-* Safrizal Rahman (Web Backend, Flutter Android version, Project Manager)
+<p align="center">
+  <img src="https://img.shields.io/badge/Tech-Laravel-FF2D20?style=for-the-badge&logo=laravel" alt="Laravel">
+  <img src="https://img.shields.io/badge/Tech-Filament-FF842A?style=for-the-badge" alt="Filament">
+  <img src="https://img.shields.io/badge/Tech-Flutter-02569B?style=for-the-badge&logo=flutter" alt="Flutter">
+  <img src="https://img.shields.io/badge/Tech-React-61DAFB?style=for-the-badge&logo=react" alt="React">
+</p>
 
-## Video Web Progress
+## 🚀 Tim Kami
+* **Ahmad Hayyin Baihaqi** (Manajemen Proyek)
+* **M Nazril Nur Rahman** (flutter IOS version)
+* **M Faruq Burhanuddin** (UI UX, Flutter Slicing)
+* **Safrizal Rahman** (Web Backend, Flutter Android version, Project Manager)
 
-## Video APPS Progress
-.
-├─ lib/
-│  ├─ main.dart              # App entrypoint
-│  ├─ src/                   # (recommended) your app modules
-│  │  ├─ features/
-│  │  ├─ common/
-│  │  └─ core/
-├─ test/                     # Unit & widget tests
-├─ android/ ios/ macos/      # Native platform configs
-├─ linux/ windows/ web/      # Desktop & web targets
-├─ pubspec.yaml              # Dependencies & assets
-└─ analysis_options.yaml     # Lints & static analysis
+---
 
+# 📸  Progress Tim
+
+# 📱 Flutter POS Apps Progress Running With IPAD Ios Gen 10
+
+## 📱 Kitchen Login On IOS IPAD
+https://github.com/user-attachments/assets/f009fd6f-0dc9-472c-bcaf-ff5886576a72
+
+## 📱 Kasir Login On IOS IPAD
+https://github.com/user-attachments/assets/c302f682-6e54-4ab0-ba32-53892d86d221
+
+---
+
+## 🔧 Laravel Web Backend Progress
+[![Watch the video](https://img.youtube.com/vi/Zz_vo05khe0/maxresdefault.jpg)](https://youtu.be/Zz_vo05khe0)
+*(klik gambar untuk membuka video)*
+
+---
+
+## 📱 Flutter POS Apps Progress Running With Chrome
+[![Watch the video](https://img.youtube.com/vi/rhiaAwGf0dw/maxresdefault.jpg)](https://youtu.be/rhiaAwGf0dw)
+*(klik gambar untuk membuka video)*
+
+---
 
 ## Dokumentasi untuk WBS (Work Breakdown system), Pengajuan IDE
 
 <img width="1600" height="1200" alt="Image" src="https://github.com/user-attachments/assets/05f64f9b-5727-4b2b-8b95-d559ca617515" />
 
+---
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Tech-Laravel-FF2D20?style=for-the-badge&logo=laravel" alt="Laravel">
-  <img src="https://img.shields.io/badge/Tech-Filament-FF842A?style=for-the-badge" alt="Filament">
-  <img src="https://img.shields.io/badge/Tech-Flutter-02569B?style=for-the-badge&logo=flutter" alt="Flutter">
-  <img src="https://img.shields.io/badge/Tech-React-61DAFB?style=for-the-badge&logo=react" alt="React">
-</p>
-
-## Proyek POS Restoran "Eat.o"
-
-Sebuah ekosistem Point of Sale (POS) modern yang dirancang untuk restoran, dibangun dengan arsitektur headless yang memisahkan backend API dan frontend aplikasi klien. Proyek ini menyediakan solusi lengkap mulai dari aplikasi kasir tablet, layar monitor dapur, hingga panel admin yang komprehensif.
-
-### 🚀 Teknologi yang Digunakan
-
-Arsitektur proyek ini terbagi menjadi dua bagian utama:
-
-#### 1. Backend (Server-Side)
-
-Framework: Laravel 11+
-
-Admin Panel: Filament 3
-
-Fungsi: Berfungsi sebagai headless API yang menangani semua logika bisnis, otentikasi, dan manajemen data.
-
-Database (Tersirat): MySQL/PostgreSQL
-
-#### 2. Frontend (Client-Side)
-
-Framework: Flutter
-
-Target Platform: Web (Chrome) / Tablet, dioptimalkan untuk Mode Landscape.
-
-State Management: Provider (ChangeNotifier)
-
-AuthService: Mengelola status login dan data pengguna.
-
-CartProvider: Mengelola keranjang belanja kasir.
-
-## ✨ Fitur Utama
-
-Proyek ini memiliki alur kerja yang jelas berdasarkan peran pengguna.
-
-Otentikasi & Peran
-
-Registrasi Kustom: Pengguna mendaftar melalui endpoint API Filament (/admin/register) [cite: Register.php]
-
-Login API: Otentikasi token (Sanctum) melalui endpoint /api/v1/login [cite: api.php].
-
-Berbasis Peran: Aplikasi memiliki dua peran utama: cashier (Kasir) dan kitchen (Dapur) [cite: UserResource.php].
-
-### 1. Aplikasi Kasir (Role: cashier)
-
-Antarmuka utama untuk kasir, dirancang sebagai dasbor 3-kolom [cite: iPad Pro 12.9_ - 4.jpg]:
-
-Navigasi: Sidebar kiri untuk berpindah halaman (Menu, Transaksi, Order, Meja).
-
-Kolom Menu: Menampilkan semua menu dalam format grid.
-
-Filter Kategori: Menu dapat difilter secara real-time berdasarkan kategori (Makanan, Minuman, dll) [cite: image_3662e1.jpg].
-
-Kolom Keranjang/Pembayaran:
-
-Kasir dapat menambah/mengurangi/menghapus item dari keranjang (CartProvider).
-
-Saat "Lanjutkan Transaksi", UI berubah menjadi Mode Pembayaran [cite: iPad Pro 12.9_ - 11.png].
-
-Kasir dapat memilih Meja, Metode Pembayaran (Cash, QRIS, Debit), dan memasukkan Nama Pelanggan.
-
-Menekan "Bayar Sekarang" akan mengirim pesanan ke backend.
-
-Manajemen Meja:
-
-Menampilkan status semua meja (Tersedia / Terisi) dalam format grid [cite: halaman meja.png].
-
-Status meja diperbarui secara real-time via auto-refresh timer.
-
-Kasir dapat secara manual mengubah status meja dengan menekannya.
-
-Daftar Order Aktif:
-
-Menampilkan daftar semua pesanan yang sedang berjalan (pending, preparing, ready) [cite: image_158569.png].
-
-Status pesanan diperbarui secara real-time via auto-refresh timer.
-
-#### 2. Aplikasi Dapur (Role: kitchen)
-
-UI Kanban: Layar Dapur menampilkan dua kolom: "Pesanan Baru" (pending) dan "Sedang Disiapkan" (preparing) [cite: kitchen_home_screen.dart].
-
-Auto-Refresh: Layar otomatis me-refresh setiap 30 detik untuk menarik pesanan baru dari kasir.
-
-Update Status: Koki dapat menekan tombol "Mulai Siapkan" (mengubah status ke preparing) atau "Selesai" (mengubah status ke completed).
-
-#### 3. Logika Bisnis (Backend)
-
-Manajemen Stok Real-time: Endpoint API (dan panel Filament [cite: CreateOrder.php]) secara otomatis mengecek dan mengurangi stok menu setiap kali pesanan baru dibuat.
-
-Pelepasan Meja Otomatis: Saat Dapur menekan "Selesai" (status completed), backend secara otomatis dipanggil untuk mengubah status meja terkait menjadi available [cite: kitchen_home_screen.dart].
-
-Pelacakan Pemasukan: Dasbor admin Filament [cite: PosStatsOverview.php] secara cerdas hanya menghitung pemasukan dari pesanan yang statusnya sudah paid.
-
-Riwayat Transaksi: Backend memiliki resource Transaction [cite: TransactionResource.php] yang berfungsi sebagai log "Hanya-Baca" [cite: ListTransactions.php], kemungkinan besar dibuat secara otomatis saat pesanan dibayar.
-
+## 🍽️ Proyek POS Restoran "Eat.o"
+Sebuah ekosistem Point of Sale (POS) modern untuk restoran, dibangun dengan arsitektur **headless** yang memisahkan backend API dan aplikasi frontend. Proyek ini menyediakan solusi lengkap untuk **kasir**, **dapur**, serta **panel admin** yang komprehensif.
 
 ---
 
-## 📚 Daftar Isi
+## 🚀 Teknologi yang Digunakan
 
-* [Arsitektur Sistem](#🏛️-arsitektur-sistem)
-* [Fitur Utama](#✨-fitur-utama)
-* [Galeri / Tampilan](#📸-galeri--tampilan)
-* [Tumpukan Teknologi](#💻-tumpukan-teknologi)
-* [Panduan Instalasi](#🛠️-instalasi--menjalankan-proyek)
-* [Struktur Direktori](#🌳-struktur-direktori)
-* [Lisensi](#📜-lisensi)
+Proyek ini terbagi menjadi dua bagian utama:
+
+### 1. Backend (Server-Side)
+* **Framework:** Laravel 11+
+* **Admin Panel:** Filament 3
+* **Fungsi:** Headless API — menangani logika bisnis, otentikasi, dan manajemen data
+* **Database:** MySQL / PostgreSQL
+* **Autentikasi:** Laravel Sanctum
+
+### 2. Frontend (Client-Side)
+* **Framework:** Flutter
+* **Target Platform:** Web (Chrome) & Tablet (Landscape Mode)
+* **State Management:** Provider (ChangeNotifier)
+* **Providers Utama:**
+    * `AuthService` – mengelola status login & data user
+    * `CartProvider` – mengelola item keranjang kasir
+
+---
+
+## 🔐 Otentikasi & Role
+
+* **Registrasi**: Endpoint custom Filament → `/admin/register`
+* **Login API**: Token-based (Sanctum) → `/api/v1/login`
+* **Role User**:
+    * `cashier` (Kasir)
+    * `kitchen` (Dapur)
+
+---
+
+## 🧾 1. Aplikasi Kasir (Role: cashier)
+
+Antarmuka kasir dirancang dengan layout **3 kolom**, responsif dan mudah digunakan.
+
+### Fitur Utama Kasir
+* **Navigasi Samping:** Sidebar berisi menu (Menu, Transaksi, Order, Meja).
+* **Kolom Menu:** Menampilkan daftar menu dalam bentuk grid dengan dukungan **filter kategori**.
+* **Kolom Keranjang & Pembayaran:**
+    * Tambah/kurangi/hapus item dari keranjang.
+    * Input: Pilih Meja, Metode Pembayaran (Cash / QRIS / Debit), Nama Pelanggan.
+* **Manajemen Meja:** Menampilkan status meja (Tersedia / Terisi) dengan auto-refresh.
+* **Daftar Order Aktif:** Menampilkan semua pesanan dengan status `pending`, `preparing`, `ready`.
+
+---
+
+## 🍳 2. Aplikasi Dapur (Role: kitchen)
+
+Aplikasi dapur dirancang seperti **Kanban Board** yang sederhana dan cepat diakses.
+
+### Fitur Utama Dapur
+* **Kolom Pesanan:** Kolom "Pesanan Baru" (`pending`) dan "Sedang Disiapkan" (`preparing`).
+* **Sistem Auto-Refresh:** Menarik pesanan baru setiap 30 detik.
+* **Update Status Pesanan:** Tombol untuk "Mulai Siapkan" (`preparing`) dan "Selesai" (`completed`).
+
+---
+
+## 🧠 3. Logika Bisnis Backend
+
+* **Manajemen Stok Real-time:** Ketika kasir membuat pesanan baru → stok berkurang otomatis.
+* **Pelepasan Meja Otomatis:** Jika dapur menekan **Selesai**, backend otomatis mengubah status meja menjadi **available**.
+* **Pelacakan Pemasukan:** Dasbor Filament hanya menghitung pesanan dengan status **paid**.
+* **Riwayat Transaksi:** Tersedia resource **Transaction** sebagai log historis *read-only*.
 
 ---
 
@@ -160,87 +132,27 @@ Proyek ini adalah **monorepo** yang mengintegrasikan tiga aplikasi utama untuk m
     * **Teknologi:** React
     * **Tujuan:** Situs web yang menghadap pelanggan. Berfungsi sebagai *landing page*, sarana promosi, dan tempat bagi pelanggan baru untuk mendaftar atau mengelola langganan mereka.
 
-
-
 ---
 
 ## 🌳 Struktur Direktori
 
 1.  **`backend` (API & Admin Panel)**
 
-#### backend/
-
-backend/
-├── app/
-│   ├── Filament/                     # Logika untuk Admin Panel
-│   │   ├── Resources/                # CRUD Pages: Menu, Order, User
-│   │   └── Widgets/                  # Dashboard Widgets: Charts, Stats
-│   ├── Http/
-│   │   └── Controllers/
-│   │       ├── Api/
-│   │       │   └── V1/               # REST API untuk Flutter / React
-│   │       │       ├── AuthController.php
-│   │       │       ├── CategoryController.php
-│   │       │       ├── MenuController.php
-│   │       │       └── OrderController.php
-│   │       └── Controller.php
-│   ├── Models/                       # Model Eloquent: User, Order, Menu
-│   └── Providers/
-│       └── Filament/
-│           └── AdminPanelProvider.php # Konfigurasi Filament Admin Panel
-│
-├── config/                           # File konfigurasi aplikasi
-├── database/
-│   ├── migrations/                   # Struktur tabel database
-│   └── seeders/                      # Data awal (dummy / default)
-│
-├── routes/
-│   ├── api.php                       # Definisi rute API (/api/v1)
-│   └── web.php                       # Definisi rute Web (/admin)
-│
-├── storage/                          # File upload dan cache Laravel
-├── tests/                            # Unit dan feature tests
-└── composer.json                     # Dependensi backend (Laravel)
-
+    #### backend/
+    <img width="445" height="544" alt="Image" src="https://github.com/user-attachments/assets/9ba2f352-de19-491e-ab57-aaeb4c93d159" />
 
 2.  **`mobile` (Aplikasi Kasir / POS)**
 
-#### backend/
-
-mobile/
-├── lib/
-│   ├── main.dart                     # Titik awal aplikasi Flutter
-│   ├── models/                       # Model data (Menu, Order, User)
-│   ├── providers/                    # State management (Provider / Bloc)
-│   ├── screens/                      # Halaman UI (Login, Home, POS)
-│   ├── services/                     # Logika bisnis & pemanggilan API
-│   └── widgets/                      # Komponen UI kustom (Button, Card)
-│
-├── assets/                           # Gambar, ikon, font, dsb.
-├── pubspec.yaml                      # Daftar dependensi Flutter
-└── analysis_options.yaml             # Aturan linting & analisis kode
-
+    #### mobile/
+    <img width="431" height="217" alt="Image" src="https://github.com/user-attachments/assets/fb1779df-6eb7-4f15-9b57-b27dd47f9caf" />
 
 3.  **`web` (Web Promosi & Langganan)**
 
-web/
-├── public/                           # File publik (index.html, favicon)
-├── src/
-│   ├── assets/                       # Gambar, ikon, dan font
-│   ├── components/                   # Komponen UI (Button, Navbar, Card)
-│   ├── pages/                        # Halaman (Home, Register, Pricing)
-│   ├── services/                     # Pemanggilan API (Axios)
-│   ├── App.js                        # Entry utama React
-│   └── index.js                      # Inisialisasi aplikasi React
-│
-├── package.json                      # Dependensi Node.js / React
-└── vite.config.js                    # Konfigurasi build (jika pakai Vite)
-
-
+    <img width="472" height="233" alt="Image" src="https://github.com/user-attachments/assets/7947362c-8cd1-41fd-9643-a5175777ed60" />
 
 ---
 
-## ✨ Fitur Utama
+## ✨ Fitur Utama Detail
 
 ### 👨‍💼 Panel Admin (Filament)
 * **Dashboard Statistik:** Grafik penjualan interaktif, ringkasan status, dan widget data (`PosSalesChart`, `AdvancedStatsOverviewWidget`).
@@ -305,17 +217,8 @@ Berikut adalah daftar teknologi utama yang digunakan dalam proyek ini:
 
 ---
 
-## 🛠️ Instalasi & Menjalankan Proyek
+## 🛠️ Instalasi Backend
 
-### Prasyarat
-* PHP 8.1+ & Composer
-* Node.js 16+ & NPM
-* Flutter SDK
-* Server Database (misal: MySQL)
-
----
-
-### 1. Backend (`backend/`)
 ```bash
 # Masuk ke direktori backend
 cd backend
@@ -339,8 +242,3 @@ php artisan make:filament-user
 
 # Jalankan server
 php artisan serve
-
----## 📸 Jobdesk/ Progres Tim
-
-
-

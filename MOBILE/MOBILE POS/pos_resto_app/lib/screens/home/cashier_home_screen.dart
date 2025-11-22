@@ -35,7 +35,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
   List<Category> _categories = [];
   List<RestoTable> _tables = [];
   List<Order> _orders = [];
-  List<Transaction> _transactions = [];
+  // List<Transaction> _transactions = [];
 
   int _selectedNavIndex = 0;
 
@@ -67,7 +67,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
         _categories = results[1] as List<Category>;
         _tables = results[2] as List<RestoTable>;
         _orders = results[3] as List<Order>;
-        _transactions = results[4] as List<Transaction>;
+        // _transactions = results[4] as List<Transaction>;
       });
     } catch (e) {
       if (mounted) {
@@ -348,11 +348,12 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
       children: [
         SizedBox(
           width: double.infinity,
-          height: 56,
+          height: 60,
           child: ElevatedButton(
             onPressed: cart.items.isEmpty ? null : () => _showPaymentScreen(cart),
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimaryColor,
+              padding: const EdgeInsets.symmetric(vertical: 14), 
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -369,7 +370,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
-          height: 56,
+          height: 60,
           child: TextButton(
             onPressed: () {
               cart.clearCart();

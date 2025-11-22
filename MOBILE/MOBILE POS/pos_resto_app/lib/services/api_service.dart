@@ -26,12 +26,11 @@ class ApiService {
   // API untuk KASIR - Menu
   Future<List<Menu>> fetchMenus() async {
     try {
-      // Rute publik, tidak perlu header
       final response = await http.get(Uri.parse('$API_URL/menu'));
       if (response.statusCode == 200) {
         return menuFromJson(response.body);
       } else {
-        throw Exception('Gagal memuat menu');
+        throw Exception('Gagal memuat menu: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Error koneksi: $e');
@@ -41,12 +40,11 @@ class ApiService {
   // API untuk KASIR - Kategori
   Future<List<Category>> fetchCategories() async {
     try {
-      // Rute publik, tidak perlu header
       final response = await http.get(Uri.parse('$API_URL/categories'));
       if (response.statusCode == 200) {
         return categoryFromJson(response.body);
       } else {
-        throw Exception('Gagal memuat kategori');
+        throw Exception('Gagal memuat kategori: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Error koneksi: $e');
@@ -56,37 +54,67 @@ class ApiService {
   // API untuk KASIR - Meja
   Future<List<RestoTable>> fetchTables() async {
     try {
-      // Rute publik, tidak perlu header
-      final response =
-          await http.get(Uri.parse('$API_URL/tables'));
+      final response = await http.get(Uri.parse('$API_URL/tables'));
       if (response.statusCode == 200) {
         return restoTableFromJson(response.body);
       } else {
-        throw Exception('Gagal memuat meja');
+        throw Exception('Gagal memuat meja: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Error koneksi: $e');
     }
   }
 
-  // API untuk KASIR & DAPUR
-  Future<List<Order>> fetchOrders(String statusQuery) async {
+  // API untuk KASIR & DAPUR - SEMUA ORDERS (HAPUS DUPLIKASI)
+  Future<List<Order>> fetchOrders([String statusQuery = '']) async {
     try {
-      // Rute publik, tidak perlu header
+      final url = '$API_URL/orders${statusQuery.isNotEmpty ? '?$statusQuery' : ''}';
+      print('🔄 Fetching orders from: $url');
+      
       final response = await http.get(
-        Uri.parse('$API_URL/orders?$statusQuery'),
+        Uri.parse(url),
+        headers: await _getHeaders(),
       );
+      
       if (response.statusCode == 200) {
-        return orderFromJson(response.body);
+        final orders = orderFromJson(response.body);
+        print('✅ Orders loaded: ${orders.length}');
+        return orders;
       } else {
-        throw Exception('Gagal memuat pesanan');
+        print('❌ API Error: ${response.statusCode}');
+        throw Exception('Gagal memuat pesanan: ${response.statusCode}');
       }
     } catch (e) {
+      print('❌ Network Error: $e');
       throw Exception('Error koneksi: $e');
     }
   }
 
-  // API untuk DAPUR & KASIR
+  // API UNTUK ACTIVE ORDERS (TAMBAHKAN HEADER)
+  Future<List<Order>> fetchActiveOrders() async {
+    try {
+      print('🔄 Fetching ACTIVE orders');
+      
+      final response = await http.get(
+        Uri.parse('$API_URL/orders/active'),
+        headers: await _getHeaders(), // PASTIKAN PAKAI HEADER YANG SAMA
+      );
+      
+      if (response.statusCode == 200) {
+        final orders = orderFromJson(response.body);
+        print('✅ Active orders loaded: ${orders.length}');
+        return orders;
+      } else {
+        print('❌ API Error: ${response.statusCode}');
+        throw Exception('Gagal memuat pesanan aktif: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Network Error: $e');
+      throw Exception('Error koneksi: $e');
+    }
+  }
+
+  // API untuk DAPUR & KASIR - Update Status Order
   Future<void> updateOrderStatus(int orderId, String newStatus) async {
     try {
       final headers = await _getHeaders();
@@ -95,16 +123,18 @@ class ApiService {
         headers: headers,
         body: json.encode({'status': newStatus}),
       );
+      
       if (response.statusCode != 200) {
-        throw Exception('Gagal update status');
+        throw Exception('Gagal update status: ${response.statusCode}');
       }
+      
+      print('✅ Order $orderId updated to: $newStatus');
     } catch (e) {
-      throw Exception('Error koneksi: $e');
+      throw Exception('Error update status: $e');
     }
   }
 
-  // --- PERBAIKAN ERROR 'void' ---
-  // API untuk KASIR (Membuat Pesanan)
+  // API untuk KASIR - Membuat Pesanan
   Future<Order> createOrder(Map<String, dynamic> orderData) async {
     try {
       final headers = await _getHeaders();
@@ -115,37 +145,37 @@ class ApiService {
       );
 
       if (response.statusCode == 201) {
-        // SUKSES: Kembalikan data Order lengkap dari respons backend
+        print('✅ Order created successfully');
         return Order.fromJson(json.decode(response.body));
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Gagal membuat pesanan');
+        throw Exception(error['message'] ?? 'Gagal membuat pesanan: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception(e.toString());
+      throw Exception('Error create order: $e');
     }
   }
 
-  // --- PERBAIKAN ERROR 'createTransaction' (FUNGSI BARU) ---
+  // API untuk KASIR - Membuat Transaksi
   Future<void> createTransaction(Map<String, dynamic> transactionData) async {
     try {
       final headers = await _getHeaders();
       final response = await http.post(
-        Uri.parse('$API_URL/transactions'), // Panggil API Transaction
+        Uri.parse('$API_URL/transactions'),
         headers: headers,
         body: json.encode(transactionData),
       );
 
       if (response.statusCode != 201) {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Gagal membuat transaksi');
+        throw Exception(error['message'] ?? 'Gagal membuat transaksi: ${response.statusCode}');
       }
-      // Sukses, tidak perlu mengembalikan apa-apa
+      
+      print('✅ Transaction created successfully');
     } catch (e) {
-      throw Exception(e.toString());
+      throw Exception('Error create transaction: $e');
     }
   }
-  // --------------------------------------------------------
 
   // API untuk AUTENTIKASI - Login
   Future<User> login(String email, String password) async {
@@ -164,16 +194,16 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        // Backend Anda mengirim 'access_token', bukan 'token'
         final token = data['access_token'] ?? data['token'];
         await _storage.write(key: 'token', value: token); 
+        print('✅ Login successful');
         return User.fromJson(data['user']);
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Email atau password salah');
+        throw Exception(error['message'] ?? 'Email atau password salah: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error koneksi: $e');
+      throw Exception('Error login: $e');
     }
   }
 
@@ -185,11 +215,12 @@ class ApiService {
         Uri.parse('$API_URL/logout'),
         headers: headers,
       );
+      print('✅ Logout successful');
     } catch (e) {
-      print('Error saat logout dari server: $e');
+      print('⚠️ Error saat logout dari server: $e');
     } finally {
       await _storage.delete(key: 'token');
-      await _storage.delete(key: 'user'); // Hapus user juga
+      await _storage.delete(key: 'user');
     }
   }
 
@@ -211,17 +242,18 @@ class ApiService {
         }),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) { // Handle 201 dan 200
+      if (response.statusCode == 201 || response.statusCode == 200) {
         final data = json.decode(response.body);
         final token = data['access_token'] ?? data['token'];
         await _storage.write(key: 'token', value: token);
+        print('✅ Registration successful');
         return User.fromJson(data['user']);
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Gagal mendaftar');
+        throw Exception(error['message'] ?? 'Gagal mendaftar: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error koneksi: $e');
+      throw Exception('Error register: $e');
     }
   }
 
@@ -238,13 +270,14 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
+        print('✅ Table $tableId updated to: $newStatus');
         return RestoTable.fromJson(json.decode(response.body));
       } else {
         final error = json.decode(response.body);
-        throw Exception(error['message'] ?? 'Gagal update status meja');
+        throw Exception(error['message'] ?? 'Gagal update status meja: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error koneksi: $e');
+      throw Exception('Error update table: $e');
     }
   }
 }

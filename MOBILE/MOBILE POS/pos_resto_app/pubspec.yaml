@@ -34,6 +34,8 @@ dependencies:
   http: ^1.2.1
   # Untuk State Management (Auth & Keranjang)
   provider: ^6.1.2
+  # untuk animasi popup
+  confetti: ^0.7.0
   # Untuk menyimpan Token API
   flutter_secure_storage: ^9.2.2
   # Untuk format mata uang (Rp) dan Tanggal
