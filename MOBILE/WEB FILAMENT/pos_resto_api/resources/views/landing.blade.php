@@ -182,7 +182,7 @@
         </div>
     </section>
 
-    ---
+---
     <section id="fitur-integrasi" class="py-16 md:py-24 bg-white">
         <div class="max-w-7xl mx-auto px-4">
             <div class="text-center mb-12">
@@ -193,21 +193,21 @@
                 </p>
             </div>
 
-            <div class="relative max-w-6xl mx-auto mt-16 min-h-[600px] flex items-center justify-center">
+            <div class="relative max-w-6xl mx-auto mt-8 min-h-[450px] flex items-center justify-center">
 
                 <div class="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
 
-                    <div class="absolute top-[3%] right-[20%] w-[14%] h-auto">
+                    <div class="absolute top-[10%] right-[-10%] w-[14%] h-auto">
                         <img src="/images/panahkanan.png" alt="Panah dari Kasir ke Dapur" class="w-full h-auto object-contain">
                     </div>
 
-                    <div class="absolute top-[10%] left-[20%] w-[14%] h-auto">
+                    <div class="absolute bottom-[-10%] left-[-5%] w-[14%] h-auto"> 
                         <img src="/images/panahkiri.png" alt="Panah dari Dapur ke Kasir" class="w-full h-auto object-contain">
                     </div>
 
                 </div>
 
-                <div class="absolute left-0 top-[60%] transform -translate-y-1/2 w-[45%] z-20">
+                <div class="absolute left-0 top-[55%] transform -translate-y-1/2 w-[45%] z-20">
                     <div class="relative">
                         <div class="relative rounded-[1.5rem] shadow-2xl overflow-hidden bg-white">
                             <img src="/images/dapur.png" alt="Tampilan Dapur (Kitchen Display System) Eat.o" class="w-full h-auto object-cover block" style="aspect-ratio: 4/3;">
@@ -218,13 +218,13 @@
                     </div>
                 </div>
 
-                <div class="absolute right-0 top-[60%] transform -translate-y-1/2 w-[45%] z-20 mt-10">
+                <div class="absolute right-0 top-[55%] transform -translate-y-1/2 w-[45%] z-20"> 
                     <div class="relative">
+                        <div class="text-center mb-4">
+                            <span class="text-xl font-bold">Tampilan Kasir (POS)</span>
+                        </div>
                         <div class="relative rounded-[1.5rem] shadow-2xl overflow-hidden bg-white">
                             <img src="/images/kasir.png" alt="Tampilan Kasir (Point of Sale) Eat.o" class="w-full h-auto object-cover block" style="aspect-ratio: 4/3;">
-                        </div>
-                        <div class="text-center mt-4">
-                            <span class="text-xl font-bold">Tampilan Kasir (POS)</span>
                         </div>
                     </div>
                 </div>
