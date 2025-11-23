@@ -7,6 +7,11 @@
     <title>Eat.o | Solusi POS Restoran Modern</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ asset('css/landing.css') }}">
+
+       <!-- Favicon -->
+    <!-- Favicon -->
+<link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
+
 </head>
 
 <body class="bg-white text-gray-800">
