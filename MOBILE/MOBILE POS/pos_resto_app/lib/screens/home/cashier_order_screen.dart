@@ -58,7 +58,20 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filteredOrders = _filterOrders(widget.orders);
+    // -----------------------------------------------------------
+    // 🔥 MODIFIKASI: SORTING LOGIC (TERBARU DI ATAS)
+    // -----------------------------------------------------------
+    
+    // 1. Buat salinan list agar aman
+    List<Order> sortedOrders = List.from(widget.orders);
+
+    // 2. Urutkan berdasarkan created_at secara Descending (Terbaru -> Terlama)
+    // Logika: b.compareTo(a)
+    sortedOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    // 3. Masukkan list yang SUDAH DIURUTKAN ke dalam filter
+    final filteredOrders = _filterOrders(sortedOrders);
+    // -----------------------------------------------------------
 
     return Container(
       color: kBackgroundColor,
@@ -576,231 +589,233 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
   }
 
   void _showReadyOrderPopup(Order order) {
-  showDialog(
-    context: context,
-    builder: (dialogContext) {
-      return Dialog(
-        backgroundColor: const Color(0xFF2D2D2D),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: 380,   // ❗ BATAS LEBAR POPUP
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: const Color(0xFF2D2D2D),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: Container(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // HEADER
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: kPrimaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.restaurant_menu,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text(
-                        "Konfirmasi Pesanan Siap",
-                        style: TextStyle(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 380, // ❗ BATAS LEBAR POPUP
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // HEADER
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          color: kPrimaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.restaurant_menu,
                           color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                Text(
-                  'Pesanan untuk Meja #${order.restoTable?.number ?? '??'} sudah siap?',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 16,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                if (order.customerName != null)
-                  Text(
-                    'Atas nama: ${order.customerName!}',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 14,
-                    ),
-                  ),
-
-                const SizedBox(height: 18),
-
-                // DETAIL SUMMARY
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Total Items:',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                            ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          "Konfirmasi Pesanan Siap",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
                           ),
-                          Text(
-                            '${order.orderItems.length} items',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Total Harga:',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                            ),
-                          ),
-                          Text(
-                            'Rp ${order.totalPrice.toStringAsFixed(0)}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
-                ),
 
-                const SizedBox(height: 18),
+                  const SizedBox(height: 16),
 
-                // BUTTONS
-                Row(
-                  children: [
-                    // CANCEL
-                    Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(color: Colors.grey),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () => Navigator.pop(dialogContext),
-                        child: const Text('Batal'),
+                  Text(
+                    'Pesanan untuk Meja #${order.restoTable?.number ?? '??'} sudah siap?',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.8),
+                      fontSize: 16,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  if (order.customerName != null)
+                    Text(
+                      'Atas nama: ${order.customerName!}',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
                       ),
                     ),
 
-                    const SizedBox(width: 14),
+                  const SizedBox(height: 18),
 
-                    // CALL CUSTOMER
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () {
-                          String customer = order.customerName ?? 'Pelanggan';
-                          String table = order.restoTable?.number ?? '';
-
-                          _speak(
-                            'Atas nama $customer, di Meja $table, pesanan anda sudah siap.',
-                          );
-                          Navigator.pop(dialogContext);
-
-                          _showSnack(
-                            'Memanggil pelanggan Meja #$table',
-                            color: Colors.blueAccent,
-                          );
-                        },
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                  // DETAIL SUMMARY
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(Icons.volume_up, size: 18, color: Colors.white),
-                            SizedBox(width: 8),
                             Text(
-                              'Panggil',
+                              'Total Items:',
                               style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                              ),
+                            ),
+                            Text(
+                              '${order.orderItems.length} items',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
 
-                    const SizedBox(width: 14),
+                        const SizedBox(height: 4),
 
-                    // SELESAI
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        onPressed: () {
-                          Navigator.pop(dialogContext);
-                          _updateOrderStatus(order.id, 'completed');
-                        },
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(Icons.check_circle, size: 18, color: Colors.white),
-                            SizedBox(width: 6),
                             Text(
-                              'Selesai',
+                              'Total Harga:',
                               style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                              ),
+                            ),
+                            Text(
+                              'Rp ${order.totalPrice.toStringAsFixed(0)}',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // BUTTONS
+                  Row(
+                    children: [
+                      // CANCEL
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.grey),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: const Text('Batal'),
+                        ),
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      // CALL CUSTOMER
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          onPressed: () {
+                            String customer = order.customerName ?? 'Pelanggan';
+                            String table = order.restoTable?.number ?? '';
+
+                            _speak(
+                              'Atas nama $customer, di Meja $table, pesanan anda sudah siap.',
+                            );
+                            Navigator.pop(dialogContext);
+
+                            _showSnack(
+                              'Memanggil pelanggan Meja #$table',
+                              color: Colors.blueAccent,
+                            );
+                          },
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.volume_up,
+                                  size: 18, color: Colors.white),
+                              SizedBox(width: 8),
+                              Text(
+                                'Panggil',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      // SELESAI
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kPrimaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(dialogContext);
+                            _updateOrderStatus(order.id, 'completed');
+                          },
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.check_circle,
+                                  size: 18, color: Colors.white),
+                              SizedBox(width: 6),
+                              Text(
+                                'Selesai',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 }
