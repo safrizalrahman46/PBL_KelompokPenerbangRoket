@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import '../../models/order_model.dart';
 import '../../utils/constants.dart';
 
-class CashierTransactionScreen extends StatelessWidget {
+// UBAH KE STATEFUL WIDGET
+class CashierTransactionScreen extends StatefulWidget {
   final List<Order> orders;
 
   const CashierTransactionScreen({
@@ -13,28 +14,137 @@ class CashierTransactionScreen extends StatelessWidget {
   });
 
   @override
+  State<CashierTransactionScreen> createState() => _CashierTransactionScreenState();
+}
+
+class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
+  // Variabel untuk menyimpan tanggal yang dipilih (bisa null)
+  DateTime? _selectedDate;
+
+  // Fungsi untuk memilih tanggal
+  Future<void> _pickDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        // Kustomisasi tema date picker agar cocok dengan dark theme
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: kPrimaryColor, // Warna header/tombol
+              onPrimary: Colors.white,
+              surface: Color(0xFF2D2D2D), // Warna background kalender
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  // Fungsi untuk mereset filter
+  void _resetFilter() {
+    setState(() {
+      _selectedDate = null;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // 1. FILTER DATA
+    List<Order> filteredList = widget.orders;
+    
+    if (_selectedDate != null) {
+      filteredList = widget.orders.where((order) {
+        return order.createdAt.year == _selectedDate!.year &&
+               order.createdAt.month == _selectedDate!.month &&
+               order.createdAt.day == _selectedDate!.day;
+      }).toList();
+    }
+
+    // 2. BALIK URUTAN (Agar yang terbaru di atas)
+    final displayOrders = filteredList.reversed.toList();
+
     return Container(
       color: kBackgroundColor,
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Detail Transaksi",
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: kSecondaryColor,
-            ),
+          // HEADER ROW (JUDUL & FILTER)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "Detail Transaksi",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: kSecondaryColor,
+                ),
+              ),
+              
+              // TOMBOL FILTER
+              Row(
+                children: [
+                  if (_selectedDate != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: TextButton.icon(
+                        onPressed: _resetFilter,
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        label: const Text(
+                          "Reset", 
+                          style: TextStyle(color: Colors.red)
+                        ),
+                      ),
+                    ),
+                  ElevatedButton.icon(
+                    onPressed: _pickDate,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kPrimaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    icon: const Icon(Icons.calendar_today, size: 18),
+                    label: Text(_selectedDate == null 
+                      ? "Pilih Tanggal" 
+                      : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}"
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
+          
           const SizedBox(height: 24),
+
           Expanded(
-            child: orders.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Belum ada transaksi selesai.',
-                      style: TextStyle(color: kSecondaryColor),
+            child: displayOrders.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.search_off, size: 64, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        Text(
+                          _selectedDate == null 
+                            ? 'Belum ada transaksi selesai.' 
+                            : 'Tidak ada transaksi pada tanggal ini.',
+                          style: const TextStyle(color: kSecondaryColor),
+                        ),
+                      ],
                     ),
                   )
                 : GridView.builder(
@@ -43,11 +153,11 @@ class CashierTransactionScreen extends StatelessWidget {
                       crossAxisCount: 2,
                       crossAxisSpacing: 20,
                       mainAxisSpacing: 20,
-                      childAspectRatio: 1.2, // Adjusted aspect ratio
+                      childAspectRatio: 1.2,
                     ),
-                    itemCount: orders.length,
+                    itemCount: displayOrders.length,
                     itemBuilder: (context, index) {
-                      return _buildTransactionCard(orders[index]);
+                      return _buildTransactionCard(displayOrders[index]);
                     },
                   ),
           ),
@@ -166,7 +276,7 @@ class CashierTransactionScreen extends StatelessWidget {
               ),
             ),
 
-            // ORDER ITEMS - FLEXIBLE SPACE
+            // ORDER ITEMS
             Expanded(
               child: order.orderItems.isEmpty
                   ? const Center(
