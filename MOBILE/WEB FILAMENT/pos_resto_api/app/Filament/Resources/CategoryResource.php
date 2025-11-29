@@ -24,12 +24,23 @@ use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Select;
 
 use Illuminate\Support\Facades\Auth;
+use Filament\Panel;
+
 
 class CategoryResource extends Resource
 {
     protected static ?string $model = Category::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+
+//     public function panel(Panel $panel): Panel
+// {
+//     return $panel
+//         ->favicon(asset('images/logo.png')) // ⬅️ favicon kamu
+//         ->brandName('Eat.o') // opsional
+//         ->sidebarCollapsibleOnDesktop()       // opsional
+//     ;
+// }
 
     
      public static function canViewAny(): bool

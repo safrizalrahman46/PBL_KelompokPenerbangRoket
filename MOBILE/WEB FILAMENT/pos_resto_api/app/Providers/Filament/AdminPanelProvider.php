@@ -55,6 +55,10 @@ class AdminPanelProvider extends PanelProvider
             // 2. AKTIFKAN REGISTRASI PUBLIK
             ->registration(Register::class)
 
+                // ⬇️ TAMBAHKAN INI ⬇️
+        ->favicon(asset('images/logo.png'))
+        // ⬆️ TAMBAHKAN INI ⬆️
+
 //            ->registration()
 // ->registrationForm(function () {
 //     return [
