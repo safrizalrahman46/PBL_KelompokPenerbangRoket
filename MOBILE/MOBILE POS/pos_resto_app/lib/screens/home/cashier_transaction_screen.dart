@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../../models/order_model.dart';
 import '../../utils/constants.dart';
 
-// UBAH KE STATEFUL WIDGET
 class CashierTransactionScreen extends StatefulWidget {
   final List<Order> orders;
 
@@ -18,26 +17,37 @@ class CashierTransactionScreen extends StatefulWidget {
 }
 
 class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
-  // Variabel untuk menyimpan tanggal yang dipilih (bisa null)
   DateTime? _selectedDate;
 
-  // Fungsi untuk memilih tanggal
+  // --- PERBAIKAN DI FUNGSI INI ---
   Future<void> _pickDate() async {
+    // Ambil waktu sekarang sekali saja agar konsisten
+    final now = DateTime.now();
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
+      
+      // 🔥 SOLUSI UTAMA: Paksa dialog muncul di layer paling atas
+      // Ini mencegah dialog langsung tertutup di iPad/Tablet
+      useRootNavigator: true, 
+
+      initialDate: _selectedDate ?? now,
       firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
+      
+      // Tambahkan sedikit buffer waktu agar tidak error "initialDate must be on or before lastDate"
+      // karena perbedaan milidetik saat eksekusi.
+      lastDate: now.add(const Duration(seconds: 1)),
+      
       builder: (context, child) {
-        // Kustomisasi tema date picker agar cocok dengan dark theme
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: kPrimaryColor, // Warna header/tombol
+              primary: kPrimaryColor, 
               onPrimary: Colors.white,
-              surface: Color(0xFF2D2D2D), // Warna background kalender
+              surface: Color(0xFF2D2D2D), 
               onSurface: Colors.white,
             ),
+            dialogBackgroundColor: const Color(0xFF2D2D2D), // Tambahan untuk background dialog
           ),
           child: child!,
         );
@@ -51,7 +61,6 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
     }
   }
 
-  // Fungsi untuk mereset filter
   void _resetFilter() {
     setState(() {
       _selectedDate = null;
@@ -60,7 +69,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. FILTER DATA
+    // FILTER DATA
     List<Order> filteredList = widget.orders;
     
     if (_selectedDate != null) {
@@ -71,7 +80,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
       }).toList();
     }
 
-    // 2. BALIK URUTAN (Agar yang terbaru di atas)
+    // BALIK URUTAN
     final displayOrders = filteredList.reversed.toList();
 
     return Container(
@@ -80,7 +89,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // HEADER ROW (JUDUL & FILTER)
+          // HEADER ROW
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
