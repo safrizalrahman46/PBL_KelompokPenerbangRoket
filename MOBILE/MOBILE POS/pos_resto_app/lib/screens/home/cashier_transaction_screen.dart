@@ -17,70 +17,70 @@ class CashierTransactionScreen extends StatefulWidget {
 }
 
 class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
-  DateTime? _selectedDate;
+  // Pilihan Filter Waktu
+  String _selectedFilter = 'Hari Ini'; // Default
+  final List<String> _filterOptions = [
+    'Hari Ini',
+    'Kemarin',
+    '7 Hari Terakhir',
+    'Bulan Ini',
+    'Semua',
+  ];
 
-  // --- PERBAIKAN DI FUNGSI INI ---
-  Future<void> _pickDate() async {
-    // Ambil waktu sekarang sekali saja agar konsisten
-    final now = DateTime.now();
+  // Search Query
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      
-      // 🔥 SOLUSI UTAMA: Paksa dialog muncul di layer paling atas
-      // Ini mencegah dialog langsung tertutup di iPad/Tablet
-      useRootNavigator: true, 
-
-      initialDate: _selectedDate ?? now,
-      firstDate: DateTime(2020),
-      
-      // Tambahkan sedikit buffer waktu agar tidak error "initialDate must be on or before lastDate"
-      // karena perbedaan milidetik saat eksekusi.
-      lastDate: now.add(const Duration(seconds: 1)),
-      
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: kPrimaryColor, 
-              onPrimary: Colors.white,
-              surface: Color(0xFF2D2D2D), 
-              onSurface: Colors.white,
-            ),
-            dialogBackgroundColor: const Color(0xFF2D2D2D), // Tambahan untuk background dialog
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
-  void _resetFilter() {
-    setState(() {
-      _selectedDate = null;
-    });
+  // LOGIKA FILTER
+  bool _checkDateFilter(DateTime orderDate) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dateToCheck = DateTime(orderDate.year, orderDate.month, orderDate.day);
+
+    switch (_selectedFilter) {
+      case 'Hari Ini':
+        return dateToCheck.isAtSameMomentAs(today);
+      case 'Kemarin':
+        final yesterday = today.subtract(const Duration(days: 1));
+        return dateToCheck.isAtSameMomentAs(yesterday);
+      case '7 Hari Terakhir':
+        final sevenDaysAgo = today.subtract(const Duration(days: 7));
+        return dateToCheck.isAfter(sevenDaysAgo) && (dateToCheck.isBefore(today) || dateToCheck.isAtSameMomentAs(today));
+      case 'Bulan Ini':
+        return orderDate.year == now.year && orderDate.month == now.month;
+      case 'Semua':
+      default:
+        return true;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // FILTER DATA
-    List<Order> filteredList = widget.orders;
-    
-    if (_selectedDate != null) {
-      filteredList = widget.orders.where((order) {
-        return order.createdAt.year == _selectedDate!.year &&
-               order.createdAt.month == _selectedDate!.month &&
-               order.createdAt.day == _selectedDate!.day;
-      }).toList();
-    }
+    // 1. FILTER LOGIC
+    List<Order> filteredList = widget.orders.where((order) {
+      // Filter A: Waktu
+      bool passDate = _checkDateFilter(order.createdAt);
 
-    // BALIK URUTAN
+      // Filter B: Search
+      bool passSearch = true;
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        final name = order.customerName?.toLowerCase() ?? '';
+        final id = order.id.toString();
+        final table = order.restoTable?.number.toLowerCase() ?? '';
+        passSearch = name.contains(query) || id.contains(query) || table.contains(query);
+      }
+
+      return passDate && passSearch;
+    }).toList();
+
+    // 2. SORTING (Terbaru di atas)
     final displayOrders = filteredList.reversed.toList();
 
     return Container(
@@ -89,68 +89,110 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // HEADER ROW
+          // --- HEADER TITLE ---
+          const Text(
+            "Riwayat Transaksi",
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: kSecondaryColor,
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+
+          // --- CONTROLS SECTION (SEARCH & FILTER) - POSISI KIRI ATAS ---
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Detail Transaksi",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: kSecondaryColor,
-                ),
-              ),
-              
-              // TOMBOL FILTER
-              Row(
-                children: [
-                  if (_selectedDate != null)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: TextButton.icon(
-                        onPressed: _resetFilter,
-                        icon: const Icon(Icons.close, color: Colors.red),
-                        label: const Text(
-                          "Reset", 
-                          style: TextStyle(color: Colors.red)
-                        ),
-                      ),
-                    ),
-                  ElevatedButton.icon(
-                    onPressed: _pickDate,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kPrimaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    icon: const Icon(Icons.calendar_today, size: 18),
-                    label: Text(_selectedDate == null 
-                      ? "Pilih Tanggal" 
-                      : "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}"
+              // 1. SEARCH BAR (Lebar diperbesar sedikit agar nyaman)
+              Container(
+                width: 280, 
+                height: 45,
+                margin: const EdgeInsets.only(right: 16),
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Cari ID, Nama, atau Meja...',
+                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                    prefixIcon: const Icon(Icons.search, color: kPrimaryColor),
+                    filled: true,
+                    fillColor: const Color(0xFF2D2D2D),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12), // Lebih rounded
+                      borderSide: BorderSide.none,
                     ),
                   ),
-                ],
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                  },
+                ),
+              ),
+
+              // 2. DROPDOWN FILTER
+              Container(
+                height: 45,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: kPrimaryColor,
+                  borderRadius: BorderRadius.circular(12), // Lebih rounded
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedFilter,
+                    dropdownColor: const Color(0xFF2D2D2D),
+                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                    items: _filterOptions.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_month, size: 16, color: Colors.white70),
+                            const SizedBox(width: 10),
+                            Text(value),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedFilter = newValue;
+                        });
+                      }
+                    },
+                  ),
+                ),
               ),
             ],
           ),
-          
-          const SizedBox(height: 24),
 
+          // INFO HASIL FILTER
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16.0),
+            child: Text(
+              "Menampilkan ${displayOrders.length} transaksi ($_selectedFilter)",
+              style: TextStyle(color: kSecondaryColor.withOpacity(0.7), fontSize: 14),
+            ),
+          ),
+
+          // --- LIST DATA ---
           Expanded(
             child: displayOrders.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.search_off, size: 64, color: Colors.grey),
+                        const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
                         const SizedBox(height: 16),
                         Text(
-                          _selectedDate == null 
-                            ? 'Belum ada transaksi selesai.' 
-                            : 'Tidak ada transaksi pada tanggal ini.',
+                          _searchQuery.isNotEmpty 
+                            ? 'Tidak ditemukan transaksi: "$_searchQuery"'
+                            : 'Tidak ada transaksi periode: "$_selectedFilter"',
                           style: const TextStyle(color: kSecondaryColor),
                         ),
                       ],
@@ -238,7 +280,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
             
             // DATE
             Text(
-              '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
+              '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year} • ${order.createdAt.hour}:${order.createdAt.minute.toString().padLeft(2, '0')}',
               style: TextStyle(
                 color: Colors.white.withOpacity(0.7),
                 fontSize: 12,
