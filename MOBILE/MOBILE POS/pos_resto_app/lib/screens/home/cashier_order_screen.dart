@@ -24,14 +24,25 @@ class CashierOrderScreen extends StatefulWidget {
 
 class _CashierOrderScreenState extends State<CashierOrderScreen> {
   final FlutterTts _flutterTts = FlutterTts();
-  String _selectedFilter = 'Semua';
-
-  final List<String> _filterOptions = [
+  
+  // --- 1. FILTER STATUS (Chip) ---
+  String _selectedStatusFilter = 'Semua';
+  final List<String> _statusOptions = [
     'Semua',
     'Pending',
     'Disiapkan',
     'Siap',
     'Selesai',
+  ];
+
+  // --- 2. FILTER WAKTU (Dropdown) - BARU ---
+  String _selectedTimeFilter = 'Hari Ini'; 
+  final List<String> _timeOptions = [
+    'Hari Ini',
+    'Kemarin',
+    '7 Hari Terakhir',
+    'Bulan Ini',
+    'Semua',
   ];
 
   // 🔥 SNACKBAR FLOATING
@@ -56,121 +67,33 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // -----------------------------------------------------------
-    // 🔥 MODIFIKASI: SORTING LOGIC (TERBARU DI ATAS)
-    // -----------------------------------------------------------
-    
-    // 1. Buat salinan list agar aman
-    List<Order> sortedOrders = List.from(widget.orders);
+  // --- LOGIKA CEK WAKTU (BARU) ---
+  bool _checkTimeFilter(DateTime orderDate) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dateToCheck = DateTime(orderDate.year, orderDate.month, orderDate.day);
 
-    // 2. Urutkan berdasarkan created_at secara Descending (Terbaru -> Terlama)
-    // Logika: b.compareTo(a)
-    sortedOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-    // 3. Masukkan list yang SUDAH DIURUTKAN ke dalam filter
-    final filteredOrders = _filterOrders(sortedOrders);
-    // -----------------------------------------------------------
-
-    return Container(
-      color: kBackgroundColor,
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Order List",
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: kSecondaryColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildFilterChipBar(),
-          const SizedBox(height: 16),
-
-          Expanded(
-            child: filteredOrders.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.receipt_long,
-                          size: 64,
-                          color: kSecondaryColor.withOpacity(0.5),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          _getEmptyStateText(),
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: kSecondaryColor.withOpacity(0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : GridView.builder(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.70,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                        ),
-                    itemCount: filteredOrders.length,
-                    itemBuilder: (context, index) {
-                      return _buildOrderCard(filteredOrders[index]);
-                    },
-                  ),
-          ),
-        ],
-      ),
-    );
+    switch (_selectedTimeFilter) {
+      case 'Hari Ini':
+        return dateToCheck.isAtSameMomentAs(today);
+      case 'Kemarin':
+        final yesterday = today.subtract(const Duration(days: 1));
+        return dateToCheck.isAtSameMomentAs(yesterday);
+      case '7 Hari Terakhir':
+        final sevenDaysAgo = today.subtract(const Duration(days: 7));
+        return dateToCheck.isAfter(sevenDaysAgo) && 
+               (dateToCheck.isBefore(today) || dateToCheck.isAtSameMomentAs(today));
+      case 'Bulan Ini':
+        return orderDate.year == now.year && orderDate.month == now.month;
+      case 'Semua':
+      default:
+        return true;
+    }
   }
 
-  Widget _buildFilterChipBar() {
-    return SizedBox(
-      height: 50,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _filterOptions.length,
-        itemBuilder: (context, index) {
-          final filter = _filterOptions[index];
-          final bool isSelected = _selectedFilter == filter;
-
-          return Container(
-            margin: const EdgeInsets.only(right: 8),
-            child: FilterChip(
-              label: Text(
-                filter,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : kSecondaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              selected: isSelected,
-              backgroundColor: kLightGreyColor,
-              selectedColor: kPrimaryColor,
-              checkmarkColor: Colors.white,
-              onSelected: (selected) {
-                setState(() {
-                  _selectedFilter = filter;
-                });
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  List<Order> _filterOrders(List<Order> orders) {
-    switch (_selectedFilter) {
+  // --- LOGIKA FILTER STATUS (DIUPDATE UNTUK MENERIMA LIST) ---
+  List<Order> _filterByStatus(List<Order> orders) {
+    switch (_selectedStatusFilter) {
       case 'Pending':
         return orders.where((order) {
           final status = order.status.toLowerCase();
@@ -203,7 +126,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
   }
 
   String _getEmptyStateText() {
-    switch (_selectedFilter) {
+    switch (_selectedStatusFilter) {
       case 'Pending':
         return 'Tidak ada order pending';
       case 'Disiapkan':
@@ -215,6 +138,181 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
       default:
         return 'Belum ada order aktif';
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 1. SORTING (Terbaru di atas)
+    List<Order> sortedOrders = List.from(widget.orders);
+    sortedOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    // 2. FILTER WAKTU (BARU)
+    List<Order> timeFilteredOrders = sortedOrders.where((order) {
+      return _checkTimeFilter(order.createdAt);
+    }).toList();
+
+    // 3. FILTER STATUS (Menggunakan hasil filter waktu)
+    final finalFilteredOrders = _filterByStatus(timeFilteredOrders);
+
+    return Container(
+      color: kBackgroundColor,
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Order List",
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: kSecondaryColor,
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // --- CHIP BAR STATUS ---
+          _buildStatusFilterBar(),
+          
+          const SizedBox(height: 16),
+
+          // --- DROPDOWN FILTER WAKTU (BARU) ---
+          Row(
+            children: [
+              Container(
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: kPrimaryColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedTimeFilter,
+                    dropdownColor: const Color(0xFF2D2D2D),
+                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
+                    style: const TextStyle(
+                      color: Colors.white, 
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14
+                    ),
+                    items: _timeOptions.map((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_month, size: 16, color: Colors.white70),
+                            const SizedBox(width: 8),
+                            Text(value),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      if (newValue != null) {
+                        setState(() {
+                          _selectedTimeFilter = newValue;
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                "($_selectedTimeFilter: ${finalFilteredOrders.length} Pesanan)",
+                style: TextStyle(
+                  color: kSecondaryColor.withOpacity(0.6),
+                  fontStyle: FontStyle.italic
+                ),
+              )
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          Expanded(
+            child: finalFilteredOrders.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.receipt_long,
+                          size: 64,
+                          color: kSecondaryColor.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _getEmptyStateText(),
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: kSecondaryColor.withOpacity(0.7),
+                          ),
+                        ),
+                        Text(
+                          "Periode: $_selectedTimeFilter",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: kSecondaryColor.withOpacity(0.5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : GridView.builder(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.70,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                    itemCount: finalFilteredOrders.length,
+                    itemBuilder: (context, index) {
+                      return _buildOrderCard(finalFilteredOrders[index]);
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusFilterBar() {
+    return SizedBox(
+      height: 50,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _statusOptions.length,
+        itemBuilder: (context, index) {
+          final filter = _statusOptions[index];
+          final bool isSelected = _selectedStatusFilter == filter;
+
+          return Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(
+                filter,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : kSecondaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              selected: isSelected,
+              backgroundColor: kLightGreyColor,
+              selectedColor: kPrimaryColor,
+              checkmarkColor: Colors.white,
+              onSelected: (selected) {
+                setState(() {
+                  _selectedStatusFilter = filter;
+                });
+              },
+            ),
+          );
+        },
+      ),
+    );
   }
 
   Widget _buildOrderCard(Order order) {
@@ -599,7 +697,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
           ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(
-              maxWidth: 380, // ❗ BATAS LEBAR POPUP
+              maxWidth: 380, 
             ),
             child: Container(
               padding: const EdgeInsets.all(24.0),
