@@ -6,14 +6,17 @@ import '../../utils/constants.dart';
 
 class CashierTransactionScreen extends StatefulWidget {
   final List<Order> orders;
+  final VoidCallback onRefresh;
 
   const CashierTransactionScreen({
     super.key,
     required this.orders,
+    required this.onRefresh,
   });
 
   @override
-  State<CashierTransactionScreen> createState() => _CashierTransactionScreenState();
+  State<CashierTransactionScreen> createState() =>
+      _CashierTransactionScreenState();
 }
 
 class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
@@ -41,7 +44,11 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
   bool _checkDateFilter(DateTime orderDate) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final dateToCheck = DateTime(orderDate.year, orderDate.month, orderDate.day);
+    final dateToCheck = DateTime(
+      orderDate.year,
+      orderDate.month,
+      orderDate.day,
+    );
 
     switch (_selectedFilter) {
       case 'Hari Ini':
@@ -51,7 +58,9 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
         return dateToCheck.isAtSameMomentAs(yesterday);
       case '7 Hari Terakhir':
         final sevenDaysAgo = today.subtract(const Duration(days: 7));
-        return dateToCheck.isAfter(sevenDaysAgo) && (dateToCheck.isBefore(today) || dateToCheck.isAtSameMomentAs(today));
+        return dateToCheck.isAfter(sevenDaysAgo) &&
+            (dateToCheck.isBefore(today) ||
+                dateToCheck.isAtSameMomentAs(today));
       case 'Bulan Ini':
         return orderDate.year == now.year && orderDate.month == now.month;
       case 'Semua':
@@ -74,7 +83,8 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
         final name = order.customerName?.toLowerCase() ?? '';
         final id = order.id.toString();
         final table = order.restoTable?.number.toLowerCase() ?? '';
-        passSearch = name.contains(query) || id.contains(query) || table.contains(query);
+        passSearch =
+            name.contains(query) || id.contains(query) || table.contains(query);
       }
 
       return passDate && passSearch;
@@ -95,10 +105,10 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: kSecondaryColor,
+              color: Color.fromARGB(255, 117, 117, 117),
             ),
           ),
-          
+
           const SizedBox(height: 20),
 
           // --- CONTROLS SECTION (SEARCH & FILTER) - POSISI KIRI ATAS ---
@@ -106,19 +116,22 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
             children: [
               // 1. SEARCH BAR (Lebar diperbesar sedikit agar nyaman)
               Container(
-                width: 280, 
+                width: 280,
                 height: 45,
                 margin: const EdgeInsets.only(right: 16),
                 child: TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(color: Colors.grey, fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'Cari ID, Nama, atau Meja...',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                    hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5)),
                     prefixIcon: const Icon(Icons.search, color: kPrimaryColor),
                     filled: true,
-                    fillColor: const Color(0xFF2D2D2D),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                    fillColor: const Color(0xEEEEEEEE),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 0,
+                      horizontal: 16,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12), // Lebih rounded
                       borderSide: BorderSide.none,
@@ -144,14 +157,25 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                   child: DropdownButton<String>(
                     value: _selectedFilter,
                     dropdownColor: const Color(0xFF2D2D2D),
-                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down,
+                      color: Colors.white,
+                    ),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                     items: _filterOptions.map((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_month, size: 16, color: Colors.white70),
+                            const Icon(
+                              Icons.calendar_month,
+                              size: 16,
+                              color: Colors.white70,
+                            ),
                             const SizedBox(width: 10),
                             Text(value),
                           ],
@@ -176,7 +200,10 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             child: Text(
               "Menampilkan ${displayOrders.length} transaksi ($_selectedFilter)",
-              style: TextStyle(color: kSecondaryColor.withOpacity(0.7), fontSize: 14),
+              style: TextStyle(
+                color: kSecondaryColor.withOpacity(0.7),
+                fontSize: 14,
+              ),
             ),
           ),
 
@@ -187,12 +214,16 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
+                        const Icon(
+                          Icons.receipt_long,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(height: 16),
                         Text(
-                          _searchQuery.isNotEmpty 
-                            ? 'Tidak ditemukan transaksi: "$_searchQuery"'
-                            : 'Tidak ada transaksi periode: "$_selectedFilter"',
+                          _searchQuery.isNotEmpty
+                              ? 'Tidak ditemukan transaksi: "$_searchQuery"'
+                              : 'Tidak ada transaksi periode: "$_selectedFilter"',
                           style: const TextStyle(color: kSecondaryColor),
                         ),
                       ],
@@ -200,12 +231,13 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                   )
                 : GridView.builder(
                     padding: const EdgeInsets.only(bottom: 20),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                      childAspectRatio: 1.2,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 20,
+                          mainAxisSpacing: 20,
+                          childAspectRatio: 1.2,
+                        ),
                     itemCount: displayOrders.length,
                     itemBuilder: (context, index) {
                       return _buildTransactionCard(displayOrders[index]);
@@ -275,9 +307,9 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // DATE
             Text(
               '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year} • ${order.createdAt.hour}:${order.createdAt.minute.toString().padLeft(2, '0')}',
@@ -286,7 +318,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                 fontSize: 12,
               ),
             ),
-            
+
             const SizedBox(height: 12),
             const Divider(color: Colors.grey, height: 1),
             const SizedBox(height: 12),
@@ -333,10 +365,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                   ? const Center(
                       child: Text(
                         'No items',
-                        style: TextStyle(
-                          color: Colors.white54,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.white54, fontSize: 12),
                       ),
                     )
                   : ListView.builder(
@@ -395,10 +424,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
               children: [
                 const Text(
                   'SubTotal',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.white, fontSize: 14),
                 ),
                 Text(
                   'Rp ${order.totalPrice.toStringAsFixed(0)}',
