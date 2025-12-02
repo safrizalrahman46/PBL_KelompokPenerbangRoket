@@ -1138,7 +1138,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
   /// Menampilkan overlay animasi cipratan (burst) di tengah layar.
   void showOrderSuccessSplash(BuildContext context) {
     final overlayState = Overlay.of(context);
-    if (overlayState == null) return;
+    // if (overlayState == null) return;
 
     late OverlayEntry entry;
     entry = OverlayEntry(

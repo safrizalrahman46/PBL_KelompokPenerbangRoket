@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/menu_model.dart'; 
+import '../../models/menu_model.dart';
 import '../../providers/cart_provider.dart';
 import '../../utils/constants.dart';
 
@@ -27,7 +27,9 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
   Widget build(BuildContext context) {
     final displayedMenus = _selectedCategoryId == null
         ? widget.menus
-        : widget.menus.where((menu) => menu.categoryId == _selectedCategoryId).toList();
+        : widget.menus
+              .where((m) => m.categoryId == _selectedCategoryId)
+              .toList();
 
     return Container(
       color: kBackgroundColor,
@@ -49,18 +51,23 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
 
           Expanded(
             child: RefreshIndicator(
-              // Pastikan fungsi ini memanggil API fetchMenus()
               onRefresh: widget.onRefresh,
-              child: displayedMenus.isEmpty 
-                  ? const Center(child: Text("Tidak ada menu", style: TextStyle(color: kSecondaryColor)))
+              child: displayedMenus.isEmpty
+                  ? const Center(
+                      child: Text(
+                        "Tidak ada menu",
+                        style: TextStyle(color: kSecondaryColor),
+                      ),
+                    )
                   : GridView.builder(
                       padding: const EdgeInsets.only(bottom: 20),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        childAspectRatio: 0.75, // Aspect ratio agak dipanjangkan untuk muat text stok
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.75,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
                       itemCount: displayedMenus.length,
                       itemBuilder: (context, index) {
                         return _buildMenuCard(displayedMenus[index]);
@@ -73,6 +80,9 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
     );
   }
 
+  // ======================================================================
+  // CATEGORY FILTER BAR
+  // ======================================================================
   Widget _buildCategoryFilterBar() {
     List<Category> allCategories = [
       Category(id: -1, name: "All", menusCount: widget.menus.length),
@@ -88,17 +98,26 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
           final category = allCategories[index];
           final bool isSelected = category.id == (_selectedCategoryId ?? -1);
 
+          // --- Icon Improvement ---
           IconData icon;
-          switch (category.name.toLowerCase()) {
-            case 'main course':
-            case 'makanan': icon = Icons.restaurant; break;
-            case 'snack': icon = Icons.fastfood; break;
-            case 'minuman': icon = Icons.local_cafe; break;
-            default: icon = Icons.category;
+          String name = category.name.toLowerCase();
+
+          if (name.contains("makan") || name.contains("main")) {
+            icon = Icons.restaurant;
+          } else if (name.contains("snack") || name.contains("camil")) {
+            icon = Icons.fastfood;
+          } else if (name.contains("minum") ||
+              name.contains("drink") ||
+              name.contains("kopi")) {
+            icon = Icons.local_cafe;
+          } else {
+            icon = Icons.category;
           }
 
           return GestureDetector(
-            onTap: () => setState(() => _selectedCategoryId = category.id == -1 ? null : category.id),
+            onTap: () => setState(() {
+              _selectedCategoryId = category.id == -1 ? null : category.id;
+            }),
             child: Container(
               width: 160,
               margin: const EdgeInsets.only(right: 16),
@@ -110,7 +129,11 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    Icon(icon, size: 32, color: isSelected ? kBackgroundColor : kSecondaryColor),
+                    Icon(
+                      icon,
+                      size: 32,
+                      color: isSelected ? kBackgroundColor : kSecondaryColor,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -119,16 +142,28 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                         children: [
                           Text(
                             category.name,
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isSelected ? kBackgroundColor : kSecondaryColor),
-                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? kBackgroundColor
+                                  : kSecondaryColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            "${category.id == -1 ? widget.menus.length : category.menusCount ?? 0} Items",
-                            style: TextStyle(fontSize: 14, color: isSelected ? kBackgroundColor.withOpacity(0.8) : kSecondaryColor.withOpacity(0.6)),
+                            "${category.id == -1 ? widget.menus.length : (category.menusCount ?? 0)} Items",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isSelected
+                                  ? kBackgroundColor.withOpacity(0.8)
+                                  : kSecondaryColor.withOpacity(0.6),
+                            ),
                           ),
                         ],
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -139,27 +174,40 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
     );
   }
 
-  String normalizeImageUrl(String? imageUrl) {
-    if (imageUrl == null || imageUrl.isEmpty) return '';
-    String path = imageUrl;
-    if (path.startsWith('http')) {
-      if (path.contains('localhost') || path.contains('127.0.0.1')) {
-          final uri = Uri.tryParse(path);
-          path = (uri != null && uri.path.isNotEmpty) ? uri.path : path.substring(path.indexOf('/storage/') + 1);
-      } else {
-          return path; 
-      }
+  // ======================================================================
+  // NORMALIZE IMAGE URL
+  // ======================================================================
+  String normalizeImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+
+    String path = url;
+
+    // Full URL langsung dipakai
+    if (url.startsWith('http')) {
+      return url;
     }
-    if (path.startsWith('/')) path = path.substring(1);
-    if (!path.startsWith('storage/')) path = 'storage/$path';
+
+    // Jika path tidak mengandung storage
+    if (!path.contains('storage')) {
+      path = 'storage/$path';
+    }
+
+    if (path.startsWith('/')) {
+      path = path.substring(1);
+    }
+
     return '$BASE_URL/$path';
   }
 
+  // ======================================================================
+  // MENU CARD
+  // ======================================================================
   Widget _buildMenuCard(Menu menu) {
     final cart = Provider.of<CartProvider>(context, listen: false);
-    final int itemCountInCart = context.watch<CartProvider>().getItemQuantity(menu.id);
-    final String fullImageUrl = normalizeImageUrl(menu.imageUrl);
-    bool isAvailable = menu.isAvailable; 
+    final itemCount = context.watch<CartProvider>().getItemQuantity(menu.id);
+
+    final fullImageUrl = normalizeImageUrl(menu.imageUrl);
+    final isAvailable = menu.isAvailable;
 
     return Card(
       elevation: 2,
@@ -184,38 +232,52 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                       children: [
                         Text(
                           menu.name,
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, height: 1.2),
-                          maxLines: 2, overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Text(
                           menu.description ?? 'Tidak ada deskripsi',
-                          style: TextStyle(fontSize: 12, color: kSecondaryColor.withOpacity(0.6), height: 1.3),
-                          maxLines: 2, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: kSecondaryColor.withOpacity(0.6),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        
-                        // 🔥 INDIKATOR STOK (Agar kamu tahu datanya sudah masuk atau belum)
-                        if(isAvailable)
+                        if (isAvailable)
                           Padding(
-                            padding: const EdgeInsets.only(top: 6.0),
+                            padding: const EdgeInsets.only(top: 6),
                             child: Text(
-                              "Sisa Stok: ${menu.stock}", 
-                              style: TextStyle(fontSize: 11, color: kPrimaryColor.withOpacity(0.8), fontWeight: FontWeight.w600),
+                              "Sisa Stok: ${menu.stock}",
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: kPrimaryColor.withOpacity(0.8),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                       ],
                     ),
-                    _buildPriceAndControls(menu, itemCountInCart, cart, isAvailable),
+                    _buildPriceAndControls(menu, itemCount, cart, isAvailable),
                   ],
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
+  // ======================================================================
+  // IMAGE WIDGET
+  // ======================================================================
   Widget _buildMenuImage(String imageUrl, bool isAvailable) {
     return AspectRatio(
       aspectRatio: 1.5,
@@ -223,25 +285,55 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
         fit: StackFit.expand,
         children: [
           imageUrl.isEmpty
-              ? Container(color: kLightGreyColor, child: const Icon(Icons.fastfood, color: kSecondaryColor, size: 40))
+              ? Container(
+                  color: kLightGreyColor,
+                  child: const Icon(
+                    Icons.fastfood,
+                    size: 40,
+                    color: kSecondaryColor,
+                  ),
+                )
               : Image.network(
-                  imageUrl, fit: BoxFit.cover,
+                  imageUrl,
+                  fit: BoxFit.cover,
                   color: isAvailable ? null : Colors.grey,
                   colorBlendMode: isAvailable ? null : BlendMode.saturation,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Container(color: kLightGreyColor, child: Center(child: CircularProgressIndicator(color: kPrimaryColor)));
-                  },
-                  errorBuilder: (context, error, stackTrace) => Container(color: kLightGreyColor, child: const Icon(Icons.broken_image, color: kSecondaryColor)),
+                  loadingBuilder: (context, child, loadingProgress) =>
+                      loadingProgress == null
+                      ? child
+                      : const Center(
+                          child: CircularProgressIndicator(
+                            color: kPrimaryColor,
+                          ),
+                        ),
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: kLightGreyColor,
+                    child: const Icon(Icons.broken_image),
+                  ),
                 ),
+
           if (!isAvailable)
             Container(
               color: Colors.black.withOpacity(0.4),
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.red.withOpacity(0.9), borderRadius: BorderRadius.circular(4), border: Border.all(color: Colors.white, width: 2)),
-                  child: const Text("HABIS", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 1.5)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    "HABIS",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -250,55 +342,117 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
     );
   }
 
-  Widget _buildPriceAndControls(Menu menu, int itemCountInCart, CartProvider cart, bool isAvailable) {
-    // Logic validasi stok
-    bool isMaxReached = itemCountInCart >= menu.stock;
+  // ======================================================================
+  // PRICE + BUTTONS
+  // ======================================================================
+  Widget _buildPriceAndControls(
+  Menu menu,
+  int itemCount,
+  CartProvider cart,
+  bool isAvailable,
+) {
+  bool isMaxReached = itemCount >= menu.stock;
+  bool outOfStock = menu.stock <= 0;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Flexible(
-          child: Text(
-            "Rp ${menu.price.toStringAsFixed(0)}",
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: isAvailable ? kPrimaryColor : Colors.grey),
-            overflow: TextOverflow.ellipsis,
+  // Fungsi untuk menampilkan snackbar dengan style yang konsisten
+  void _showSnack(String message, {Color? color}) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            fontSize: 16,
           ),
         ),
-        if (!isAvailable)
-          const Text("Stok Kosong", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.red))
-        else
-          Container(
-            decoration: BoxDecoration(color: itemCountInCart > 0 ? kPrimaryColor.withOpacity(0.1) : null, borderRadius: BorderRadius.circular(20)),
-            child: Row(
-              children: [
-                if (itemCountInCart > 0)
-                  IconButton(
-                    icon: const Icon(Icons.remove, size: 18),
-                    padding: const EdgeInsets.all(4),
-                    constraints: const BoxConstraints(),
-                    onPressed: () => cart.decreaseItem(menu.id),
-                  ),
-                if (itemCountInCart > 0)
-                  Text(itemCountInCart.toString(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                
-                IconButton(
-                  icon: Icon(itemCountInCart > 0 ? Icons.add : Icons.add_circle, size: 18, color: isMaxReached ? Colors.grey : kPrimaryColor),
-                  padding: const EdgeInsets.all(4),
-                  constraints: const BoxConstraints(),
-                  onPressed: () {
-                    // Logic Klik
-                    if (isMaxReached) {
-                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Maksimal order! Stok hanya ${menu.stock}."), backgroundColor: Colors.red, duration: const Duration(milliseconds: 1000)));
-                    } else {
-                      cart.addItem(menu);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-      ],
+        backgroundColor: color ?? Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(milliseconds: 1500), // Lebih pendek karena pesan lebih singkat
+      ),
     );
   }
+
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Flexible(
+        child: Text(
+          "Rp ${menu.price.toStringAsFixed(0)}",
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: isAvailable ? kPrimaryColor : Colors.grey,
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+
+      // --- Jika habis ---
+      if (!isAvailable)
+        const Text(
+          "Stok Kosong",
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.red,
+          ),
+        )
+      else
+        // --- Kontrol Add/Remove ---
+        Container(
+          decoration: BoxDecoration(
+            color: itemCount > 0 ? kPrimaryColor.withOpacity(0.1) : null,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            children: [
+              if (itemCount > 0)
+                IconButton(
+                  icon: const Icon(Icons.remove, size: 18),
+                  padding: const EdgeInsets.all(4),
+                  constraints: const BoxConstraints(),
+                  onPressed: () => cart.decreaseItem(menu.id),
+                ),
+
+              if (itemCount > 0)
+                Text(
+                  itemCount.toString(),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+              // --- ADD BUTTON ---
+              IconButton(
+                icon: Icon(
+                  itemCount > 0 ? Icons.add : Icons.add_circle,
+                  size: 18,
+                  color: isMaxReached || outOfStock
+                      ? Colors.grey
+                      : kPrimaryColor,
+                ),
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(),
+                onPressed: isMaxReached || outOfStock
+                    ? () {
+                        _showSnack(
+                          "Maksimal order! Stok hanya ${menu.stock}.",
+                          color: Colors.red,
+                        );
+                      }
+                    : () => cart.addItem(menu),
+              ),
+            ],
+          ),
+        ),
+    ],
+  );
+}
 }
