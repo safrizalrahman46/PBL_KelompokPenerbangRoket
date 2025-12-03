@@ -79,11 +79,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
         SnackBar(
           content: Row(
             children: [
-              Icon(
-                _getToastIcon(color),
-                color: Colors.white,
-                size: 24,
-              ),
+              Icon(_getToastIcon(color), color: Colors.white, size: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -150,7 +146,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
       _showQuickToast('Data berhasil dimuat', color: Colors.green);
     } catch (e) {
       if (!mounted) return;
-      
+
       _showNotification(
         title: 'Gagal Memuat Data',
         message: 'Terjadi kesalahan: ${e.toString()}',
@@ -195,7 +191,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
       _showQuickToast('Data berhasil di-refresh', color: Colors.green);
     } catch (e) {
       if (!mounted) return;
-      
+
       _showNotification(
         title: 'Refresh Gagal',
         message: 'Gagal refresh data: ${e.toString()}',
@@ -216,10 +212,10 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
       type: NotificationType.warning,
       duration: const Duration(seconds: 5),
     );
-    
+
     // Tunggu sebentar sebelum logout
     await Future.delayed(const Duration(seconds: 1));
-    
+
     final authService = Provider.of<AuthService>(context, listen: false);
     await authService.logout();
 
@@ -307,11 +303,16 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
 
   String _getPageTitle(int index) {
     switch (index) {
-      case 0: return 'Menu';
-      case 1: return 'Transaksi';
-      case 2: return 'Order';
-      case 3: return 'Meja';
-      default: return 'Menu';
+      case 0:
+        return 'Menu';
+      case 1:
+        return 'Transaksi';
+      case 2:
+        return 'Order';
+      case 3:
+        return 'Meja';
+      default:
+        return 'Menu';
     }
   }
 
@@ -557,11 +558,11 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
           onOrderSuccess: () {
             _refreshData();
             cart.clearCart();
-            _showNotification(
-              title: 'Transaksi Berhasil!',
-              message: 'Pesanan telah berhasil diproses.',
-              type: NotificationType.success,
-            );
+            // _showNotification(
+            //   title: 'Transaksi Berhasil!',
+            //   message: 'Pesanan telah berhasil diproses.',
+            //   type: NotificationType.success,
+            // );
           },
         ),
       ),
@@ -570,12 +571,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
 }
 
 // --- ENUM UNTUK TIPE NOTIFIKASI ---
-enum NotificationType {
-  success,
-  error,
-  warning,
-  info,
-}
+enum NotificationType { success, error, warning, info }
 
 // --- WIDGET NOTIFIKASI POPUP ---
 class _NotificationPopup extends StatelessWidget {
@@ -595,9 +591,7 @@ class _NotificationPopup extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       contentPadding: EdgeInsets.zero,
       content: Container(
         width: 350,
@@ -613,15 +607,11 @@ class _NotificationPopup extends StatelessWidget {
                 color: _getColor(type).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                _getIcon(type),
-                color: _getColor(type),
-                size: 32,
-              ),
+              child: Icon(_getIcon(type), color: _getColor(type), size: 32),
             ),
-            
+
             const SizedBox(height: 20),
-            
+
             // Title
             Text(
               title,
@@ -632,9 +622,9 @@ class _NotificationPopup extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            
+
             const SizedBox(height: 12),
-            
+
             // Message
             Text(
               message,
@@ -645,9 +635,9 @@ class _NotificationPopup extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Close Button
             SizedBox(
               width: double.infinity,
