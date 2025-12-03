@@ -24,7 +24,7 @@ class CashierOrderScreen extends StatefulWidget {
 
 class _CashierOrderScreenState extends State<CashierOrderScreen> {
   final FlutterTts _flutterTts = FlutterTts();
-  
+
   // --- 1. FILTER STATUS (Chip) ---
   String _selectedStatusFilter = 'Semua';
   final List<String> _statusOptions = [
@@ -36,7 +36,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
   ];
 
   // --- 2. FILTER WAKTU (Dropdown) - BARU ---
-  String _selectedTimeFilter = 'Hari Ini'; 
+  String _selectedTimeFilter = 'Hari Ini';
   final List<String> _timeOptions = [
     'Hari Ini',
     'Kemarin',
@@ -71,7 +71,11 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
   bool _checkTimeFilter(DateTime orderDate) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final dateToCheck = DateTime(orderDate.year, orderDate.month, orderDate.day);
+    final dateToCheck = DateTime(
+      orderDate.year,
+      orderDate.month,
+      orderDate.day,
+    );
 
     switch (_selectedTimeFilter) {
       case 'Hari Ini':
@@ -81,8 +85,9 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
         return dateToCheck.isAtSameMomentAs(yesterday);
       case '7 Hari Terakhir':
         final sevenDaysAgo = today.subtract(const Duration(days: 7));
-        return dateToCheck.isAfter(sevenDaysAgo) && 
-               (dateToCheck.isBefore(today) || dateToCheck.isAtSameMomentAs(today));
+        return dateToCheck.isAfter(sevenDaysAgo) &&
+            (dateToCheck.isBefore(today) ||
+                dateToCheck.isAtSameMomentAs(today));
       case 'Bulan Ini':
         return orderDate.year == now.year && orderDate.month == now.month;
       case 'Semua':
@@ -169,63 +174,87 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // --- CHIP BAR STATUS ---
           _buildStatusFilterBar(),
-          
+
           const SizedBox(height: 16),
 
           // --- DROPDOWN FILTER WAKTU (BARU) ---
-          Row(
-            children: [
-              Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: kPrimaryColor,
-                  borderRadius: BorderRadius.circular(20),
+          SizedBox(
+            height: 45,
+            width: 200,
+            child: DropdownMenu<String>(
+              width: 200,
+              initialSelection: _selectedTimeFilter,
+              onSelected: (value) {
+                if (value != null) {
+                  setState(() {
+                    _selectedTimeFilter = value;
+                  });
+                }
+              },
+
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: kPrimaryColor,
+                hintStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
                 ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedTimeFilter,
-                    dropdownColor: const Color(0xFF2D2D2D),
-                    icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
-                    style: const TextStyle(
-                      color: Colors.white, 
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14
-                    ),
-                    items: _timeOptions.map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Row(
-                          children: [
-                            const Icon(Icons.calendar_month, size: 16, color: Colors.white70),
-                            const SizedBox(width: 8),
-                            Text(value),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          _selectedTimeFilter = newValue;
-                        });
-                      }
-                    },
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+
+              menuStyle: MenuStyle(
+                backgroundColor: const MaterialStatePropertyAll(
+                  Color.fromARGB(255, 255, 255, 255),
+                ),
+                elevation: const MaterialStatePropertyAll(6),
+                shape: MaterialStatePropertyAll(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                "($_selectedTimeFilter: ${finalFilteredOrders.length} Pesanan)",
-                style: TextStyle(
-                  color: kSecondaryColor.withOpacity(0.6),
-                  fontStyle: FontStyle.italic
+                maximumSize: MaterialStatePropertyAll(
+                  Size(265, double.infinity),
                 ),
-              )
-            ],
+              ),
+
+              trailingIcon: const Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.white,
+              ),
+
+              textStyle: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+
+              dropdownMenuEntries: _timeOptions.map((value) {
+                return DropdownMenuEntry<String>(
+                  value: value,
+                  label: value,
+                  labelWidget: Text(
+                    value,
+                    style: const TextStyle(
+                      color: Color.fromARGB(255, 0, 0, 0),
+                      fontSize: 14,
+                    ),
+                  ),
+                  leadingIcon: const Icon(
+                    Icons.calendar_month,
+                    size: 18,
+                    color: kPrimaryColor,
+                  ),
+                );
+              }).toList(),
+            ),
           ),
 
           const SizedBox(height: 16),
@@ -696,9 +725,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
             borderRadius: BorderRadius.circular(16),
           ),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 380, 
-            ),
+            constraints: const BoxConstraints(maxWidth: 380),
             child: Container(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -858,8 +885,11 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.volume_up,
-                                  size: 18, color: Colors.white),
+                              Icon(
+                                Icons.volume_up,
+                                size: 18,
+                                color: Colors.white,
+                              ),
                               SizedBox(width: 8),
                               Text(
                                 'Panggil',
@@ -892,8 +922,11 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.check_circle,
-                                  size: 18, color: Colors.white),
+                              Icon(
+                                Icons.check_circle,
+                                size: 18,
+                                color: Colors.white,
+                              ),
                               SizedBox(width: 6),
                               Text(
                                 'Selesai',

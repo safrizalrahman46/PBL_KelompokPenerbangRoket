@@ -111,7 +111,6 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
 
           const SizedBox(height: 20),
 
-          // --- CONTROLS SECTION (SEARCH & FILTER) - POSISI KIRI ATAS ---
           Row(
             children: [
               // 1. SEARCH BAR (Lebar diperbesar sedikit agar nyaman)
@@ -146,50 +145,75 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
               ),
 
               // 2. DROPDOWN FILTER
-              Container(
+              SizedBox(
                 height: 45,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: kPrimaryColor,
-                  borderRadius: BorderRadius.circular(12), // Lebih rounded
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedFilter,
-                    dropdownColor: const Color(0xFF2D2D2D),
-                    icon: const Icon(
-                      Icons.keyboard_arrow_down,
-                      color: Colors.white,
+                width: 200,
+                child: DropdownMenu<String>(
+                  width: 200,
+                  initialSelection: _selectedFilter,
+                  onSelected: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedFilter = value;
+                      });
+                    }
+                  },
+
+                  // STYLE INPUT
+                  inputDecorationTheme: InputDecorationTheme(
+                    filled: true,
+                    fillColor: kPrimaryColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                    items: _filterOptions.map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_month,
-                              size: 16,
-                              color: Colors.white70,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(value),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          _selectedFilter = newValue;
-                        });
-                      }
-                    },
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
+
+                  // STYLE POPUP ROUNDED
+                  menuStyle: MenuStyle(
+                    backgroundColor: const MaterialStatePropertyAll(
+                      Color.fromARGB(255, 255, 255, 255),
+                    ),
+                    elevation: const MaterialStatePropertyAll(6),
+                    shape: MaterialStatePropertyAll(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    maximumSize: MaterialStatePropertyAll(
+                      Size(270, double.infinity),
+                    ),
+                  ),
+
+                  trailingIcon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.white,
+                  ),
+
+                  textStyle: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  dropdownMenuEntries: _filterOptions.map((value) {
+                    return DropdownMenuEntry<String>(
+                      value: value,
+                      label: value,
+                      labelWidget: Text(
+                        value,
+                        style: const TextStyle(
+                          color: Color.fromARGB(255, 0, 0, 0),
+                          fontSize: 14,
+                        ),
+                      ),
+                      leadingIcon: const Icon(
+                        Icons.calendar_month,
+                        size: 18,
+                        color: kPrimaryColor,
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ],
