@@ -253,7 +253,7 @@ class NotificationPopup extends StatelessWidget {
   final NotificationType type;
   final VoidCallback onClose;
 
-  const NotificationPopup({
+  const NotificationPopup({super.key, 
     required this.title,
     required this.message,
     required this.type,

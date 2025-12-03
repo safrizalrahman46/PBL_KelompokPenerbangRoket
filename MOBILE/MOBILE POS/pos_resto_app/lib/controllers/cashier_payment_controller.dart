@@ -648,6 +648,7 @@ class CashierPaymentController extends ChangeNotifier {
   }
 
   // Cleanup
+  @override
   void dispose() {
     receivedController.dispose();
     customerNameController.dispose();

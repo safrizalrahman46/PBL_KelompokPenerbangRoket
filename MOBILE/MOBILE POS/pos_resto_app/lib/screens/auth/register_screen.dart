@@ -1,12 +1,11 @@
 // lib/screens/auth/register_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:pos_resto_app/screens/home/cashier_home_screen.dart';
-import 'package:provider/provider.dart';
-import '../../services/auth_service.dart';
 import '../../utils/constants.dart';
+import '../home/cashier_home_screen.dart';
 import '../home/kitchen_home_screen.dart';
 import 'login_screen.dart';
+import '../../controllers/register_controller.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,19 +15,27 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  late RegisterController _controller;
+  VoidCallback? _controllerListener;
 
-  String? _selectedRole;
-  final List<Map<String, String>> _roles = [
-    {'label': 'Kasir', 'value': 'cashier'},
-    {'label': 'Dapur', 'value': 'kitchen'},
-    {'label': 'Admin', 'value': 'admin'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _controller = RegisterController(context);
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
 
-  // 🔥 SNACKBAR FLOATING PERSEGI PANJANG
+  @override
+  void dispose() {
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+    _controller.dispose();
+    super.dispose();
+  }
+
+  // Show snackbar (UI only)
   void _showSnack(String message, {Color? color}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -50,59 +57,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  void _submitRegister() async {
-    if (_formKey.currentState!.validate()) {
-      if (_selectedRole == null) {
-        _showSnack('Silakan pilih Role', color: Colors.red);
-        return;
-      }
-
-      final authService = Provider.of<AuthService>(context, listen: false);
-      _showSnack('Memproses registrasi...');
-
-      try {
-        await authService.register(
-          name: _nameController.text,
-          email: _emailController.text,
-          password: _passwordController.text,
-          role: _selectedRole!,
-        );
-
-        if (!mounted) return;
-        _showSnack(
-          'Registrasi berhasil! Selamat datang 👋',
-          color: Colors.green,
-        );
-
-        _navigateBasedOnRole(authService.user!.role);
-      } catch (e) {
-        _showSnack(
-          e.toString().replaceFirst('Exception: ', ''),
-          color: Colors.red,
-        );
-      }
-    } else {
-      _showSnack(
-        'Form tidak valid, periksa kembali input Anda',
-        color: Colors.orange,
-      );
-    }
-  }
-
+  // Navigate based on role (UI only)
   void _navigateBasedOnRole(String role) {
     Widget homeScreen;
 
     switch (role.toLowerCase()) {
-      case 'cashier':
+      case 'kasir':
         _showSnack('Masuk sebagai Kasir...');
         homeScreen = const CashierHomeScreen();
         break;
-      case 'kitchen':
+      case 'dapur':
         _showSnack('Masuk sebagai Dapur...');
         homeScreen = const KitchenHomeScreen();
         break;
       case 'admin':
-        _showSnack('Masuk sebagai Admin (sementara ke login)');
+        _showSnack('Masuk sebagai Admin (sementara kembali ke login)');
         homeScreen = const LoginScreen();
         break;
       default:
@@ -116,14 +85,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBackgroundColor,
@@ -131,12 +92,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Form(
-            key: _formKey,
+            key: _controller.formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // Header
                 const Text(
-                  "Mari Buat!",
+                  "Buat Akun Baru!",
                   style: TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.bold,
@@ -145,15 +107,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Akun Baru Untuk Restoranmu",
+                  "Kelola restoranmu dengan mudah",
                   style: TextStyle(
                     fontSize: 18,
-                    color: kSecondaryColor.withValues(alpha: 0.7),
+                    color: kSecondaryColor.withOpacity(0.7),
                   ),
                 ),
                 const SizedBox(height: 48),
 
-                // Dropdown Role
+                // Role Dropdown
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
@@ -161,36 +123,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: DropdownButtonFormField<String>(
-                    value: _selectedRole,
+                    initialValue: _controller.selectedRole,
                     hint: const Text('Pilih Role'),
                     decoration: const InputDecoration(
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.zero,
                     ),
-                    items: _roles.map((role) {
+                    items: _controller.roles.map((role) {
                       return DropdownMenuItem<String>(
                         value: role['value'],
                         child: Text(role['label']!),
                       );
                     }).toList(),
-                    onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedRole = newValue;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Silakan pilih role';
-                      }
-                      return null;
-                    },
+                    onChanged: _controller.setRole,
+                    validator: _controller.validateRole,
                   ),
                 ),
                 const SizedBox(height: 16),
 
-                // Username
+                // Name Input
                 TextFormField(
-                  controller: _nameController,
+                  controller: _controller.nameController,
                   decoration: InputDecoration(
                     hintText: 'Username',
                     fillColor: kLightGreyColor,
@@ -204,18 +157,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       vertical: 18,
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Username tidak boleh kosong';
-                    }
-                    return null;
-                  },
+                  validator: _controller.validateName,
                 ),
                 const SizedBox(height: 16),
 
-                // Email
+                // Email Input
                 TextFormField(
-                  controller: _emailController,
+                  controller: _controller.emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: 'Email',
@@ -230,21 +178,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       vertical: 18,
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Email tidak boleh kosong';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Masukkan email yang valid';
-                    }
-                    return null;
-                  },
+                  validator: _controller.validateEmail,
                 ),
                 const SizedBox(height: 16),
 
-                // Password
+                // Password Input
                 TextFormField(
-                  controller: _passwordController,
+                  controller: _controller.passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'Password',
@@ -259,55 +199,53 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       vertical: 18,
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Password tidak boleh kosong';
-                    }
-                    if (value.length < 6) {
-                      return 'Password minimal 6 karakter';
-                    }
-                    return null;
-                  },
+                  validator: _controller.validatePassword,
                 ),
                 const SizedBox(height: 32),
 
                 // Register Button
-                Consumer<AuthService>(
-                  builder: (context, authService, child) {
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 62,
-                      child: ElevatedButton(
-                        onPressed: authService.isLoading
-                            ? null
-                            : _submitRegister,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          backgroundColor: kPrimaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: authService.isLoading
-                            ? const CircularProgressIndicator(
-                                color: kBackgroundColor,
-                              )
-                            : const Text(
-                                'Register',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: kBackgroundColor,
-                                ),
-                              ),
+                SizedBox(
+                  width: double.infinity,
+                  height: 62,
+                  child: ElevatedButton(
+                    onPressed: _controller.isLoading
+                        ? null
+                        : () async {
+                            _showSnack('Memproses registrasi...');
+                            final role = await _controller.submitRegister();
+                            if (role != null) {
+                              _showSnack(
+                                'Registrasi berhasil! Selamat datang 👋',
+                                color: Colors.green,
+                              );
+                              _navigateBasedOnRole(role);
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      backgroundColor: kPrimaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    );
-                  },
+                      elevation: 0,
+                    ),
+                    child: _controller.isLoading
+                        ? const CircularProgressIndicator(
+                            color: kBackgroundColor,
+                          )
+                        : const Text(
+                            'Register',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: kBackgroundColor,
+                            ),
+                          ),
+                  ),
                 ),
                 const SizedBox(height: 24),
 
-                // Link ke Login
+                // Login Link
                 GestureDetector(
                   onTap: () {
                     Navigator.of(context).pushReplacement(
@@ -319,7 +257,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       text: "Sudah Punya Akun? Mari ",
                       style: TextStyle(
                         fontSize: 16,
-                        color: kSecondaryColor.withValues(alpha: 0.7),
+                        color: kSecondaryColor.withOpacity(0.7),
                       ),
                       children: const [
                         TextSpan(

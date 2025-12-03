@@ -1,10 +1,10 @@
+// lib/screens/auth/login_screen.dart
+
 import 'package:flutter/material.dart';
-import 'package:pos_resto_app/screens/home/cashier_home_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:pos_resto_app/services/auth_service.dart';
-import 'package:pos_resto_app/utils/constants.dart';
-import 'package:pos_resto_app/screens/home/kitchen_home_screen.dart';
-import 'register_screen.dart';
+import '../../services/auth_service.dart';
+import '../../utils/constants.dart';
+import '../../controllers/login_controller.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,101 +14,55 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  LoginController? _controller;
+  VoidCallback? _controllerListener;
+  bool _controllerInitialized = false;
 
-  void _showSnack(String message, {Color? color}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            fontSize: 16,
-          ),
-        ),
-
-        backgroundColor: color ?? kPrimaryColor,
-
-        // 🔥 Membuat SnackBar jadi persegi panjang
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        margin: const EdgeInsets.all(16), // SnackBar terangkat dari bawah
-
-        duration: const Duration(seconds: 7),
-      ),
-    );
+  @override
+  void initState() {
+    super.initState();
   }
 
-  Future<void> _submitLogin() async {
-    if (_formKey.currentState!.validate()) {
-      final authService = Provider.of<AuthService>(context, listen: false);
-
-      try {
-        _showSnack('Proses login dimulai...');
-
-        // 🔹 Login dan ambil role
-        final String role = await authService.login(
-          _emailController.text,
-          _passwordController.text,
-        );
-
-        _showSnack('Login berhasil, role: $role', color: Colors.green);
-
-        if (!mounted) return;
-        _navigateBasedOnRole(role);
-      } catch (e) {
-        _showSnack(
-          e.toString().replaceFirst('Exception: ', ''),
-          color: Colors.red,
-        );
-      }
-    } else {
-      _showSnack('Form tidak valid, periksa input', color: Colors.orange);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_controllerInitialized) {
+      // Initialize controller here to ensure `context` is fully available.
+      _controller = LoginController(context);
+      _controllerListener = () => setState(() {});
+      _controller!.addListener(_controllerListener!);
+      _controllerInitialized = true;
+      // Rebuild now that controller is ready
+      setState(() {});
     }
-  }
-
-  void _navigateBasedOnRole(String role) {
-    Widget homeScreen;
-    switch (role.toLowerCase()) {
-      case 'cashier':
-        _showSnack('Mengalihkan ke halaman kasir...');
-        homeScreen = const CashierHomeScreen();
-        break;
-      case 'kitchen':
-        _showSnack('Mengalihkan ke halaman dapur...');
-        homeScreen = const KitchenHomeScreen();
-        break;
-      default:
-        _showSnack('Role tidak dikenal, kembali ke login', color: Colors.red);
-        return;
-    }
-
-    if (!mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => homeScreen),
-      (route) => false,
-    );
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    if (_controllerListener != null) {
+      _controller?.removeListener(_controllerListener!);
+    }
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // If controller isn't ready yet, show a small loading state to avoid
+    // accessing a not-yet-initialized late field.
+    if (!_controllerInitialized || _controller == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final controller = _controller!;
+
     return Scaffold(
       backgroundColor: kBackgroundColor,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Form(
-            key: _formKey,
+            key: controller.formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -130,9 +84,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 48),
 
-                // 🔹 Input Email
+                // Email Input
                 TextFormField(
-                  controller: _emailController,
+                  controller: controller.emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     hintText: 'Email',
@@ -147,21 +101,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       vertical: 18,
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Email tidak boleh kosong';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Masukkan email yang valid';
-                    }
-                    return null;
-                  },
+                  validator: controller.validateEmail,
                 ),
                 const SizedBox(height: 16),
 
-                // 🔹 Input Password
+                // Password Input
                 TextFormField(
-                  controller: _passwordController,
+                  controller: controller.passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     hintText: 'Password',
@@ -176,25 +122,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       vertical: 18,
                     ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Password tidak boleh kosong';
-                    }
-                    if (value.length < 6) {
-                      return 'Password minimal 6 karakter';
-                    }
-                    return null;
-                  },
+                  validator: controller.validatePassword,
                 ),
                 const SizedBox(height: 32),
 
-                // 🔹 Tombol Login
+                // Login Button
                 Consumer<AuthService>(
                   builder: (context, authService, child) {
                     return SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: authService.isLoading ? null : _submitLogin,
+                        onPressed: authService.isLoading
+                            ? null
+                            : controller.submitLogin,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           backgroundColor: kPrimaryColor,
@@ -226,13 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // 🔹 Link ke Register
+                // Register Link
                 GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                    );
-                  },
+                  onTap: controller.navigateToRegister,
                   child: RichText(
                     text: TextSpan(
                       text: "Belum Punya Akun? Mari Buat ",
@@ -253,28 +189,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                // --- TOMBOL LIHAT ANTRIAN (VERSI KECIL) ---
+                // Queue Display Button
                 const SizedBox(height: 24),
                 TextButton.icon(
-                  icon: const Icon(
-                    Icons.tv_rounded,
-                    size: 18,
-                  ), 
+                  icon: const Icon(Icons.tv_rounded, size: 18),
                   label: const Text(
                     'Lihat Layar Antrian',
                     style: TextStyle(
-                      fontSize: 16, // Font lebih kecil
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: kPrimaryColor,
                     ),
                   ),
-                  onPressed: () {
-                    // Navigasi ke rute yang sudah didaftarkan di main.dart
-                    Navigator.of(context).pushNamed('/queue_display');
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: kPrimaryColor, // Warna teks dan ikon
-                  ),
+                  onPressed: controller.navigateToQueueDisplay,
+                  style: TextButton.styleFrom(foregroundColor: kPrimaryColor),
                 ),
               ],
             ),

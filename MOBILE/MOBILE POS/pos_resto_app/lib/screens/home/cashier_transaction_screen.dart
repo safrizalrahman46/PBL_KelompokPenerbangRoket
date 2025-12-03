@@ -141,16 +141,16 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
                   menuStyle: MenuStyle(
-                    backgroundColor: const MaterialStatePropertyAll(
+                    backgroundColor: const WidgetStatePropertyAll(
                       Color.fromARGB(255, 255, 255, 255),
                     ),
-                    elevation: const MaterialStatePropertyAll(6),
-                    shape: MaterialStatePropertyAll(
+                    elevation: const WidgetStatePropertyAll(6),
+                    shape: WidgetStatePropertyAll(
                       RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    maximumSize: MaterialStatePropertyAll(
+                    maximumSize: WidgetStatePropertyAll(
                       Size(270, double.infinity),
                     ),
                   ),

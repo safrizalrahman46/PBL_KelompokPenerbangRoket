@@ -360,7 +360,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                       ),
                     );
                   }
-                }).toList(),
+                }),
               ],
             ),
           ),

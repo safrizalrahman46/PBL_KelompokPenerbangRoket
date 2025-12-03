@@ -80,7 +80,7 @@ class KitchenHomeController extends ChangeNotifier {
 
   // Toggle centang item
   void toggleItemCheck(int orderId, int itemId) {
-    final key = "${orderId}_${itemId}";
+    final key = "${orderId}_$itemId";
     if (_checkedItemIds.contains(key)) {
       _checkedItemIds.remove(key);
     } else {
@@ -128,6 +128,7 @@ class KitchenHomeController extends ChangeNotifier {
   }
 
   // Cleanup timer
+  @override
   void dispose() {
     refreshTimer?.cancel();
     super.dispose();
