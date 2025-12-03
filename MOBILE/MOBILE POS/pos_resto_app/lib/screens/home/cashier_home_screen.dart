@@ -121,7 +121,7 @@ class _CashierHomeScreenState extends State<CashierHomeScreen> {
     return Consumer<CartProvider>(
       builder: (context, cart, child) {
         return Container(
-          color: kLightGreyColor.withOpacity(0.5),
+          color: kLightGreyColor.withValues(alpha: 0.5),
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

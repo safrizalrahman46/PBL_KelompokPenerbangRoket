@@ -35,8 +35,8 @@ class CashierTableController extends ChangeNotifier {
           : Colors.red.shade600,
       'textColor': isAvailable ? kSecondaryColor : Colors.white,
       'statusColor': isAvailable
-          ? kSecondaryColor.withOpacity(0.8)
-          : Colors.white.withOpacity(0.8),
+          ? kSecondaryColor.withValues(alpha: 0.8)
+          : Colors.white.withValues(alpha: 0.8),
       'statusText': isAvailable ? 'Tersedia' : 'Terisi',
     };
   }

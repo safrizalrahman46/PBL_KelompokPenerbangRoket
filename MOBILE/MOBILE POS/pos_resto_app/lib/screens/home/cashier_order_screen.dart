@@ -170,21 +170,21 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                         Icon(
                           Icons.receipt_long,
                           size: 64,
-                          color: kSecondaryColor.withOpacity(0.5),
+                          color: kSecondaryColor.withValues(alpha: 0.5),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           _controller.getEmptyStateText(),
                           style: TextStyle(
                             fontSize: 18,
-                            color: kSecondaryColor.withOpacity(0.7),
+                            color: kSecondaryColor.withValues(alpha: 0.7),
                           ),
                         ),
                         Text(
                           "Periode: ${_controller.selectedTimeFilter}",
                           style: TextStyle(
                             fontSize: 14,
-                            color: kSecondaryColor.withOpacity(0.5),
+                            color: kSecondaryColor.withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -299,7 +299,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                         Text(
                           'Order #${order.id}',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
+                            color: Colors.white.withValues(alpha: 0.7),
                             fontSize: 12,
                           ),
                         ),
@@ -322,14 +322,14 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                 Text(
                   '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                 ),
                 Text(
                   '${order.createdAt.hour.toString().padLeft(2, '0')}:${order.createdAt.minute.toString().padLeft(2, '0')}',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                 ),
@@ -383,7 +383,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
             Container(
               constraints: const BoxConstraints(maxHeight: 150, minHeight: 40),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: order.orderItems.isEmpty
@@ -406,7 +406,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Row(
@@ -488,7 +488,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20.0),
         border: Border.all(color: color, width: 1),
       ),
@@ -591,7 +591,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                   Text(
                     'Pesanan untuk Meja #${order.restoTable?.number ?? '??'} sudah siap?',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 16,
                     ),
                   ),
@@ -602,7 +602,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                     Text(
                       'Atas nama: ${order.customerName!}',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                     ),
@@ -613,7 +613,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Column(
@@ -624,7 +624,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                             Text(
                               'Total Items:',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                               ),
                             ),
                             Text(
@@ -645,7 +645,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                             Text(
                               'Total Harga:',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                               ),
                             ),
                             Text(

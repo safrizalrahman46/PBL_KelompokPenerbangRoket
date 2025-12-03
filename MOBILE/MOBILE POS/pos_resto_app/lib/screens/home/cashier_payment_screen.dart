@@ -65,7 +65,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
               Expanded(
                 flex: 2,
                 child: Container(
-                  color: kLightGreyColor.withOpacity(0.3),
+                  color: kLightGreyColor.withValues(alpha: 0.3),
                   padding: const EdgeInsets.only(
                     top: 24.0,
                     left: 72.0,
@@ -118,7 +118,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                         ),
                         const SizedBox(height: 8),
                         ToggleButtons(
-                          borderColor: kPrimaryColor.withOpacity(0.5),
+                          borderColor: kPrimaryColor.withValues(alpha: 0.5),
                           selectedBorderColor: kPrimaryColor,
                           selectedColor: Colors.white,
                           fillColor: kPrimaryColor,
@@ -256,8 +256,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                                           'x ${item.quantity}',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: kSecondaryColor.withOpacity(
-                                              0.6,
+                                            color: kSecondaryColor.withValues(
+                                              alpha: 0.6,
                                             ),
                                           ),
                                         ),
@@ -298,7 +298,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
             left: 16.0,
             child: Container(
               decoration: BoxDecoration(
-                color: kBackgroundColor.withOpacity(0.7),
+                color: kBackgroundColor.withValues(alpha: 0.7),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -555,7 +555,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
         : (isTotal ? kPrimaryColor : kSecondaryColor);
     final Color labelColor = isChange
         ? Colors.blueAccent
-        : kSecondaryColor.withOpacity(0.8);
+        : kSecondaryColor.withValues(alpha: 0.8);
     final double fontSize = (isTotal || isChange) ? 18 : 16;
     final FontWeight fontWeight = (isTotal || isChange)
         ? FontWeight.bold
@@ -705,7 +705,7 @@ class _SplashBurstState extends State<SplashBurst>
         speed: random.nextDouble() * 40 + 40,
         radius: random.nextDouble() * 6 + 4,
         color: Colors.primaries[random.nextInt(Colors.primaries.length)]
-            .withOpacity(0.95),
+            .withValues(alpha: 0.95),
       );
     });
 
@@ -760,7 +760,7 @@ class _BurstPainter extends CustomPainter {
     final center = size.center(Offset.zero);
 
     final glowPaint = Paint()
-      ..color = Colors.white.withOpacity((1 - progress) * 0.4)
+      ..color = Colors.white.withValues(alpha: (1 - progress) * 0.4)
       ..style = PaintingStyle.fill;
     final glowRadius = (size.shortestSide / 6) * (1 + progress * 1.6);
     canvas.drawCircle(center, glowRadius, glowPaint);
@@ -772,7 +772,7 @@ class _BurstPainter extends CustomPainter {
       final position = Offset(center.dx + dx, center.dy + dy);
 
       final paint = Paint()
-        ..color = p.color.withOpacity((1 - progress).clamp(0.0, 1.0))
+        ..color = p.color.withValues(alpha: (1 - progress).clamp(0.0, 1.0))
         ..style = PaintingStyle.fill;
 
       canvas.drawCircle(position, p.radius * (1 - progress), paint);

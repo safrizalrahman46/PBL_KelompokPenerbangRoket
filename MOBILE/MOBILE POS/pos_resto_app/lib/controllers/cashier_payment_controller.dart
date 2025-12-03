@@ -608,7 +608,7 @@ class CashierPaymentController extends ChangeNotifier {
         : (isTotal ? kPrimaryColor : kSecondaryColor);
     final Color labelColor = isChange
         ? Colors.blueAccent
-        : kSecondaryColor.withOpacity(0.8);
+        : kSecondaryColor.withValues(alpha: 0.8);
     final double fontSize = (isTotal || isChange) ? 18 : 16;
     final FontWeight fontWeight = (isTotal || isChange)
         ? FontWeight.bold

@@ -172,8 +172,8 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               color: isSelected
-                                  ? kBackgroundColor.withOpacity(0.8)
-                                  : kSecondaryColor.withOpacity(0.6),
+                                  ? kBackgroundColor.withValues(alpha: 0.8)
+                                  : kSecondaryColor.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -233,7 +233,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                           menu.description ?? 'Tidak ada deskripsi',
                           style: TextStyle(
                             fontSize: 12,
-                            color: kSecondaryColor.withOpacity(0.6),
+                            color: kSecondaryColor.withValues(alpha: 0.6),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -245,7 +245,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                               "Sisa Stok: ${menu.stock}",
                               style: TextStyle(
                                 fontSize: 11,
-                                color: kPrimaryColor.withOpacity(0.8),
+                                color: kPrimaryColor.withValues(alpha: 0.8),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -301,7 +301,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                 ),
           if (!isAvailable)
             Container(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -309,7 +309,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.9),
+                    color: Colors.red.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text(
@@ -362,7 +362,9 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
         else
           Container(
             decoration: BoxDecoration(
-              color: itemCount > 0 ? kPrimaryColor.withOpacity(0.1) : null,
+              color: itemCount > 0
+                  ? kPrimaryColor.withValues(alpha: 0.1)
+                  : null,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(

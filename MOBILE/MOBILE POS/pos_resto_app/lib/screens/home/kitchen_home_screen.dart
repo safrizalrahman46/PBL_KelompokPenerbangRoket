@@ -147,7 +147,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                       'Tidak ada pesanan',
                       style: TextStyle(
                         fontSize: 18,
-                        color: kSecondaryColor.withOpacity(0.5),
+                        color: kSecondaryColor.withValues(alpha: 0.5),
                       ),
                     ),
                   )
@@ -190,7 +190,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
         borderRadius: BorderRadius.circular(12.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

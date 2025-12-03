@@ -101,7 +101,9 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                   style: const TextStyle(color: Colors.grey, fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'Cari ID, Nama, atau Meja...',
-                    hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5)),
+                    hintStyle: TextStyle(
+                      color: Colors.grey.withValues(alpha: 0.5),
+                    ),
                     prefixIcon: const Icon(Icons.search, color: kPrimaryColor),
                     filled: true,
                     fillColor: const Color(0xEEEEEEEE),
@@ -190,7 +192,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
             child: Text(
               _controller.getFilterInfoText(),
               style: TextStyle(
-                color: kSecondaryColor.withOpacity(0.7),
+                color: kSecondaryColor.withValues(alpha: 0.7),
                 fontSize: 14,
               ),
             ),
@@ -287,7 +289,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                       Text(
                         'Order #${order.id}',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 12,
                         ),
                       ),
@@ -303,7 +305,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
             Text(
               '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year} • ${order.createdAt.hour}:${order.createdAt.minute.toString().padLeft(2, '0')}',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 12,
               ),
             ),
@@ -322,7 +324,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                     child: Text(
                       'Qty',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 11,
                       ),
                     ),
@@ -332,7 +334,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                     child: Text(
                       'Items',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 11,
                       ),
                     ),
@@ -340,7 +342,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                   Text(
                     'Price',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 11,
                     ),
                   ),

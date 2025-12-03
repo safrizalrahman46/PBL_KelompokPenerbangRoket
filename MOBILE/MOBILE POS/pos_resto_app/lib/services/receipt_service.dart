@@ -163,7 +163,7 @@ class ReceiptService {
             label,
             style: TextStyle(
               fontSize: 16,
-              color: kSecondaryColor.withOpacity(0.8),
+              color: kSecondaryColor.withValues(alpha: 0.8),
             ),
           ),
           Text(

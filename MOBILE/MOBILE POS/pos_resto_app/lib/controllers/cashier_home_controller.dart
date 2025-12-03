@@ -143,7 +143,7 @@ class CashierHomeController extends ChangeNotifier {
     showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.3),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
       builder: (context) => NotificationPopup(
         title: title,
         message: message,
@@ -153,7 +153,7 @@ class CashierHomeController extends ChangeNotifier {
     );
 
     Timer(duration, () {
-      if (Navigator.of(context).canPop()) {
+      if (context.mounted && Navigator.of(context).canPop()) {
         Navigator.of(context).pop();
       }
     });
@@ -276,7 +276,7 @@ class NotificationPopup extends StatelessWidget {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: _getColor(type).withOpacity(0.1),
+                color: _getColor(type).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(_getIcon(type), color: _getColor(type), size: 32),

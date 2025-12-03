@@ -42,14 +42,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         backgroundColor: color ?? kPrimaryColor,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        margin: const EdgeInsets.only(
-          left: 16,
-          right: 16,
-          bottom: 20,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
         elevation: 6,
         duration: const Duration(seconds: 3),
       ),
@@ -75,8 +69,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
 
         if (!mounted) return;
-        _showSnack('Registrasi berhasil! Selamat datang 👋',
-            color: Colors.green);
+        _showSnack(
+          'Registrasi berhasil! Selamat datang 👋',
+          color: Colors.green,
+        );
 
         _navigateBasedOnRole(authService.user!.role);
       } catch (e) {
@@ -114,8 +110,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         homeScreen = const LoginScreen();
     }
 
-    Navigator.of(context)
-        .pushReplacement(MaterialPageRoute(builder: (_) => homeScreen));
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => homeScreen));
   }
 
   @override
@@ -202,8 +199,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -226,8 +225,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -253,8 +254,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -275,8 +278,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       width: double.infinity,
                       height: 62,
                       child: ElevatedButton(
-                        onPressed:
-                            authService.isLoading ? null : _submitRegister,
+                        onPressed: authService.isLoading
+                            ? null
+                            : _submitRegister,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           backgroundColor: kPrimaryColor,
@@ -287,7 +291,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         child: authService.isLoading
                             ? const CircularProgressIndicator(
-                                color: kBackgroundColor)
+                                color: kBackgroundColor,
+                              )
                             : const Text(
                                 'Register',
                                 style: TextStyle(
@@ -314,7 +319,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       text: "Sudah Punya Akun? Mari ",
                       style: TextStyle(
                         fontSize: 16,
-                        color: kSecondaryColor.withOpacity(0.7),
+                        color: kSecondaryColor.withValues(alpha: 0.7),
                       ),
                       children: const [
                         TextSpan(
