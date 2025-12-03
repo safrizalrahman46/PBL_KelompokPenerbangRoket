@@ -30,6 +30,9 @@ class Menu {
     required this.categoryId,
   });
 
+// untuk tahu barang habis atau tidak berdasarkan stok.
+  bool get isAvailable => stock > 0;
+
   factory Menu.fromJson(Map<String, dynamic> json) => Menu(
         id: json["id"] ?? 0,
         name: json["name"] ?? 'Nama Menu Error',
