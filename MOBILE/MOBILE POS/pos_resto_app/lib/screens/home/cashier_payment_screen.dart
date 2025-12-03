@@ -10,7 +10,7 @@ import '../../models/order_model.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/constants.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 
 class CashierPaymentScreen extends StatefulWidget {
   final CartProvider cart;
@@ -35,8 +35,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
   String? selectedPaymentMethod;
   final TextEditingController receivedController = TextEditingController();
   // PERUBAHAN: Dikosongkan agar kasir wajib mengisi
-  final TextEditingController customerNameController =
-      TextEditingController(text: '');
+  final TextEditingController customerNameController = TextEditingController(
+    text: '',
+  );
   bool isSubmitting = false;
 
   // --- TAMBAHAN ---
@@ -53,8 +54,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
   @override
   Widget build(BuildContext context) {
     double received = double.tryParse(receivedController.text) ?? 0;
-    double change =
-        (received > widget.cart.total) ? received - widget.cart.total : 0;
+    double change = (received > widget.cart.total)
+        ? received - widget.cart.total
+        : 0;
 
     return Scaffold(
       backgroundColor: kBackgroundColor,
@@ -84,9 +86,10 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                         const Text(
                           "Nama Pelanggan (Wajib)",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: kSecondaryColor,
-                              fontWeight: FontWeight.w600),
+                            fontSize: 16,
+                            color: kSecondaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         SizedBox(
@@ -96,8 +99,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                             decoration: const InputDecoration(
                               labelText: 'Nama Pelanggan',
                               isDense: true,
-                              contentPadding:
-                                  EdgeInsets.symmetric(vertical: 4.0),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 4.0,
+                              ),
                               border: UnderlineInputBorder(),
                             ),
                             style: const TextStyle(
@@ -112,9 +116,10 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                         const Text(
                           "Tipe Layanan",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: kSecondaryColor,
-                              fontWeight: FontWeight.w600),
+                            fontSize: 16,
+                            color: kSecondaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         ToggleButtons(
@@ -134,8 +139,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                           ],
                           onPressed: (int index) {
                             setState(() {
-                              _serviceType =
-                                  (index == 0) ? 'meja' : 'self_service';
+                              _serviceType = (index == 0)
+                                  ? 'meja'
+                                  : 'self_service';
                               // Jika pilih 'self_service', hapus pilihan meja
                               if (_serviceType == 'self_service') {
                                 selectedTableId = null;
@@ -178,9 +184,10 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                                   const Text(
                                     "Meja Terpilih",
                                     style: TextStyle(
-                                        fontSize: 16,
-                                        color: kSecondaryColor,
-                                        fontWeight: FontWeight.w600),
+                                      fontSize: 16,
+                                      color: kSecondaryColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
@@ -196,8 +203,11 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                                 ],
                               ),
                               IconButton(
-                                icon: const Icon(Icons.edit,
-                                    color: kPrimaryColor, size: 28),
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: kPrimaryColor,
+                                  size: 28,
+                                ),
                                 onPressed: () {
                                   _showTableSelectionDialog(context);
                                 },
@@ -264,8 +274,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                                           'x ${item.quantity}',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: kSecondaryColor
-                                                .withOpacity(0.6),
+                                            color: kSecondaryColor.withOpacity(
+                                              0.6,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -312,8 +323,11 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon:
-                    const Icon(Icons.arrow_back, color: kSecondaryColor, size: 28),
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: kSecondaryColor,
+                  size: 28,
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),
@@ -332,15 +346,23 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
       ),
       child: Column(
         children: [
-          _buildSummaryRow('Subtotal', 'Rp ${cart.subtotal.toStringAsFixed(0)}'),
+          _buildSummaryRow(
+            'Subtotal',
+            'Rp ${cart.subtotal.toStringAsFixed(0)}',
+          ),
           const SizedBox(height: 12),
-          _buildSummaryRow('Tax 10%',
-              'Rp ${(cart.subtotal * cart.taxPercent / 100).toStringAsFixed(0)}'),
+          _buildSummaryRow(
+            'Tax 10%',
+            'Rp ${(cart.subtotal * cart.taxPercent / 100).toStringAsFixed(0)}',
+          ),
           const SizedBox(height: 12),
           _buildSummaryRow('Tip', 'Rp 500'),
           const Divider(height: 24, thickness: 1),
-          _buildSummaryRow('Total', 'Rp ${cart.total.toStringAsFixed(0)}',
-              isTotal: true),
+          _buildSummaryRow(
+            'Total',
+            'Rp ${cart.total.toStringAsFixed(0)}',
+            isTotal: true,
+          ),
           if (change > 0 && selectedPaymentMethod == 'cash')
             Padding(
               padding: const EdgeInsets.only(top: 12.0),
@@ -366,24 +388,19 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSummaryRow(
-              'Received', 'Rp ${double.tryParse(receivedController.text) ?? 0}'),
+            'Received',
+            'Rp ${double.tryParse(receivedController.text) ?? 0}',
+          ),
           const SizedBox(height: 24),
           const Text(
             'Payment Method',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: _buildPaymentMethodButton(
-                  'Cash',
-                  Icons.money,
-                  'cash',
-                ),
+                child: _buildPaymentMethodButton('Cash', Icons.money, 'cash'),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -414,10 +431,12 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
       height: 56,
       child: ElevatedButton(
         // --- PERUBAHAN: Validasi Tombol ---
-        onPressed: ((_serviceType == 'meja' && selectedTableId == null) || // <-- Logika diubah
-                    selectedPaymentMethod == null ||
-                    customerNameController.text.isEmpty ||
-                    isSubmitting)
+        onPressed:
+            ((_serviceType == 'meja' &&
+                    selectedTableId == null) || // <-- Logika diubah
+                selectedPaymentMethod == null ||
+                customerNameController.text.isEmpty ||
+                isSubmitting)
             ? null // Tombol disable jika validasi gagal
             : () async {
                 // --- Validasi tambahan untuk uang tunai ---
@@ -427,8 +446,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                     received < widget.cart.total) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content:
-                          Text('Uang tunai yang diterima kurang dari total.'),
+                      content: Text(
+                        'Uang tunai yang diterima kurang dari total.',
+                      ),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -440,9 +460,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                     selectedPaymentMethod == 'qris') {
                   final bool? isConfirmed =
                       await _showPaymentConfirmationDialog(
-                    context,
-                    selectedPaymentMethod!,
-                  );
+                        context,
+                        selectedPaymentMethod!,
+                      );
 
                   if (isConfirmed != true) {
                     return; // Batalkan jika user menekan 'Batalkan'
@@ -460,14 +480,16 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                     paymentMethod: selectedPaymentMethod!,
                     customerName: customerNameController.text,
                     // Pastikan status dikirim dengan benar
-                    status: (selectedPaymentMethod == 'debit' ||
+                    status:
+                        (selectedPaymentMethod == 'debit' ||
                             selectedPaymentMethod == 'qris')
                         ? 'pending' // Jika non-tunai, mungkin perlu konfirmasi
                         : 'paid', // Jika tunai, langsung lunas
                   );
 
-                  final Order newOrder =
-                      await widget.apiService.createOrder(orderData);
+                  final Order newOrder = await widget.apiService.createOrder(
+                    orderData,
+                  );
 
                   // Buat transaksi
                   await widget.apiService.createTransaction({
@@ -480,8 +502,10 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
 
                   // --- PERUBAHAN: Update status meja jika 'dine-in' ---
                   if (selectedTableId != null) {
-                    await widget.apiService
-                        .updateTableStatus(selectedTableId!, 'occupied');
+                    await widget.apiService.updateTableStatus(
+                      selectedTableId!,
+                      'occupied',
+                    );
                   }
                   // --- BATAS PERUBAHAN ---
 
@@ -503,7 +527,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                            'Gagal: ${e.toString().replaceFirst("Exception: ", "")}'),
+                          'Gagal: ${e.toString().replaceFirst("Exception: ", "")}',
+                        ),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -592,7 +617,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                 _buildCalculatorButton('7'),
                 _buildCalculatorButton('8'),
                 _buildCalculatorButton('9'),
-                _buildCalculatorButton('000'), // Tambah 000
+                _buildCalculatorButton('000'),
                 _buildCalculatorButton('0'),
                 _buildCalculatorButton('X', isDelete: true),
               ],
@@ -628,8 +653,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     setState(() {
-                      receivedController.text =
-                          widget.cart.total.toStringAsFixed(0);
+                      receivedController.text = widget.cart.total
+                          .toStringAsFixed(0);
                     });
                   },
                   style: ElevatedButton.styleFrom(
@@ -656,16 +681,22 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value,
-      {bool isTotal = false, bool isChange = false}) {
+  Widget _buildSummaryRow(
+    String label,
+    String value, {
+    bool isTotal = false,
+    bool isChange = false,
+  }) {
     final Color valueColor = isChange
         ? Colors.blueAccent
         : (isTotal ? kPrimaryColor : kSecondaryColor);
-    final Color labelColor =
-        isChange ? Colors.blueAccent : kSecondaryColor.withOpacity(0.8);
+    final Color labelColor = isChange
+        ? Colors.blueAccent
+        : kSecondaryColor.withOpacity(0.8);
     final double fontSize = (isTotal || isChange) ? 18 : 16;
-    final FontWeight fontWeight =
-        (isTotal || isChange) ? FontWeight.bold : FontWeight.normal;
+    final FontWeight fontWeight = (isTotal || isChange)
+        ? FontWeight.bold
+        : FontWeight.normal;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -740,8 +771,10 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
         setState(() {
           if (isDelete) {
             if (receivedController.text.isNotEmpty) {
-              receivedController.text = receivedController.text
-                  .substring(0, receivedController.text.length - 1);
+              receivedController.text = receivedController.text.substring(
+                0,
+                receivedController.text.length - 1,
+              );
             }
           } else {
             receivedController.text += value;
@@ -750,9 +783,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: isDelete ? kPrimaryColor : const Color(0xFFFFF4E0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: EdgeInsets.zero,
       ),
       child: Text(
@@ -800,8 +831,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                   title: Text(
                     'Meja ${table.number}',
                     style: TextStyle(
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       color: isSelected ? kPrimaryColor : kSecondaryColor,
                     ),
                   ),
@@ -830,7 +862,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
   }
 
   Future<bool?> _showPaymentConfirmationDialog(
-      BuildContext context, String method) async {
+    BuildContext context,
+    String method,
+  ) async {
     final bool isDebit = method == 'debit';
     final String title = isDebit ? 'Pembayaran Debit' : 'Pembayaran E-Wallet';
     final Widget imageWidget = isDebit
@@ -876,8 +910,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
       context: context,
       builder: (dialogContext) {
         return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           child: Container(
             width: 500,
             height: 350,
@@ -920,7 +955,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                     backgroundColor: Colors.white,
                     foregroundColor: kPrimaryColor,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 48, vertical: 16),
+                      horizontal: 48,
+                      vertical: 16,
+                    ),
                   ),
                   child: const Text(
                     'Lanjutkan Transaksi',
@@ -942,12 +979,13 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
         customerNameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text(
-                'Isi Nama, Tipe Layanan, Meja (jika D-In), dan Metode Pembayaran.')),
+          content: Text(
+            'Isi Nama, Tipe Layanan, Meja (jika D-In), dan Metode Pembayaran.',
+          ),
+        ),
       );
       return;
     }
-    // --- BATAS PERUBAHAN ---
 
     // --- PERUBAHAN: Nama layanan dinamis ---
     final String serviceName = _serviceType == 'meja'
@@ -968,46 +1006,60 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                 Text('Nama: ${customerNameController.text}'),
                 Text('Layanan: $serviceName'), // Diubah
                 const Divider(),
-                ...widget.cart.items.map((item) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                              child:
-                                  Text('${item.quantity}x ${item.menu.name}')),
-                          Text(
-                              'Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}'),
-                        ],
-                      ),
-                    )),
+                ...widget.cart.items.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text('${item.quantity}x ${item.menu.name}'),
+                        ),
+                        Text(
+                          'Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 const Divider(),
-                _buildSummaryRow('Subtotal',
-                    'Rp ${widget.cart.subtotal.toStringAsFixed(0)}'),
                 _buildSummaryRow(
-                    'Tax 10%',
-                    'Rp ${(widget.cart.subtotal * widget.cart.taxPercent / 100).toStringAsFixed(0)}'),
+                  'Subtotal',
+                  'Rp ${widget.cart.subtotal.toStringAsFixed(0)}',
+                ),
+                _buildSummaryRow(
+                  'Tax 10%',
+                  'Rp ${(widget.cart.subtotal * widget.cart.taxPercent / 100).toStringAsFixed(0)}',
+                ),
                 _buildSummaryRow('Tip', 'Rp 500'),
                 const Divider(),
                 _buildSummaryRow(
-                    'Total', 'Rp ${widget.cart.total.toStringAsFixed(0)}',
-                    isTotal: true),
+                  'Total',
+                  'Rp ${widget.cart.total.toStringAsFixed(0)}',
+                  isTotal: true,
+                ),
                 const Divider(),
                 _buildSummaryRow(
-                    'Metode', selectedPaymentMethod!.toUpperCase()),
+                  'Metode',
+                  selectedPaymentMethod!.toUpperCase(),
+                ),
                 _buildSummaryRow(
-                    'Diterima', 'Rp ${received.toStringAsFixed(0)}'),
+                  'Diterima',
+                  'Rp ${received.toStringAsFixed(0)}',
+                ),
                 if (change > 0 && selectedPaymentMethod == 'cash')
                   _buildSummaryRow(
-                      'Kembali', 'Rp ${change.toStringAsFixed(0)}',
-                      isChange: true),
+                    'Kembali',
+                    'Rp ${change.toStringAsFixed(0)}',
+                    isChange: true,
+                  ),
               ],
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Tutup'),
+              child: const Text(' '),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -1018,7 +1070,8 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                     serviceName, // Kirim nama layanan dinamis
                   );
                   await Printing.layoutPdf(
-                      onLayout: (PdfPageFormat format) async => pdfData);
+                    onLayout: (PdfPageFormat format) async => pdfData,
+                  );
                   if (mounted) {
                     Navigator.of(dialogContext).pop();
                   }
@@ -1048,20 +1101,28 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
 
     pdf.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, double.infinity,
-            marginAll: 5 * PdfPageFormat.mm),
+        pageFormat: PdfPageFormat(
+          80 * PdfPageFormat.mm,
+          double.infinity,
+          marginAll: 5 * PdfPageFormat.mm,
+        ),
         build: (pw.Context context) {
           return pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Center(
-                child: pw.Text('Eat.o Nota',
-                    style: pw.TextStyle(
-                        fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                child: pw.Text(
+                  'Eat.o Nota',
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
               ),
               pw.SizedBox(height: 10),
               pw.Text(
-                  'Tanggal: ${DateFormat('dd/MM/yy HH:mm').format(DateTime.now())}'),
+                'Tanggal: ${DateFormat('dd/MM/yy HH:mm').format(DateTime.now())}',
+              ),
               pw.Text('Nama: ${customerNameController.text}'),
               pw.Text('Layanan: $serviceName'), // Diubah
               pw.Divider(height: 15),
@@ -1073,34 +1134,47 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                     children: [
                       pw.Text('${item.quantity}x ${item.menu.name}'),
                       pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.end,
-                          children: [
-                            pw.Text(
-                                'Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}'),
-                          ])
+                        mainAxisAlignment: pw.MainAxisAlignment.end,
+                        children: [
+                          pw.Text(
+                            'Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}',
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
               pw.Divider(height: 15),
               _buildPdfSummaryRow(
-                  'Subtotal', 'Rp ${widget.cart.subtotal.toStringAsFixed(0)}'),
+                'Subtotal',
+                'Rp ${widget.cart.subtotal.toStringAsFixed(0)}',
+              ),
               _buildPdfSummaryRow(
-                  'Tax 10%',
-                  'Rp ${(widget.cart.subtotal * widget.cart.taxPercent / 100).toStringAsFixed(0)}'),
+                'Tax 10%',
+                'Rp ${(widget.cart.subtotal * widget.cart.taxPercent / 100).toStringAsFixed(0)}',
+              ),
               _buildPdfSummaryRow('Tip', 'Rp 500'),
               pw.Divider(),
               _buildPdfSummaryRow(
-                  'Total', 'Rp ${widget.cart.total.toStringAsFixed(0)}',
-                  isTotal: true),
+                'Total',
+                'Rp ${widget.cart.total.toStringAsFixed(0)}',
+                isTotal: true,
+              ),
               pw.Divider(),
               _buildPdfSummaryRow(
-                  'Metode', selectedPaymentMethod!.toUpperCase()),
+                'Metode',
+                selectedPaymentMethod!.toUpperCase(),
+              ),
               _buildPdfSummaryRow(
-                  'Diterima', 'Rp ${received.toStringAsFixed(0)}'),
+                'Diterima',
+                'Rp ${received.toStringAsFixed(0)}',
+              ),
               if (change > 0 && selectedPaymentMethod == 'cash')
                 _buildPdfSummaryRow(
-                    'Kembali', 'Rp ${change.toStringAsFixed(0)}',
-                    isChange: true),
+                  'Kembali',
+                  'Rp ${change.toStringAsFixed(0)}',
+                  isChange: true,
+                ),
               pw.SizedBox(height: 20),
               pw.Center(child: pw.Text('Terima kasih!')),
             ],
@@ -1112,11 +1186,16 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
     return pdf.save();
   }
 
-  pw.Widget _buildPdfSummaryRow(String label, String value,
-      {bool isTotal = false, bool isChange = false}) {
+  pw.Widget _buildPdfSummaryRow(
+    String label,
+    String value, {
+    bool isTotal = false,
+    bool isChange = false,
+  }) {
     final style = pw.TextStyle(
-      fontWeight:
-          (isTotal || isChange) ? pw.FontWeight.bold : pw.FontWeight.normal,
+      fontWeight: (isTotal || isChange)
+          ? pw.FontWeight.bold
+          : pw.FontWeight.normal,
       fontSize: (isTotal || isChange) ? 12 : 10,
     );
     return pw.Padding(
@@ -1146,12 +1225,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
         return Positioned.fill(
           child: IgnorePointer(
             ignoring: true,
-            child: Center(
-              child: SplashBurst(
-                size: 260,
-                particles: 20,
-              ),
-            ),
+            child: Center(child: SplashBurst(size: 260, particles: 20)),
           ),
         );
       },
@@ -1176,11 +1250,7 @@ class SplashBurst extends StatefulWidget {
   final double size;
   final int particles;
 
-  const SplashBurst({
-    super.key,
-    this.size = 180,
-    this.particles = 18,
-  });
+  const SplashBurst({super.key, this.size = 180, this.particles = 18});
 
   @override
   _SplashBurstState createState() => _SplashBurstState();
@@ -1285,6 +1355,7 @@ class _BurstPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _BurstPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.particles.length != particles.length;
+    return oldDelegate.progress != progress ||
+        oldDelegate.particles.length != particles.length;
   }
 }
