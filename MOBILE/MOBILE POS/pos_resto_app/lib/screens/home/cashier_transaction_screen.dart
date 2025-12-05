@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../../models/order_model.dart';
 import '../../utils/constants.dart';
+import '../../controllers/cashier_transaction_controller.dart';
 
 class CashierTransactionScreen extends StatefulWidget {
   final List<Order> orders;
@@ -20,79 +21,56 @@ class CashierTransactionScreen extends StatefulWidget {
 }
 
 class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
-  // Pilihan Filter Waktu
-  String _selectedFilter = 'Hari Ini'; // Default
-  final List<String> _filterOptions = [
-    'Hari Ini',
-    'Kemarin',
-    '7 Hari Terakhir',
-    'Bulan Ini',
-    'Semua',
-  ];
-
-  // Search Query
-  String _searchQuery = '';
+  late CashierTransactionController _controller;
   final TextEditingController _searchController = TextEditingController();
+  VoidCallback? _controllerListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = CashierTransactionController(
+      context: context,
+      orders: widget.orders,
+      onRefresh: widget.onRefresh,
+    );
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+
+    // Setup search controller listener
+    _searchController.addListener(() {
+      _controller.setSearchQuery(_searchController.text);
+    });
+  }
+
+  @override
+  void didUpdateWidget(CashierTransactionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+
+    // Update controller jika data berubah
+    _controller = CashierTransactionController(
+      context: context,
+      orders: widget.orders,
+      onRefresh: widget.onRefresh,
+    );
+
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
 
   @override
   void dispose() {
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
     _searchController.dispose();
     super.dispose();
   }
 
-  // LOGIKA FILTER
-  bool _checkDateFilter(DateTime orderDate) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final dateToCheck = DateTime(
-      orderDate.year,
-      orderDate.month,
-      orderDate.day,
-    );
-
-    switch (_selectedFilter) {
-      case 'Hari Ini':
-        return dateToCheck.isAtSameMomentAs(today);
-      case 'Kemarin':
-        final yesterday = today.subtract(const Duration(days: 1));
-        return dateToCheck.isAtSameMomentAs(yesterday);
-      case '7 Hari Terakhir':
-        final sevenDaysAgo = today.subtract(const Duration(days: 7));
-        return dateToCheck.isAfter(sevenDaysAgo) &&
-            (dateToCheck.isBefore(today) ||
-                dateToCheck.isAtSameMomentAs(today));
-      case 'Bulan Ini':
-        return orderDate.year == now.year && orderDate.month == now.month;
-      case 'Semua':
-      default:
-        return true;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // 1. FILTER LOGIC
-    List<Order> filteredList = widget.orders.where((order) {
-      // Filter A: Waktu
-      bool passDate = _checkDateFilter(order.createdAt);
-
-      // Filter B: Search
-      bool passSearch = true;
-      if (_searchQuery.isNotEmpty) {
-        final query = _searchQuery.toLowerCase();
-        final name = order.customerName?.toLowerCase() ?? '';
-        final id = order.id.toString();
-        final table = order.restoTable?.number.toLowerCase() ?? '';
-        passSearch =
-            name.contains(query) || id.contains(query) || table.contains(query);
-      }
-
-      return passDate && passSearch;
-    }).toList();
-
-    // 2. SORTING (Terbaru di atas)
-    final displayOrders = filteredList.reversed.toList();
-
     return Container(
       color: kBackgroundColor,
       padding: const EdgeInsets.all(24.0),
@@ -111,10 +89,9 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
 
           const SizedBox(height: 20),
 
-          // --- CONTROLS SECTION (SEARCH & FILTER) - POSISI KIRI ATAS ---
           Row(
             children: [
-              // 1. SEARCH BAR (Lebar diperbesar sedikit agar nyaman)
+              // 1. SEARCH BAR
               Container(
                 width: 280,
                 height: 45,
@@ -124,7 +101,9 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                   style: const TextStyle(color: Colors.grey, fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'Cari ID, Nama, atau Meja...',
-                    hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5)),
+                    hintStyle: TextStyle(
+                      color: Colors.grey.withValues(alpha: 0.5),
+                    ),
                     prefixIcon: const Icon(Icons.search, color: kPrimaryColor),
                     filled: true,
                     fillColor: const Color(0xEEEEEEEE),
@@ -133,63 +112,75 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                       horizontal: 16,
                     ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12), // Lebih rounded
+                      borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                   ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
                 ),
               ),
 
               // 2. DROPDOWN FILTER
-              Container(
+              SizedBox(
                 height: 45,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: kPrimaryColor,
-                  borderRadius: BorderRadius.circular(12), // Lebih rounded
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedFilter,
-                    dropdownColor: const Color(0xFF2D2D2D),
-                    icon: const Icon(
-                      Icons.keyboard_arrow_down,
-                      color: Colors.white,
+                width: 200,
+                child: DropdownMenu<String>(
+                  width: 200,
+                  initialSelection: _controller.selectedFilter,
+                  onSelected: (value) {
+                    if (value != null) {
+                      _controller.setSelectedFilter(value);
+                    }
+                  },
+                  inputDecorationTheme: InputDecorationTheme(
+                    filled: true,
+                    fillColor: kPrimaryColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                    items: _filterOptions.map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_month,
-                              size: 16,
-                              color: Colors.white70,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(value),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      if (newValue != null) {
-                        setState(() {
-                          _selectedFilter = newValue;
-                        });
-                      }
-                    },
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
+                  menuStyle: MenuStyle(
+                    backgroundColor: const WidgetStatePropertyAll(
+                      Color.fromARGB(255, 255, 255, 255),
+                    ),
+                    elevation: const WidgetStatePropertyAll(6),
+                    shape: WidgetStatePropertyAll(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    maximumSize: WidgetStatePropertyAll(
+                      Size(270, double.infinity),
+                    ),
+                  ),
+                  trailingIcon: const Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.white,
+                  ),
+                  textStyle: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  dropdownMenuEntries: _controller.filterOptions.map((value) {
+                    return DropdownMenuEntry<String>(
+                      value: value,
+                      label: value,
+                      labelWidget: Text(
+                        value,
+                        style: const TextStyle(
+                          color: Color.fromARGB(255, 0, 0, 0),
+                          fontSize: 14,
+                        ),
+                      ),
+                      leadingIcon: const Icon(
+                        Icons.calendar_month,
+                        size: 18,
+                        color: kPrimaryColor,
+                      ),
+                    );
+                  }).toList(),
                 ),
               ),
             ],
@@ -199,9 +190,9 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             child: Text(
-              "Menampilkan ${displayOrders.length} transaksi ($_selectedFilter)",
+              _controller.getFilterInfoText(),
               style: TextStyle(
-                color: kSecondaryColor.withOpacity(0.7),
+                color: kSecondaryColor.withValues(alpha: 0.7),
                 fontSize: 14,
               ),
             ),
@@ -209,7 +200,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
 
           // --- LIST DATA ---
           Expanded(
-            child: displayOrders.isEmpty
+            child: _controller.filteredOrders.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -221,9 +212,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _searchQuery.isNotEmpty
-                              ? 'Tidak ditemukan transaksi: "$_searchQuery"'
-                              : 'Tidak ada transaksi periode: "$_selectedFilter"',
+                          _controller.getEmptyStateMessage(),
                           style: const TextStyle(color: kSecondaryColor),
                         ),
                       ],
@@ -238,9 +227,11 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                           mainAxisSpacing: 20,
                           childAspectRatio: 1.2,
                         ),
-                    itemCount: displayOrders.length,
+                    itemCount: _controller.filteredOrders.length,
                     itemBuilder: (context, index) {
-                      return _buildTransactionCard(displayOrders[index]);
+                      return _buildTransactionCard(
+                        _controller.filteredOrders[index],
+                      );
                     },
                   ),
           ),
@@ -298,7 +289,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                       Text(
                         'Order #${order.id}',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 12,
                         ),
                       ),
@@ -314,7 +305,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
             Text(
               '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year} • ${order.createdAt.hour}:${order.createdAt.minute.toString().padLeft(2, '0')}',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 12,
               ),
             ),
@@ -333,7 +324,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                     child: Text(
                       'Qty',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 11,
                       ),
                     ),
@@ -343,7 +334,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                     child: Text(
                       'Items',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 11,
                       ),
                     ),
@@ -351,7 +342,7 @@ class _CashierTransactionScreenState extends State<CashierTransactionScreen> {
                   Text(
                     'Price',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 11,
                     ),
                   ),

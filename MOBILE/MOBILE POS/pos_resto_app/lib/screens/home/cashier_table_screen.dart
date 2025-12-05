@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import '../../models/order_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/constants.dart';
+import '../../controllers/cashier_table_controller.dart';
 
-class CashierTableScreen extends StatelessWidget {
+class CashierTableScreen extends StatefulWidget {
   final List<RestoTable> tables;
   final Future<void> Function() onRefresh;
   final ApiService apiService;
@@ -16,6 +17,54 @@ class CashierTableScreen extends StatelessWidget {
     required this.onRefresh,
     required this.apiService,
   });
+
+  @override
+  State<CashierTableScreen> createState() => _CashierTableScreenState();
+}
+
+class _CashierTableScreenState extends State<CashierTableScreen> {
+  late CashierTableController _controller;
+  VoidCallback? _controllerListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = CashierTableController(
+      context: context,
+      tables: widget.tables,
+      onRefresh: widget.onRefresh,
+      apiService: widget.apiService,
+    );
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
+
+  @override
+  void didUpdateWidget(CashierTableScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+
+    // Update controller jika data berubah
+    _controller = CashierTableController(
+      context: context,
+      tables: widget.tables,
+      onRefresh: widget.onRefresh,
+      apiService: widget.apiService,
+    );
+
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
+
+  @override
+  void dispose() {
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +85,7 @@ class CashierTableScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: onRefresh,
+              onRefresh: widget.onRefresh,
               child: GridView.builder(
                 padding: EdgeInsets.zero,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -45,12 +94,10 @@ class CashierTableScreen extends StatelessWidget {
                   crossAxisSpacing: 20,
                   mainAxisSpacing: 20,
                 ),
-                itemCount: tables.length,
+                itemCount: _controller.getSortedTables().length,
                 itemBuilder: (context, index) {
-                  final sortedTables = List<RestoTable>.from(tables)
-                    ..sort((a, b) => a.number.compareTo(b.number));
-                  final table = sortedTables[index];
-                  return _buildTableCard(table, context);
+                  final table = _controller.getSortedTables()[index];
+                  return _buildTableCard(table);
                 },
               ),
             ),
@@ -60,20 +107,16 @@ class CashierTableScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTableCard(RestoTable table, BuildContext context) {
-    final bool isAvailable = table.status.toLowerCase() == 'available';
-    final Color cardColor = isAvailable ? const Color.fromARGB(255, 230, 230, 230) : Colors.red.shade600;
-    final Color textColor = isAvailable ? kSecondaryColor : Colors.white;
-    final Color statusColor = isAvailable ? kSecondaryColor.withOpacity(0.8) : Colors.white.withOpacity(0.8);
-    final String statusText = isAvailable ? 'Tersedia' : 'Terisi';
+  Widget _buildTableCard(RestoTable table) {
+    final statusInfo = _controller.getTableStatusInfo(table);
 
     return GestureDetector(
       onTap: () {
-        _showUpdateStatusDialog(table, context);
+        _controller.showUpdateStatusDialog(table);
       },
       child: Card(
         elevation: 4,
-        color: cardColor,
+        color: statusInfo['cardColor'] as Color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Center(
           child: Column(
@@ -84,15 +127,15 @@ class CashierTableScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: textColor,
+                  color: statusInfo['textColor'] as Color,
                 ),
               ),
               const SizedBox(height: 1),
               Text(
-                statusText,
+                statusInfo['statusText'] as String,
                 style: TextStyle(
                   fontSize: 14,
-                  color: statusColor,
+                  color: statusInfo['statusColor'] as Color,
                 ),
               ),
             ],
@@ -101,148 +144,4 @@ class CashierTableScreen extends StatelessWidget {
       ),
     );
   }
-
-  Future<void> _showUpdateStatusDialog(RestoTable table, BuildContext context) async {
-  final bool isAvailable = table.status.toLowerCase() == 'available';
-  final String newStatus = isAvailable ? 'occupied' : 'available';
-  final String newStatusText = isAvailable ? 'Terisi' : 'Tersedia';
-
-  await showDialog(
-    context: context,
-    barrierDismissible: true,
-    builder: (BuildContext dialogContext) {
-      return Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        backgroundColor: kBackgroundColor,
-        child: SizedBox(
-          width: 400, // lebar dialog
-          height: 300, // tinggi dialog
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ICON BULAT
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: kSplashCircleColor,
-                ),
-                child: const Icon(
-                  Icons.info_outline,
-                  size: 40,
-                  color: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // TITLE
-              const Text(
-                'Konfirmasi',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: kPrimaryColor,
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // MESSAGE
-              Text(
-                'Ubah status "Meja ${table.number}" menjadi "$newStatusText"?',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
-              ),
-
-              const SizedBox(height: 28),
-
-              // BUTTONS
-              Row(
-                children: [
-                  // CANCEL BUTTON
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        side: BorderSide(color: kPrimaryColor, width: 2),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Batal',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: kPrimaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 12),
-
-                  // CONFIRM BUTTON
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        try {
-                          await apiService.updateTableStatus(table.id, newStatus);
-                          await onRefresh();
-
-                          Navigator.of(dialogContext).pop();
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Status Meja ${table.number} berhasil diubah!'),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        } catch (e) {
-                          Navigator.of(dialogContext).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Gagal update: ${e.toString()}'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        elevation: 0,
-                        backgroundColor: kPrimaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Ubah',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      )
-      );
-    },
-  );
-}
 }

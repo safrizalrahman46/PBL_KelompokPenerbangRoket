@@ -1,8 +1,9 @@
+// lib/screens/home/cashier_menu_screen.dart
+
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../models/menu_model.dart';
-import '../../providers/cart_provider.dart';
 import '../../utils/constants.dart';
+import '../../controllers/cashier_menu_controller.dart';
 
 class CashierMenuScreen extends StatefulWidget {
   final List<Menu> menus;
@@ -21,16 +22,51 @@ class CashierMenuScreen extends StatefulWidget {
 }
 
 class _CashierMenuScreenState extends State<CashierMenuScreen> {
-  int? _selectedCategoryId;
+  late CashierMenuController _controller;
+  VoidCallback? _controllerListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = CashierMenuController(
+      context: context,
+      menus: widget.menus,
+      categories: widget.categories,
+      onRefresh: widget.onRefresh,
+    );
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
+
+  @override
+  void didUpdateWidget(CashierMenuScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update controller jika data berubah
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+
+    _controller = CashierMenuController(
+      context: context,
+      menus: widget.menus,
+      categories: widget.categories,
+      onRefresh: widget.onRefresh,
+    );
+
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
+
+  @override
+  void dispose() {
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final displayedMenus = _selectedCategoryId == null
-        ? widget.menus
-        : widget.menus
-              .where((m) => m.categoryId == _selectedCategoryId)
-              .toList();
-
     return Container(
       color: kBackgroundColor,
       padding: const EdgeInsets.all(24.0),
@@ -48,11 +84,10 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
             ),
           ),
           const SizedBox(height: 16),
-
           Expanded(
             child: RefreshIndicator(
               onRefresh: widget.onRefresh,
-              child: displayedMenus.isEmpty
+              child: _controller.displayedMenus.isEmpty
                   ? const Center(
                       child: Text(
                         "Tidak ada menu",
@@ -68,9 +103,11 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
                           ),
-                      itemCount: displayedMenus.length,
+                      itemCount: _controller.displayedMenus.length,
                       itemBuilder: (context, index) {
-                        return _buildMenuCard(displayedMenus[index]);
+                        return _buildMenuCard(
+                          _controller.displayedMenus[index],
+                        );
                       },
                     ),
             ),
@@ -81,43 +118,21 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
   }
 
   // ======================================================================
-  // CATEGORY FILTER BAR
+  // CATEGORY FILTER BAR (UI only)
   // ======================================================================
   Widget _buildCategoryFilterBar() {
-    List<Category> allCategories = [
-      Category(id: -1, name: "All", menusCount: widget.menus.length),
-      ...widget.categories,
-    ];
-
     return SizedBox(
       height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: allCategories.length,
+        itemCount: _controller.getAllCategories().length,
         itemBuilder: (context, index) {
-          final category = allCategories[index];
-          final bool isSelected = category.id == (_selectedCategoryId ?? -1);
-
-          // --- Icon Improvement ---
-          IconData icon;
-          String name = category.name.toLowerCase();
-
-          if (name.contains("makan") || name.contains("main")) {
-            icon = Icons.restaurant;
-          } else if (name.contains("snack") || name.contains("camil")) {
-            icon = Icons.fastfood;
-          } else if (name.contains("minum") ||
-              name.contains("drink") ||
-              name.contains("kopi")) {
-            icon = Icons.local_cafe;
-          } else {
-            icon = Icons.category;
-          }
+          final category = _controller.getAllCategories()[index];
+          final isSelected = _controller.isCategorySelected(category);
+          final icon = _controller.getCategoryIcon(category);
 
           return GestureDetector(
-            onTap: () => setState(() {
-              _selectedCategoryId = category.id == -1 ? null : category.id;
-            }),
+            onTap: () => _controller.selectCategory(category.id),
             child: Container(
               width: 160,
               margin: const EdgeInsets.only(right: 16),
@@ -157,8 +172,8 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                             style: TextStyle(
                               fontSize: 14,
                               color: isSelected
-                                  ? kBackgroundColor.withOpacity(0.8)
-                                  : kSecondaryColor.withOpacity(0.6),
+                                  ? kBackgroundColor.withValues(alpha: 0.8)
+                                  : kSecondaryColor.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -175,38 +190,11 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
   }
 
   // ======================================================================
-  // NORMALIZE IMAGE URL
-  // ======================================================================
-  String normalizeImageUrl(String? url) {
-    if (url == null || url.isEmpty) return '';
-
-    String path = url;
-
-    // Full URL langsung dipakai
-    if (url.startsWith('http')) {
-      return url;
-    }
-
-    // Jika path tidak mengandung storage
-    if (!path.contains('storage')) {
-      path = 'storage/$path';
-    }
-
-    if (path.startsWith('/')) {
-      path = path.substring(1);
-    }
-
-    return '$BASE_URL/$path';
-  }
-
-  // ======================================================================
-  // MENU CARD
+  // MENU CARD (UI only)
   // ======================================================================
   Widget _buildMenuCard(Menu menu) {
-    final cart = Provider.of<CartProvider>(context, listen: false);
-    final itemCount = context.watch<CartProvider>().getItemQuantity(menu.id);
-
-    final fullImageUrl = normalizeImageUrl(menu.imageUrl);
+    final itemCount = _controller.getItemQuantity(menu.id);
+    final fullImageUrl = _controller.normalizeImageUrl(menu.imageUrl);
     final isAvailable = menu.isAvailable;
 
     return Card(
@@ -245,7 +233,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                           menu.description ?? 'Tidak ada deskripsi',
                           style: TextStyle(
                             fontSize: 12,
-                            color: kSecondaryColor.withOpacity(0.6),
+                            color: kSecondaryColor.withValues(alpha: 0.6),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -257,14 +245,14 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                               "Sisa Stok: ${menu.stock}",
                               style: TextStyle(
                                 fontSize: 11,
-                                color: kPrimaryColor.withOpacity(0.8),
+                                color: kPrimaryColor.withValues(alpha: 0.8),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
                       ],
                     ),
-                    _buildPriceAndControls(menu, itemCount, cart, isAvailable),
+                    _buildPriceAndControls(menu, itemCount, isAvailable),
                   ],
                 ),
               ),
@@ -276,7 +264,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
   }
 
   // ======================================================================
-  // IMAGE WIDGET
+  // IMAGE WIDGET (UI only)
   // ======================================================================
   Widget _buildMenuImage(String imageUrl, bool isAvailable) {
     return AspectRatio(
@@ -311,10 +299,9 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                     child: const Icon(Icons.broken_image),
                   ),
                 ),
-
           if (!isAvailable)
             Container(
-              color: Colors.black.withOpacity(0.4),
+              color: Colors.black.withValues(alpha: 0.4),
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -322,7 +309,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.9),
+                    color: Colors.red.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Text(
@@ -343,116 +330,78 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
   }
 
   // ======================================================================
-  // PRICE + BUTTONS
+  // PRICE + BUTTONS (UI only)
   // ======================================================================
-  Widget _buildPriceAndControls(
-  Menu menu,
-  int itemCount,
-  CartProvider cart,
-  bool isAvailable,
-) {
-  bool isMaxReached = itemCount >= menu.stock;
-  bool outOfStock = menu.stock <= 0;
+  Widget _buildPriceAndControls(Menu menu, int itemCount, bool isAvailable) {
+    bool isMaxReached = itemCount >= menu.stock;
+    bool outOfStock = menu.stock <= 0;
 
-  // Fungsi untuk menampilkan snackbar dengan style yang konsisten
-  void _showSnack(String message, {Color? color}) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            fontSize: 16,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Text(
+            "Rp ${menu.price.toStringAsFixed(0)}",
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isAvailable ? kPrimaryColor : Colors.grey,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
-        backgroundColor: color ?? Colors.red,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(milliseconds: 1500), // Lebih pendek karena pesan lebih singkat
-      ),
-    );
-  }
-
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Flexible(
-        child: Text(
-          "Rp ${menu.price.toStringAsFixed(0)}",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: isAvailable ? kPrimaryColor : Colors.grey,
-          ),
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-
-      // --- Jika habis ---
-      if (!isAvailable)
-        const Text(
-          "Stok Kosong",
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.red,
-          ),
-        )
-      else
-        // --- Kontrol Add/Remove ---
-        Container(
-          decoration: BoxDecoration(
-            color: itemCount > 0 ? kPrimaryColor.withOpacity(0.1) : null,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            children: [
-              if (itemCount > 0)
+        if (!isAvailable)
+          const Text(
+            "Stok Kosong",
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          )
+        else
+          Container(
+            decoration: BoxDecoration(
+              color: itemCount > 0
+                  ? kPrimaryColor.withValues(alpha: 0.1)
+                  : null,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                if (itemCount > 0)
+                  IconButton(
+                    icon: const Icon(Icons.remove, size: 18),
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    onPressed: () => _controller.decreaseFromCart(menu.id),
+                  ),
+                if (itemCount > 0)
+                  Text(
+                    itemCount.toString(),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 IconButton(
-                  icon: const Icon(Icons.remove, size: 18),
+                  icon: Icon(
+                    itemCount > 0 ? Icons.add : Icons.add_circle,
+                    size: 18,
+                    color: isMaxReached || outOfStock
+                        ? Colors.grey
+                        : kPrimaryColor,
+                  ),
                   padding: const EdgeInsets.all(4),
                   constraints: const BoxConstraints(),
-                  onPressed: () => cart.decreaseItem(menu.id),
+                  onPressed: isMaxReached || outOfStock
+                      ? null
+                      : () => _controller.addToCart(menu),
                 ),
-
-              if (itemCount > 0)
-                Text(
-                  itemCount.toString(),
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-              // --- ADD BUTTON ---
-              IconButton(
-                icon: Icon(
-                  itemCount > 0 ? Icons.add : Icons.add_circle,
-                  size: 18,
-                  color: isMaxReached || outOfStock
-                      ? Colors.grey
-                      : kPrimaryColor,
-                ),
-                padding: const EdgeInsets.all(4),
-                constraints: const BoxConstraints(),
-                onPressed: isMaxReached || outOfStock
-                    ? () {
-                        _showSnack(
-                          "Maksimal order! Stok hanya ${menu.stock}.",
-                          color: Colors.red,
-                        );
-                      }
-                    : () => cart.addItem(menu),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-    ],
-  );
-}
+      ],
+    );
+  }
 }

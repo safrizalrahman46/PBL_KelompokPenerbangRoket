@@ -1,16 +1,12 @@
 // lib/screens/home/cashier_payment_screen.dart
 
-import 'dart:typed_data';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import '../../models/order_model.dart';
 import '../../providers/cart_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/constants.dart';
-import 'package:intl/intl.dart'; 
+import '../../controllers/cashier_payment_controller.dart';
 
 class CashierPaymentScreen extends StatefulWidget {
   final CartProvider cart;
@@ -31,94 +27,98 @@ class CashierPaymentScreen extends StatefulWidget {
 }
 
 class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
-  int? selectedTableId;
-  String? selectedPaymentMethod;
-  final TextEditingController receivedController = TextEditingController();
-  // PERUBAHAN: Dikosongkan agar kasir wajib mengisi
-  final TextEditingController customerNameController =
-      TextEditingController(text: '');
-  bool isSubmitting = false;
+  late CashierPaymentController _controller;
+  VoidCallback? _controllerListener;
 
-  // --- TAMBAHAN ---
-  String _serviceType = 'meja'; // Pilihan default: 'meja' atau 'self_service'
-  // --- BATAS TAMBAHAN ---
+  @override
+  void initState() {
+    super.initState();
+    _controller = CashierPaymentController(
+      context: context,
+      cart: widget.cart,
+      tables: widget.tables,
+      apiService: widget.apiService,
+      onOrderSuccess: widget.onOrderSuccess,
+    );
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
 
   @override
   void dispose() {
-    receivedController.dispose();
-    customerNameController.dispose();
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    double received = double.tryParse(receivedController.text) ?? 0;
-    double change =
-        (received > widget.cart.total) ? received - widget.cart.total : 0;
-
     return Scaffold(
       backgroundColor: kBackgroundColor,
       body: Stack(
         children: [
           Row(
             children: [
-              // --- PANEL KIRI (refactored) ---
+              // --- PANEL KIRI ---
               Expanded(
                 flex: 2,
                 child: Container(
-                  color: kLightGreyColor.withOpacity(0.3),
+                  color: kLightGreyColor.withValues(alpha: 0.3),
                   padding: const EdgeInsets.only(
                     top: 24.0,
                     left: 72.0,
                     right: 24.0,
                     bottom: 24.0,
                   ),
-                  // --- PERUBAHAN 1: Tambahkan SingleChildScrollView ---
                   child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // --- PERUBAHAN: UI Panel Kiri Diatur Ulang ---
-
-                        // 1. Nama Pelanggan (Wajib)
+                        // 1. Nama Pelanggan
                         const Text(
                           "Nama Pelanggan (Wajib)",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: kSecondaryColor,
-                              fontWeight: FontWeight.w600),
+                            fontSize: 16,
+                            color: kSecondaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         SizedBox(
                           width: 300,
                           child: TextField(
-                            controller: customerNameController,
+                            controller: _controller.customerNameController,
                             decoration: const InputDecoration(
                               labelText: 'Nama Pelanggan',
                               isDense: true,
-                              contentPadding:
-                                  EdgeInsets.symmetric(vertical: 4.0),
+                              contentPadding: EdgeInsets.symmetric(
+                                vertical: 4.0,
+                              ),
                               border: UnderlineInputBorder(),
                             ),
                             style: const TextStyle(
                               fontSize: 16,
                               color: kSecondaryColor,
                             ),
+                            onChanged: (_) => setState(() {}),
                           ),
                         ),
                         const SizedBox(height: 24),
 
-                        // 2. Tipe Layanan (Toggle)
+                        // 2. Tipe Layanan
                         const Text(
                           "Tipe Layanan",
                           style: TextStyle(
-                              fontSize: 16,
-                              color: kSecondaryColor,
-                              fontWeight: FontWeight.w600),
+                            fontSize: 16,
+                            color: kSecondaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         ToggleButtons(
-                          borderColor: kPrimaryColor.withOpacity(0.5),
+                          borderColor: kPrimaryColor.withValues(alpha: 0.5),
                           selectedBorderColor: kPrimaryColor,
                           selectedColor: Colors.white,
                           fillColor: kPrimaryColor,
@@ -126,21 +126,16 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                           borderRadius: BorderRadius.circular(8),
                           constraints: const BoxConstraints(
                             minHeight: 45.0,
-                            minWidth: 150.0, // Sesuaikan lebar
+                            minWidth: 150.0,
                           ),
                           isSelected: [
-                            _serviceType == 'meja',
-                            _serviceType == 'self_service',
+                            _controller.serviceType == 'meja',
+                            _controller.serviceType == 'self_service',
                           ],
                           onPressed: (int index) {
-                            setState(() {
-                              _serviceType =
-                                  (index == 0) ? 'meja' : 'self_service';
-                              // Jika pilih 'self_service', hapus pilihan meja
-                              if (_serviceType == 'self_service') {
-                                selectedTableId = null;
-                              }
-                            });
+                            _controller.setServiceType(
+                              index == 0 ? 'meja' : 'self_service',
+                            );
                           },
                           children: const [
                             Padding(
@@ -168,7 +163,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                         const SizedBox(height: 24),
 
                         // 3. Pilihan Meja (Kondisional)
-                        if (_serviceType == 'meja')
+                        if (_controller.serviceType == 'meja')
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -178,15 +173,16 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                                   const Text(
                                     "Meja Terpilih",
                                     style: TextStyle(
-                                        fontSize: 16,
-                                        color: kSecondaryColor,
-                                        fontWeight: FontWeight.w600),
+                                      fontSize: 16,
+                                      color: kSecondaryColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    selectedTableId == null
+                                    _controller.selectedTableId == null
                                         ? 'Belum Pilih Meja'
-                                        : 'Meja ${_getTableNumber(selectedTableId!)}',
+                                        : 'Meja ${_controller.getTableNumber(_controller.selectedTableId!)}',
                                     style: const TextStyle(
                                       fontSize: 28,
                                       fontWeight: FontWeight.bold,
@@ -196,27 +192,23 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                                 ],
                               ),
                               IconButton(
-                                icon: const Icon(Icons.edit,
-                                    color: kPrimaryColor, size: 28),
-                                onPressed: () {
-                                  _showTableSelectionDialog(context);
-                                },
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: kPrimaryColor,
+                                  size: 28,
+                                ),
+                                onPressed: _controller.showTableSelectionDialog,
                               ),
                             ],
                           ),
 
-                        // Beri spasi jika 'meja' dipilih, agar layout konsisten
-                        if (_serviceType == 'meja') const SizedBox(height: 24),
-
-                        // --- BATAS PERUBAHAN UI ---
+                        if (_controller.serviceType == 'meja')
+                          const SizedBox(height: 24),
 
                         // 4. Daftar Pesanan
-                        // --- PERUBAHAN 2: Hapus 'Expanded' ---
                         ListView.builder(
-                          // --- PERUBAHAN 3: Tambahkan shrinkWrap & physics ---
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          // --- BATAS PERUBAHAN ---
                           itemCount: widget.cart.items.length,
                           itemBuilder: (context, index) {
                             final item = widget.cart.items[index];
@@ -264,8 +256,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                                           'x ${item.quantity}',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: kSecondaryColor
-                                                .withOpacity(0.6),
+                                            color: kSecondaryColor.withValues(
+                                              alpha: 0.6,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -285,21 +278,18 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        _buildSummarySection(widget.cart, change),
+                        _buildSummarySection(),
                         const SizedBox(height: 16),
                         _buildPaymentMethodSection(),
                         const SizedBox(height: 16),
-                        _buildOrderButton(change),
+                        _buildOrderButton(),
                       ],
                     ),
                   ),
                 ),
               ),
               // --- PANEL KANAN (Kalkulator) ---
-              Expanded(
-                flex: 1,
-                child: _buildCalculatorSection(received, change),
-              ),
+              Expanded(flex: 1, child: _buildCalculatorSection()),
             ],
           ),
           // Tombol Back
@@ -308,12 +298,15 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
             left: 16.0,
             child: Container(
               decoration: BoxDecoration(
-                color: kBackgroundColor.withOpacity(0.7),
+                color: kBackgroundColor.withValues(alpha: 0.7),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon:
-                    const Icon(Icons.arrow_back, color: kSecondaryColor, size: 28),
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: kSecondaryColor,
+                  size: 28,
+                ),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),
@@ -323,7 +316,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
     );
   }
 
-  Widget _buildSummarySection(CartProvider cart, double change) {
+  Widget _buildSummarySection() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -332,21 +325,30 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
       ),
       child: Column(
         children: [
-          _buildSummaryRow('Subtotal', 'Rp ${cart.subtotal.toStringAsFixed(0)}'),
+          _buildSummaryRow(
+            'Subtotal',
+            'Rp ${widget.cart.subtotal.toStringAsFixed(0)}',
+          ),
           const SizedBox(height: 12),
-          _buildSummaryRow('Tax 10%',
-              'Rp ${(cart.subtotal * cart.taxPercent / 100).toStringAsFixed(0)}'),
+          _buildSummaryRow(
+            'Tax 10%',
+            'Rp ${(widget.cart.subtotal * widget.cart.taxPercent / 100).toStringAsFixed(0)}',
+          ),
           const SizedBox(height: 12),
           _buildSummaryRow('Tip', 'Rp 500'),
           const Divider(height: 24, thickness: 1),
-          _buildSummaryRow('Total', 'Rp ${cart.total.toStringAsFixed(0)}',
-              isTotal: true),
-          if (change > 0 && selectedPaymentMethod == 'cash')
+          _buildSummaryRow(
+            'Total',
+            'Rp ${widget.cart.total.toStringAsFixed(0)}',
+            isTotal: true,
+          ),
+          if (_controller.changeAmount > 0 &&
+              _controller.selectedPaymentMethod == 'cash')
             Padding(
               padding: const EdgeInsets.only(top: 12.0),
               child: _buildSummaryRow(
                 'Kembalian',
-                'Rp ${change.toStringAsFixed(0)}',
+                'Rp ${_controller.changeAmount.toStringAsFixed(0)}',
                 isChange: true,
               ),
             ),
@@ -366,152 +368,46 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSummaryRow(
-              'Received', 'Rp ${double.tryParse(receivedController.text) ?? 0}'),
+            'Received',
+            'Rp ${_controller.receivedAmount.toStringAsFixed(0)}',
+          ),
           const SizedBox(height: 24),
           const Text(
             'Payment Method',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           Row(
-            children: [
-              Expanded(
-                child: _buildPaymentMethodButton(
-                  'Cash',
-                  Icons.money,
-                  'cash',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildPaymentMethodButton(
-                  'Debit Card',
-                  Icons.credit_card,
-                  'debit',
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildPaymentMethodButton(
-                  'E-Wallet',
-                  Icons.account_balance_wallet,
-                  'qris',
-                ),
-              ),
-            ],
+            children: _controller.paymentMethods.map((method) {
+              final bool isSelected =
+                  _controller.selectedPaymentMethod == method['method'];
+              return Expanded(
+                child: _buildPaymentMethodButton(method, isSelected),
+              );
+            }).toList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildOrderButton(double change) {
+  Widget _buildOrderButton() {
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        // --- PERUBAHAN: Validasi Tombol ---
-        onPressed: ((_serviceType == 'meja' && selectedTableId == null) || // <-- Logika diubah
-                    selectedPaymentMethod == null ||
-                    customerNameController.text.isEmpty ||
-                    isSubmitting)
-            ? null // Tombol disable jika validasi gagal
+        onPressed: _controller.isSubmitting
+            ? null
             : () async {
-                // --- Validasi tambahan untuk uang tunai ---
-                final double received =
-                    double.tryParse(receivedController.text) ?? 0;
-                if (selectedPaymentMethod == 'cash' &&
-                    received < widget.cart.total) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content:
-                          Text('Uang tunai yang diterima kurang dari total.'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
-                // --- Batas validasi uang tunai ---
+                await _controller.processOrder();
+                // Show splash burst animation
+                showOrderSuccessSplash(context);
 
-                if (selectedPaymentMethod == 'debit' ||
-                    selectedPaymentMethod == 'qris') {
-                  final bool? isConfirmed =
-                      await _showPaymentConfirmationDialog(
-                    context,
-                    selectedPaymentMethod!,
-                  );
+                // Close the payment screen
+                Navigator.of(context).pop();
 
-                  if (isConfirmed != true) {
-                    return; // Batalkan jika user menekan 'Batalkan'
-                  }
-                }
-
-                setState(() {
-                  isSubmitting = true;
-                });
-
-                try {
-                  // --- PERUBAHAN: 'tableId' dibuat nullable ---
-                  final orderData = widget.cart.createOrderJson(
-                    tableId: selectedTableId, // <-- '!' dihapus
-                    paymentMethod: selectedPaymentMethod!,
-                    customerName: customerNameController.text,
-                    // Pastikan status dikirim dengan benar
-                    status: (selectedPaymentMethod == 'debit' ||
-                            selectedPaymentMethod == 'qris')
-                        ? 'pending' // Jika non-tunai, mungkin perlu konfirmasi
-                        : 'paid', // Jika tunai, langsung lunas
-                  );
-
-                  final Order newOrder =
-                      await widget.apiService.createOrder(orderData);
-
-                  // Buat transaksi
-                  await widget.apiService.createTransaction({
-                    'order_id': newOrder.id,
-                    'payment_method': selectedPaymentMethod!,
-                    'amount_paid': receivedController.text.isNotEmpty
-                        ? double.parse(receivedController.text)
-                        : widget.cart.total,
-                  });
-
-                  // --- PERUBAHAN: Update status meja jika 'dine-in' ---
-                  if (selectedTableId != null) {
-                    await widget.apiService
-                        .updateTableStatus(selectedTableId!, 'occupied');
-                  }
-                  // --- BATAS PERUBAHAN ---
-
-                  // Clear cart FIRST, then show splash
-                  widget.cart.clearCart();
-
-                  // Show splash burst animation (overlay)
-                  showOrderSuccessSplash(context);
-
-                  // Close the payment screen
-                  Navigator.of(context).pop();
-
-                  // Show the success dialog (still using current context)
-                  _showSuccessOrderDialog(context);
-
-                  widget.onOrderSuccess();
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            'Gagal: ${e.toString().replaceFirst("Exception: ", "")}'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    setState(() {
-                      isSubmitting = false;
-                    });
-                  }
-                }
+                // Show success dialog
+                _controller.showSuccessDialog();
               },
         style: ElevatedButton.styleFrom(
           backgroundColor: kPrimaryColor,
@@ -519,10 +415,9 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          // Style untuk tombol disabled
           disabledBackgroundColor: Colors.grey.shade400,
         ),
-        child: isSubmitting
+        child: _controller.isSubmitting
             ? const SizedBox(
                 width: 24,
                 height: 24,
@@ -543,7 +438,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
     );
   }
 
-  Widget _buildCalculatorSection(double received, double change) {
+  Widget _buildCalculatorSection() {
     return Container(
       color: kBackgroundColor,
       padding: const EdgeInsets.all(24),
@@ -566,7 +461,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
-              'Rp ${received.toStringAsFixed(0)}',
+              'Rp ${_controller.receivedAmount.toStringAsFixed(0)}',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 36,
@@ -592,7 +487,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
                 _buildCalculatorButton('7'),
                 _buildCalculatorButton('8'),
                 _buildCalculatorButton('9'),
-                _buildCalculatorButton('000'), // Tambah 000
+                _buildCalculatorButton('000'),
                 _buildCalculatorButton('0'),
                 _buildCalculatorButton('X', isDelete: true),
               ],
@@ -603,9 +498,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
             children: [
               Expanded(
                 child: TextButton(
-                  onPressed: () {
-                    _printReceipt(context, received, change);
-                  },
+                  onPressed: _controller.showReceiptDialog,
                   style: TextButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     side: const BorderSide(color: kPrimaryColor),
@@ -626,12 +519,7 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      receivedController.text =
-                          widget.cart.total.toStringAsFixed(0);
-                    });
-                  },
+                  onPressed: _controller.applyExactAmount,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: kPrimaryColor,
@@ -656,16 +544,22 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value,
-      {bool isTotal = false, bool isChange = false}) {
+  Widget _buildSummaryRow(
+    String label,
+    String value, {
+    bool isTotal = false,
+    bool isChange = false,
+  }) {
     final Color valueColor = isChange
         ? Colors.blueAccent
         : (isTotal ? kPrimaryColor : kSecondaryColor);
-    final Color labelColor =
-        isChange ? Colors.blueAccent : kSecondaryColor.withOpacity(0.8);
+    final Color labelColor = isChange
+        ? Colors.blueAccent
+        : kSecondaryColor.withValues(alpha: 0.8);
     final double fontSize = (isTotal || isChange) ? 18 : 16;
-    final FontWeight fontWeight =
-        (isTotal || isChange) ? FontWeight.bold : FontWeight.normal;
+    final FontWeight fontWeight = (isTotal || isChange)
+        ? FontWeight.bold
+        : FontWeight.normal;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -693,42 +587,43 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
     );
   }
 
-  Widget _buildPaymentMethodButton(String label, IconData icon, String method) {
-    final bool isSelected = selectedPaymentMethod == method;
-    return InkWell(
-      onTap: () {
-        setState(() {
-          selectedPaymentMethod = method;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: isSelected ? kPrimaryColor : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected ? kPrimaryColor : kLightGreyColor,
-            width: 2,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 32,
-              color: isSelected ? Colors.white : kSecondaryColor,
+  Widget _buildPaymentMethodButton(
+    Map<String, dynamic> method,
+    bool isSelected,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(right: 12),
+      child: InkWell(
+        onTap: () => _controller.setPaymentMethod(method['method'] as String),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? kPrimaryColor : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? kPrimaryColor : kLightGreyColor,
+              width: 2,
             ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
+          ),
+          child: Column(
+            children: [
+              Icon(
+                method['icon'] as IconData,
+                size: 32,
                 color: isSelected ? Colors.white : kSecondaryColor,
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                method['label'] as String,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : kSecondaryColor,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -736,23 +631,10 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
 
   Widget _buildCalculatorButton(String value, {bool isDelete = false}) {
     return ElevatedButton(
-      onPressed: () {
-        setState(() {
-          if (isDelete) {
-            if (receivedController.text.isNotEmpty) {
-              receivedController.text = receivedController.text
-                  .substring(0, receivedController.text.length - 1);
-            }
-          } else {
-            receivedController.text += value;
-          }
-        });
-      },
+      onPressed: () => _controller.calculatorInput(value),
       style: ElevatedButton.styleFrom(
         backgroundColor: isDelete ? kPrimaryColor : const Color(0xFFFFF4E0),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: EdgeInsets.zero,
       ),
       child: Text(
@@ -765,422 +647,38 @@ class _CashierPaymentScreenState extends State<CashierPaymentScreen> {
       ),
     );
   }
-
-  String _getTableNumber(int tableId) {
-    try {
-      return widget.tables.firstWhere((t) => t.id == tableId).number;
-    } catch (e) {
-      return '??'; // Fallback jika meja tidak ditemukan
-    }
-  }
-
-  void _showTableSelectionDialog(BuildContext context) {
-    final availableTables = widget.tables
-        .where((t) => t.status.toLowerCase() == 'available')
-        .toList();
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Pilih Meja'),
-          content: SizedBox(
-            width: 300,
-            height: 400,
-            child: ListView.builder(
-              itemCount: availableTables.length,
-              itemBuilder: (context, index) {
-                final table = availableTables[index];
-                final isSelected = table.id == selectedTableId;
-                return ListTile(
-                  leading: Icon(
-                    Icons.table_restaurant,
-                    color: isSelected ? kPrimaryColor : kSecondaryColor,
-                  ),
-                  title: Text(
-                    'Meja ${table.number}',
-                    style: TextStyle(
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                      color: isSelected ? kPrimaryColor : kSecondaryColor,
-                    ),
-                  ),
-                  trailing: isSelected
-                      ? const Icon(Icons.check_circle, color: kPrimaryColor)
-                      : null,
-                  onTap: () {
-                    setState(() {
-                      selectedTableId = table.id;
-                    });
-                    Navigator.of(dialogContext).pop();
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Batal'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<bool?> _showPaymentConfirmationDialog(
-      BuildContext context, String method) async {
-    final bool isDebit = method == 'debit';
-    final String title = isDebit ? 'Pembayaran Debit' : 'Pembayaran E-Wallet';
-    final Widget imageWidget = isDebit
-        ? const Icon(Icons.credit_card, size: 100, color: kPrimaryColor)
-        : const Icon(Icons.qr_code_2, size: 100, color: kPrimaryColor);
-
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(title),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              imageWidget,
-              const SizedBox(height: 16),
-              Text(
-                isDebit
-                    ? 'Silakan gesek kartu debit. Tekan "Selesai" jika berhasil.'
-                    : 'Silakan pindai QRIS. Tekan "Selesai" jika berhasil.',
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Batalkan'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Selesai'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showSuccessOrderDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Container(
-            width: 500,
-            height: 350,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: kPrimaryColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Pesanan Berhasil!',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check,
-                    color: kPrimaryColor,
-                    size: 80,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: kPrimaryColor,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 48, vertical: 16),
-                  ),
-                  child: const Text(
-                    'Lanjutkan Transaksi',
-                    style: TextStyle(fontSize: 18),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _printReceipt(BuildContext context, double received, double change) {
-    // --- PERUBAHAN: Validasi diubah ---
-    if ((_serviceType == 'meja' && selectedTableId == null) ||
-        selectedPaymentMethod == null ||
-        customerNameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Isi Nama, Tipe Layanan, Meja (jika D-In), dan Metode Pembayaran.')),
-      );
-      return;
-    }
-    // --- BATAS PERUBAHAN ---
-
-    // --- PERUBAHAN: Nama layanan dinamis ---
-    final String serviceName = _serviceType == 'meja'
-        ? 'Meja ${_getTableNumber(selectedTableId!)}'
-        : 'Ambil Sendiri';
-    // --- BATAS PERUBAHAN ---
-
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Nota Pesanan'),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Nama: ${customerNameController.text}'),
-                Text('Layanan: $serviceName'), // Diubah
-                const Divider(),
-                ...widget.cart.items.map((item) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                              child:
-                                  Text('${item.quantity}x ${item.menu.name}')),
-                          Text(
-                              'Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}'),
-                        ],
-                      ),
-                    )),
-                const Divider(),
-                _buildSummaryRow('Subtotal',
-                    'Rp ${widget.cart.subtotal.toStringAsFixed(0)}'),
-                _buildSummaryRow(
-                    'Tax 10%',
-                    'Rp ${(widget.cart.subtotal * widget.cart.taxPercent / 100).toStringAsFixed(0)}'),
-                _buildSummaryRow('Tip', 'Rp 500'),
-                const Divider(),
-                _buildSummaryRow(
-                    'Total', 'Rp ${widget.cart.total.toStringAsFixed(0)}',
-                    isTotal: true),
-                const Divider(),
-                _buildSummaryRow(
-                    'Metode', selectedPaymentMethod!.toUpperCase()),
-                _buildSummaryRow(
-                    'Diterima', 'Rp ${received.toStringAsFixed(0)}'),
-                if (change > 0 && selectedPaymentMethod == 'cash')
-                  _buildSummaryRow(
-                      'Kembali', 'Rp ${change.toStringAsFixed(0)}',
-                      isChange: true),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Tutup'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  final Uint8List pdfData = await _generatePdfReceipt(
-                    received,
-                    change,
-                    serviceName, // Kirim nama layanan dinamis
-                  );
-                  await Printing.layoutPdf(
-                      onLayout: (PdfPageFormat format) async => pdfData);
-                  if (mounted) {
-                    Navigator.of(dialogContext).pop();
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    Navigator.of(dialogContext).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Gagal membuat PDF: $e')),
-                    );
-                  }
-                }
-              },
-              child: const Text('Print'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<Uint8List> _generatePdfReceipt(
-    double received,
-    double change,
-    String serviceName, // Diubah dari tableName
-  ) async {
-    final pdf = pw.Document();
-
-    pdf.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat(80 * PdfPageFormat.mm, double.infinity,
-            marginAll: 5 * PdfPageFormat.mm),
-        build: (pw.Context context) {
-          return pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Center(
-                child: pw.Text('Eat.o Nota',
-                    style: pw.TextStyle(
-                        fontSize: 16, fontWeight: pw.FontWeight.bold)),
-              ),
-              pw.SizedBox(height: 10),
-              pw.Text(
-                  'Tanggal: ${DateFormat('dd/MM/yy HH:mm').format(DateTime.now())}'),
-              pw.Text('Nama: ${customerNameController.text}'),
-              pw.Text('Layanan: $serviceName'), // Diubah
-              pw.Divider(height: 15),
-              for (final item in widget.cart.items)
-                pw.Padding(
-                  padding: const pw.EdgeInsets.symmetric(vertical: 2.0),
-                  child: pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text('${item.quantity}x ${item.menu.name}'),
-                      pw.Row(
-                          mainAxisAlignment: pw.MainAxisAlignment.end,
-                          children: [
-                            pw.Text(
-                                'Rp ${(item.menu.price * item.quantity).toStringAsFixed(0)}'),
-                          ])
-                    ],
-                  ),
-                ),
-              pw.Divider(height: 15),
-              _buildPdfSummaryRow(
-                  'Subtotal', 'Rp ${widget.cart.subtotal.toStringAsFixed(0)}'),
-              _buildPdfSummaryRow(
-                  'Tax 10%',
-                  'Rp ${(widget.cart.subtotal * widget.cart.taxPercent / 100).toStringAsFixed(0)}'),
-              _buildPdfSummaryRow('Tip', 'Rp 500'),
-              pw.Divider(),
-              _buildPdfSummaryRow(
-                  'Total', 'Rp ${widget.cart.total.toStringAsFixed(0)}',
-                  isTotal: true),
-              pw.Divider(),
-              _buildPdfSummaryRow(
-                  'Metode', selectedPaymentMethod!.toUpperCase()),
-              _buildPdfSummaryRow(
-                  'Diterima', 'Rp ${received.toStringAsFixed(0)}'),
-              if (change > 0 && selectedPaymentMethod == 'cash')
-                _buildPdfSummaryRow(
-                    'Kembali', 'Rp ${change.toStringAsFixed(0)}',
-                    isChange: true),
-              pw.SizedBox(height: 20),
-              pw.Center(child: pw.Text('Terima kasih!')),
-            ],
-          );
-        },
-      ),
-    );
-
-    return pdf.save();
-  }
-
-  pw.Widget _buildPdfSummaryRow(String label, String value,
-      {bool isTotal = false, bool isChange = false}) {
-    final style = pw.TextStyle(
-      fontWeight:
-          (isTotal || isChange) ? pw.FontWeight.bold : pw.FontWeight.normal,
-      fontSize: (isTotal || isChange) ? 12 : 10,
-    );
-    return pw.Padding(
-      padding: const pw.EdgeInsets.symmetric(vertical: 2.0),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text(label, style: style),
-          pw.Text(value, style: style),
-        ],
-      ),
-    );
-  }
-
-  // -----------------------
-  // SPLASH BURST (Overlay)
-  // -----------------------
-
-  /// Menampilkan overlay animasi cipratan (burst) di tengah layar.
-  void showOrderSuccessSplash(BuildContext context) {
-    final overlayState = Overlay.of(context);
-    // if (overlayState == null) return;
-
-    late OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (context) {
-        return Positioned.fill(
-          child: IgnorePointer(
-            ignoring: true,
-            child: Center(
-              child: SplashBurst(
-                size: 260,
-                particles: 20,
-              ),
-            ),
-          ),
-        );
-      },
-    );
-
-    overlayState.insert(entry);
-
-    // Hapus setelah durasi animasi selesai
-    Future.delayed(const Duration(milliseconds: 800), () {
-      try {
-        entry.remove();
-      } catch (_) {}
-    });
-  }
 }
 
-/// -----------------------
-/// SPLASHBURST WIDGET
-/// Custom animated burst/cipratan tanpa dependency eksternal
-/// -----------------------
+// SPLASH BURST ANIMATION WIDGETS (UI only)
+void showOrderSuccessSplash(BuildContext context) {
+  final overlayState = Overlay.of(context);
+
+  late OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (context) {
+      return Positioned.fill(
+        child: IgnorePointer(
+          ignoring: true,
+          child: Center(child: SplashBurst(size: 260, particles: 20)),
+        ),
+      );
+    },
+  );
+
+  overlayState.insert(entry);
+
+  Future.delayed(const Duration(milliseconds: 800), () {
+    try {
+      entry.remove();
+    } catch (_) {}
+  });
+}
+
 class SplashBurst extends StatefulWidget {
   final double size;
   final int particles;
 
-  const SplashBurst({
-    super.key,
-    this.size = 180,
-    this.particles = 18,
-  });
+  const SplashBurst({super.key, this.size = 180, this.particles = 18});
 
   @override
   _SplashBurstState createState() => _SplashBurstState();
@@ -1207,12 +705,11 @@ class _SplashBurstState extends State<SplashBurst>
         speed: random.nextDouble() * 40 + 40,
         radius: random.nextDouble() * 6 + 4,
         color: Colors.primaries[random.nextInt(Colors.primaries.length)]
-            .withOpacity(0.95),
+            .withValues(alpha: 0.95),
       );
     });
 
     _controller.addListener(() {
-      // Force repaint
       if (mounted) setState(() {});
     });
   }
@@ -1262,9 +759,8 @@ class _BurstPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
 
-    // Draw a subtle glow circle at center (expanding & fading)
     final glowPaint = Paint()
-      ..color = Colors.white.withOpacity((1 - progress) * 0.4)
+      ..color = Colors.white.withValues(alpha: (1 - progress) * 0.4)
       ..style = PaintingStyle.fill;
     final glowRadius = (size.shortestSide / 6) * (1 + progress * 1.6);
     canvas.drawCircle(center, glowRadius, glowPaint);
@@ -1276,7 +772,7 @@ class _BurstPainter extends CustomPainter {
       final position = Offset(center.dx + dx, center.dy + dy);
 
       final paint = Paint()
-        ..color = p.color.withOpacity((1 - progress).clamp(0.0, 1.0))
+        ..color = p.color.withValues(alpha: (1 - progress).clamp(0.0, 1.0))
         ..style = PaintingStyle.fill;
 
       canvas.drawCircle(position, p.radius * (1 - progress), paint);
@@ -1285,6 +781,7 @@ class _BurstPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _BurstPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.particles.length != particles.length;
+    return oldDelegate.progress != progress ||
+        oldDelegate.particles.length != particles.length;
   }
 }
