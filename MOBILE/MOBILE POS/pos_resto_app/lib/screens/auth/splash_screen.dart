@@ -1,11 +1,12 @@
 // lib/screens/auth/splash_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:pos_resto_app/screens/home/cashier_home_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
 import '../../utils/constants.dart';
-import '../home/cashier_home_screen.dart';
+// import '../home/cashier/cashier_menu_screen.dart';
 import '../home/kitchen_home_screen.dart';
 import '../auth/login_screen.dart';
 import '../../models/user_model.dart';
@@ -184,7 +185,7 @@ class _SplashScreenState extends State<SplashScreen>
             width: size,
             height: size,
             decoration: BoxDecoration(
-              color: kSplashCircleColor.withOpacity(opacity),
+              color: kSplashCircleColor.withValues(alpha:opacity),
               shape: BoxShape.circle,
             ),
           ),
@@ -266,7 +267,7 @@ class _SplashScreenState extends State<SplashScreen>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),

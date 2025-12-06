@@ -1,9 +1,8 @@
+// lib/screens/home/queue_display_screen.dart
+
 import 'package:flutter/material.dart';
-import 'dart:async'; // Untuk Timer.periodic
-// Import sesuai lokasi file Anda
 import '../../services/api_service.dart';
-import '../../models/order_model.dart';
-import '../../utils/constants.dart'; // Untuk warna dan konstanta lain
+import '../../controllers/queue_display_controller.dart';
 
 class QueueDisplayScreen extends StatefulWidget {
   const QueueDisplayScreen({super.key});
@@ -13,63 +12,28 @@ class QueueDisplayScreen extends StatefulWidget {
 }
 
 class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
-  // Buat instance ApiService di dalam State
-  final ApiService _apiService = ApiService();
-
-  // --- Data untuk Tampilan ---
-  List<Order> _pendingOrders = []; // Status: 'preparing'
-  List<Order> _readyOrders = []; // Status: 'ready'
-
-  // --- Timer untuk Auto-Refresh ---
-  Timer? _timer;
+  late QueueDisplayController _controller;
+  VoidCallback? _controllerListener;
 
   @override
   void initState() {
     super.initState();
-    _startPollingOrders();
+    _controller = QueueDisplayController(
+      context: context,
+      apiService: ApiService(),
+    );
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+    _controller.startPollingOrders();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  // --- Polling Data dari API ---
-  void _startPollingOrders() {
-    // Panggil pertama kali
-    _fetchOrders();
-    // Lalu panggil setiap 5 detik
-    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (mounted) {
-        // Tambahkan pengecekan mounted
-        _fetchOrders();
-      }
-    });
-  }
-
-  Future<void> _fetchOrders() async {
-    try {
-      // Ambil semua order, lalu filter di Flutter
-      // Menggunakan _apiService (instance lokal) bukan widget.apiService
-      final List<Order> allOrders = await _apiService.fetchOrders("all");
-
-      final newPendingOrders =
-          allOrders.where((order) => order.status == 'preparing').toList();
-      final newReadyOrders =
-          allOrders.where((order) => order.status == 'completed').toList();
-
-      // Pastikan widget masih ada sebelum setState
-      if (mounted) {
-        setState(() {
-          _pendingOrders = newPendingOrders;
-          _readyOrders = newReadyOrders;
-        });
-      }
-    } catch (e) {
-      print('Error fetching orders for display: $e');
-      // Tampilkan pesan error di UI jika perlu
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
     }
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -95,12 +59,12 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
                         child: ListView.builder(
-                          itemCount: _pendingOrders.length,
+                          itemCount: _controller.pendingOrders.length,
                           itemBuilder: (context, index) {
-                            final order = _pendingOrders[index];
-                            final firstItem = order.orderItems.isNotEmpty
-                                ? order.orderItems.first.menu.name
-                                : 'No Items';
+                            final order = _controller.pendingOrders[index];
+                            final firstItem = _controller.getFirstItemName(
+                              order,
+                            );
 
                             return _buildProcessItem(
                               order.customerName ?? 'Pelanggan',
@@ -133,18 +97,7 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
                       flex: 1,
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
-                        child: ListView.builder(
-                          // Tampilkan 1 item jika list tidak kosong
-                          itemCount: _readyOrders.isNotEmpty ? 1 : 0,
-                          itemBuilder: (context, index) {
-                            // Ambil item PERTAMA saja
-                            final order = _readyOrders.first;
-                            return _buildQueueNumber(
-                              order.id.toString().padLeft(2, '0'),
-                              order.customerName ?? 'Pelanggan',
-                            );
-                          },
-                        ),
+                        child: _buildQueueSection(),
                       ),
                     ),
                     _buildHeader('Selesai', const Color(0xFFFF9500)),
@@ -152,24 +105,7 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
                       flex: 1,
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
-                        child: ListView.builder(
-                          // Tampilkan sisa item (jumlah total dikurangi 1)
-                          itemCount: (_readyOrders.length > 1)
-                              ? _readyOrders.length - 1
-                              : 0,
-                          itemBuilder: (context, index) {
-                            // Ambil item mulai dari index KEDUA (index 1)
-                            final order = _readyOrders[index + 1];
-                            final firstItem = order.orderItems.isNotEmpty
-                                ? order.orderItems.first.menu.name
-                                : 'No Items';
-                            return _buildFinishedItem(
-                              order.customerName ?? 'Pelanggan',
-                              firstItem,
-                              order.id.toString().padLeft(2, '0'),
-                            );
-                          },
-                        ),
+                        child: _buildFinishedSection(),
                       ),
                     ),
                   ],
@@ -210,6 +146,55 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
     );
   }
 
+  Widget _buildQueueSection() {
+    final queueOrder = _controller.getQueueNumberOrder();
+
+    if (queueOrder == null) {
+      return const Center(
+        child: Text(
+          'Tidak ada antrian',
+          style: TextStyle(fontSize: 20, color: Colors.grey),
+        ),
+      );
+    }
+
+    return ListView(
+      children: [
+        _buildQueueNumber(
+          queueOrder.id.toString().padLeft(2, '0'),
+          queueOrder.customerName ?? 'Pelanggan',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFinishedSection() {
+    final finishedOrders = _controller.getFinishedOrders();
+
+    if (finishedOrders.isEmpty) {
+      return const Center(
+        child: Text(
+          'Belum ada yang selesai',
+          style: TextStyle(fontSize: 20, color: Colors.grey),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: finishedOrders.length,
+      itemBuilder: (context, index) {
+        final order = finishedOrders[index];
+        final firstItem = _controller.getFirstItemName(order);
+
+        return _buildFinishedItem(
+          order.customerName ?? 'Pelanggan',
+          firstItem,
+          order.id.toString().padLeft(2, '0'),
+        );
+      },
+    );
+  }
+
   // --- Widget Pembantu ---
 
   Widget _buildHeader(String title, Color backgroundColor) {
@@ -237,7 +222,10 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
   }
 
   Widget _buildProcessItem(
-      String customerName, String itemName, String orderNumber) {
+    String customerName,
+    String itemName,
+    String orderNumber,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16.0),
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
@@ -301,7 +289,7 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
         borderRadius: BorderRadius.circular(16.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -335,7 +323,10 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
   }
 
   Widget _buildFinishedItem(
-      String customerName, String itemName, String orderNumber) {
+    String customerName,
+    String itemName,
+    String orderNumber,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16.0),
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),

@@ -1,10 +1,10 @@
 // lib/screens/home/cashier_order_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import '../../models/order_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/constants.dart';
+import '../../controllers/cashier_order_controller.dart';
 
 class CashierOrderScreen extends StatefulWidget {
   final List<Order> orders;
@@ -23,23 +23,51 @@ class CashierOrderScreen extends StatefulWidget {
 }
 
 class _CashierOrderScreenState extends State<CashierOrderScreen> {
-  final FlutterTts _flutterTts = FlutterTts();
-  String _selectedFilter = 'Semua'; // Default filter
+  late CashierOrderController _controller;
+  VoidCallback? _controllerListener;
 
-  // List filter options
-  final List<String> _filterOptions = [
-    'Semua',
-    'Pending',
-    'Disiapkan',
-    'Siap',
-    'Selesai'
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _controller = CashierOrderController(
+      context: context,
+      orders: widget.orders,
+      onRefresh: widget.onRefresh,
+      apiService: widget.apiService,
+    );
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
+
+  @override
+  void didUpdateWidget(CashierOrderScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update controller jika data berubah
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+
+    _controller = CashierOrderController(
+      context: context,
+      orders: widget.orders,
+      onRefresh: widget.onRefresh,
+      apiService: widget.apiService,
+    );
+
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
+
+  @override
+  void dispose() {
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Filter orders berdasarkan status yang dipilih
-    final filteredOrders = _filterOrders(widget.orders);
-
     return Container(
       color: kBackgroundColor,
       padding: const EdgeInsets.all(24.0),
@@ -56,12 +84,85 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Filter Chip Bar
-          _buildFilterChipBar(),
+          // --- CHIP BAR STATUS ---
+          _buildStatusFilterBar(),
 
           const SizedBox(height: 16),
+
+          // --- DROPDOWN FILTER WAKTU ---
+          SizedBox(
+            height: 45,
+            width: 200,
+            child: DropdownMenu<String>(
+              width: 200,
+              initialSelection: _controller.selectedTimeFilter,
+              onSelected: (value) {
+                if (value != null) {
+                  _controller.selectTimeFilter(value);
+                }
+              },
+              inputDecorationTheme: InputDecorationTheme(
+                filled: true,
+                fillColor: kPrimaryColor,
+                hintStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              menuStyle: MenuStyle(
+                backgroundColor: const WidgetStatePropertyAll(
+                  Color.fromARGB(255, 255, 255, 255),
+                ),
+                elevation: const WidgetStatePropertyAll(6),
+                shape: WidgetStatePropertyAll(
+                  RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                maximumSize: WidgetStatePropertyAll(
+                  Size(265, double.infinity),
+                ),
+              ),
+              trailingIcon: const Icon(
+                Icons.keyboard_arrow_down,
+                color: Colors.white,
+              ),
+              textStyle: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              dropdownMenuEntries: _controller.timeOptions.map((value) {
+                return DropdownMenuEntry<String>(
+                  value: value,
+                  label: value,
+                  labelWidget: Text(
+                    value,
+                    style: const TextStyle(
+                      color: Color.fromARGB(255, 0, 0, 0),
+                      fontSize: 14,
+                    ),
+                  ),
+                  leadingIcon: const Icon(
+                    Icons.calendar_month,
+                    size: 18,
+                    color: kPrimaryColor,
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
           Expanded(
-            child: filteredOrders.isEmpty
+            child: _controller.filteredOrders.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -69,30 +170,38 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                         Icon(
                           Icons.receipt_long,
                           size: 64,
-                          color: kSecondaryColor.withOpacity(0.5),
+                          color: kSecondaryColor.withValues(alpha: 0.5),
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          _getEmptyStateText(),
+                          _controller.getEmptyStateText(),
                           style: TextStyle(
                             fontSize: 18,
-                            color: kSecondaryColor.withOpacity(0.7),
+                            color: kSecondaryColor.withValues(alpha: 0.7),
+                          ),
+                        ),
+                        Text(
+                          "Periode: ${_controller.selectedTimeFilter}",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: kSecondaryColor.withValues(alpha: 0.5),
                           ),
                         ),
                       ],
                     ),
                   )
                 : GridView.builder(
+                    padding: const EdgeInsets.only(bottom: 16),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 0.7,
-                      crossAxisSpacing: 20,
-                      mainAxisSpacing: 20,
-                    ),
-                    itemCount: filteredOrders.length,
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.70,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                        ),
+                    itemCount: _controller.filteredOrders.length,
                     itemBuilder: (context, index) {
-                      return _buildOrderCard(filteredOrders[index]);
+                      return _buildOrderCard(_controller.filteredOrders[index]);
                     },
                   ),
           ),
@@ -101,16 +210,15 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     );
   }
 
-  // Widget untuk filter chip bar
-  Widget _buildFilterChipBar() {
+  Widget _buildStatusFilterBar() {
     return SizedBox(
       height: 50,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: _filterOptions.length,
+        itemCount: _controller.statusOptions.length,
         itemBuilder: (context, index) {
-          final filter = _filterOptions[index];
-          final bool isSelected = _selectedFilter == filter;
+          final filter = _controller.statusOptions[index];
+          final bool isSelected = _controller.selectedStatusFilter == filter;
 
           return Container(
             margin: const EdgeInsets.only(right: 8),
@@ -127,9 +235,7 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
               selectedColor: kPrimaryColor,
               checkmarkColor: Colors.white,
               onSelected: (selected) {
-                setState(() {
-                  _selectedFilter = filter;
-                });
+                _controller.selectStatusFilter(filter);
               },
             ),
           );
@@ -138,126 +244,77 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     );
   }
 
-  // Fungsi untuk memfilter orders berdasarkan status
-  List<Order> _filterOrders(List<Order> orders) {
-    switch (_selectedFilter) {
-      case 'Pending':
-        return orders.where((order) {
-          final status = order.status.toLowerCase();
-          // Pending termasuk status: pending, paid (sudah bayar tapi belum diproses)
-          return status == 'pending' || status == 'paid';
-        }).toList();
-
-      case 'Disiapkan':
-        return orders.where((order) {
-          final status = order.status.toLowerCase();
-          return status == 'preparing' || status == 'cooking';
-        }).toList();
-
-      case 'Siap':
-        return orders.where((order) {
-          final status = order.status.toLowerCase();
-          return status == 'ready' || status == 'ready to serve';
-        }).toList();
-
-      case 'Selesai':
-        return orders.where((order) {
-          final status = order.status.toLowerCase();
-          return status == 'completed' || status == 'done' || status == 'finished';
-        }).toList();
-
-      case 'Semua':
-      default:
-        return orders;
-    }
-  }
-
-  // Fungsi untuk teks empty state berdasarkan filter
-  String _getEmptyStateText() {
-    switch (_selectedFilter) {
-      case 'Pending':
-        return 'Tidak ada order pending';
-      case 'Disiapkan':
-        return 'Tidak ada order yang sedang disiapkan';
-      case 'Siap':
-        return 'Tidak ada order yang siap disajikan';
-      case 'Selesai':
-        return 'Tidak ada order yang selesai';
-      case 'Semua':
-      default:
-        return 'Belum ada order aktif';
-    }
-  }
-
-// DIUBAH OLEH SAFRIZAL
- Widget _buildOrderCard(Order order) {
-    final statusInfo = _getStatusInfo(order.status);
+  Widget _buildOrderCard(Order order) {
+    final statusInfo = _controller.getStatusInfo(order.status);
 
     return Card(
       color: const Color(0xFF2D2D2D),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 400, maxHeight: 500),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Bungkus Row kiri dengan Expanded agar mengambil sisa ruang
-                Expanded(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: const BoxDecoration(
-                          color: kPrimaryColor,
-                          shape: BoxShape.circle,
+            // HEADER
+            SizedBox(
+              height: 60,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: kPrimaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        order.restoTable?.number ?? '??',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
-                        child: Center(
-                          child: Text(
-                            order.restoTable?.number ?? '??',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          order.customerName ?? 'Nama Pelanggan',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'Order #${order.id}',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 12,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Bungkus Column nama dengan Flexible
-                      Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              order.customerName ?? 'Nama Pelanggan',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold),
-                              // <-- Baris 'overflow' sudah dihapus dari sini
-                            ),
-                            Text(
-                              'Order #${order.id}',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 8), // Beri jarak
-                _buildStatusChip(
-                    statusInfo['text']!, statusInfo['icon']!, statusInfo['color']!),
-              ],
+                  _buildStatusChip(
+                    statusInfo['text']!,
+                    statusInfo['icon']!,
+                    statusInfo['color']!,
+                  ),
+                ],
+              ),
             ),
+
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -265,79 +322,161 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
                 Text(
                   '${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year}',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                 ),
                 Text(
                   '${order.createdAt.hour.toString().padLeft(2, '0')}:${order.createdAt.minute.toString().padLeft(2, '0')}',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,
                   ),
                 ),
               ],
             ),
-            const Divider(color: Colors.grey, height: 20),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
+
+            const SizedBox(height: 12),
+            const Divider(color: Colors.grey, height: 1),
+            const SizedBox(height: 8),
+
+            // LABEL TABLE HEADER
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8.0),
               child: Row(
                 children: [
-                  Text('Qty',
+                  SizedBox(
+                    width: 25,
+                    child: Text(
+                      'Qty',
                       style: TextStyle(
-                          color: Colors.white.withOpacity(0.7), fontSize: 12)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text('Items',
-                        style: TextStyle(
-                            color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  Text('Price',
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Items',
                       style: TextStyle(
-                          color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Price',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
             ),
-            Expanded(
-              child: ListView.builder(
-                padding: EdgeInsets.zero,
-                itemCount: order.orderItems.length,
-                itemBuilder: (context, index) {
-                  final item = order.orderItems[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 6.0),
-                    child: Row(
-                      children: [
-                        Text('${item.quantity}'.padLeft(2, '0'),
-                            style: const TextStyle(color: Colors.white, fontSize: 13)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(item.menu.name,
-                              style:
-                                  const TextStyle(color: Colors.white, fontSize: 13)),
-                        ),
-                        Text('Rp ${item.priceAtTime.toStringAsFixed(0)}',
-                            style: const TextStyle(color: Colors.white, fontSize: 13)),
-                      ],
-                    ),
-                  );
-                },
+
+            // ITEMS LIST
+            Container(
+              constraints: const BoxConstraints(maxHeight: 150, minHeight: 40),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(6),
               ),
+              child: order.orderItems.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No items',
+                        style: TextStyle(color: Colors.white54, fontSize: 12),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(4),
+                      itemCount: order.orderItems.length,
+                      itemBuilder: (context, index) {
+                        final item = order.orderItems[index];
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 25,
+                                child: Text(
+                                  '${item.quantity}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  item.menu.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                'Rp ${item.priceAtTime.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
             ),
-            const Divider(color: Colors.grey, height: 20),
+
+            const SizedBox(height: 8),
+            const Divider(color: Colors.grey, height: 1),
+            const SizedBox(height: 8),
+
+            // TOTAL
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('SubTotal',
-                    style: TextStyle(color: Colors.white, fontSize: 16)),
-                Text('Rp ${order.totalPrice.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold)),
+                const Text(
+                  'Total:',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Rp ${order.totalPrice.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: 12),
             _buildOrderActionButtons(order),
           ],
         ),
@@ -345,51 +484,11 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     );
   }
 
-  Map<String, dynamic> _getStatusInfo(String status) {
-    status = status.toLowerCase();
-
-    // Mapping status yang lebih komprehensif
-    if (status == 'pending' || status == 'paid') {
-      return {
-        'text': 'Pending',
-        'icon': Icons.hourglass_empty,
-        'color': Colors.orange.shade300
-      };
-    }
-    if (status == 'preparing' || status == 'cooking') {
-      return {
-        'text': 'Disiapkan',
-        'icon': Icons.kitchen,
-        'color': Colors.blue.shade300
-      };
-    }
-    if (status == 'ready' || status == 'ready to serve') {
-      return {
-        'text': 'Siap',
-        'icon': Icons.check_circle,
-        'color': Colors.green.shade300
-      };
-    }
-    if (status == 'completed' || status == 'done' || status == 'finished') {
-      return {
-        'text': 'Selesai',
-        'icon': Icons.done_all,
-        'color': Colors.grey.shade300
-      };
-    }
-
-    return {
-      'text': status.toUpperCase(),
-      'icon': Icons.help_outline,
-      'color': Colors.grey.shade300
-    };
-  }
-
   Widget _buildStatusChip(String text, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20.0),
         border: Border.all(color: color, width: 1),
       ),
@@ -397,10 +496,14 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 14),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
           Text(
             text,
-            style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -410,74 +513,31 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
   Widget _buildOrderActionButtons(Order order) {
     String status = order.status.toLowerCase();
 
-    // Tombol aksi berdasarkan status
     if (status == 'ready' || status == 'ready to serve') {
       return SizedBox(
         width: double.infinity,
-        height: 44,
+        height: 45,
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             backgroundColor: kPrimaryColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8.0),
             ),
           ),
-          onPressed: () {
-            _showReadyOrderPopup(order);
-          },
+          onPressed: () => _showReadyOrderPopup(order),
           child: const Text(
             'Konfirmasi',
             style: TextStyle(
-                color: kBackgroundColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 16),
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
           ),
         ),
       );
-    }
-
-    // dibuang oleh safrizal
-    else {
-      return const SizedBox(height: 44);
-    }
-  }
-
-  Future<void> _updateOrderStatus(int orderId, String newStatus) async {
-    try {
-      await widget.apiService.updateOrderStatus(orderId, newStatus);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Pesanan #$orderId diperbarui ke $newStatus'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-      await widget.onRefresh();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Gagal update status: $e'),
-              backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
-  Future<void> _speak(String text) async {
-    try {
-      await _flutterTts.setLanguage("id-ID");
-      await _flutterTts.setPitch(1.0);
-      await _flutterTts.speak(text);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Gagal memutar audio: $e'),
-              backgroundColor: Colors.red),
-        );
-      }
+    } else {
+      return const SizedBox(height: 30);
     }
   }
 
@@ -485,49 +545,235 @@ class _CashierOrderScreenState extends State<CashierOrderScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Konfirmasi Pesanan Siap'),
-          content: Text('Pilih tindakan untuk Meja #${order.restoTable?.number ?? '??'}'),
-          // --- PERBAIKAN RENDERFLEX (Mulai) ---
-          // Bungkus tombol dengan Wrap agar tidak overflow
-          actions: [
-            Wrap(
-              alignment: WrapAlignment.end,
-              spacing: 8.0,
-              runSpacing: 4.0,
-              children: [
-                TextButton(
-                  child:
-                      const Text('Batal', style: TextStyle(color: kSecondaryColor)),
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                ),
-                ElevatedButton(
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
-                  child: const Text('Panggil Pelanggan',
-                      style: TextStyle(color: kBackgroundColor)),
-                  onPressed: () {
-                    String customerName = order.customerName ?? 'Pelanggan';
-                    String tableNumber = order.restoTable?.number ?? '';
-                    _speak(
-                        'Atas nama $customerName, di Meja $tableNumber, pesanan anda sudah siap diambil.');
-                    Navigator.of(dialogContext).pop();
-                  },
-                ),
-                ElevatedButton(
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
-                  child: const Text('Tandai Selesai',
-                      style: TextStyle(color: kBackgroundColor)),
-                  onPressed: () {
-                    Navigator.of(dialogContext).pop();
-                    _updateOrderStatus(order.id, 'completed');
-                  },
-                ),
-              ],
-            )
-            // --- PERBAIKAN RENDERFLEX (Selesai) ---
-          ],
+        return Dialog(
+          backgroundColor: const Color(0xFF2D2D2D),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 380),
+            child: Container(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // HEADER
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          color: kPrimaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.restaurant_menu,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          "Konfirmasi Pesanan Siap",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Text(
+                    'Pesanan untuk Meja #${order.restoTable?.number ?? '??'} sudah siap?',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 16,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  if (order.customerName != null)
+                    Text(
+                      'Atas nama: ${order.customerName!}',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 14,
+                      ),
+                    ),
+
+                  const SizedBox(height: 18),
+
+                  // DETAIL SUMMARY
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Total Items:',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
+                            ),
+                            Text(
+                              '${order.orderItems.length} items',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Total Harga:',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.7),
+                              ),
+                            ),
+                            Text(
+                              'Rp ${order.totalPrice.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // BUTTONS
+                  Row(
+                    children: [
+                      // CANCEL
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.grey),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          onPressed: () => Navigator.pop(dialogContext),
+                          child: const Text('Batal'),
+                        ),
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      // CALL CUSTOMER
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          onPressed: () {
+                            String customer = order.customerName ?? 'Pelanggan';
+                            String table = order.restoTable?.number ?? '';
+
+                            _controller.speak(
+                              'Atas nama $customer, di Meja $table, pesanan anda sudah siap.',
+                            );
+                            Navigator.pop(dialogContext);
+
+                            _controller.showSnack(
+                              'Memanggil pelanggan Meja #$table',
+                              color: Colors.blueAccent,
+                            );
+                          },
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.volume_up,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Panggil',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      // SELESAI
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kPrimaryColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(dialogContext);
+                            _controller.updateOrderStatus(
+                              order.id,
+                              'completed',
+                            );
+                          },
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                'Selesai',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
         );
       },
     );

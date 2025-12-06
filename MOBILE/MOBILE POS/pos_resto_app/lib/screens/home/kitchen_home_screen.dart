@@ -2,14 +2,10 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; // Dibutuhkan untuk format waktu
-
-import '../../models/order_model.dart'; // Import model Order Anda
-import '../../services/api_service.dart';
-import '../../services/auth_service.dart';
+import '../../models/order_model.dart';
 import '../../utils/constants.dart';
 import '../auth/login_screen.dart';
+import '../../controllers/kitchen_home_controller.dart';
 
 class KitchenHomeScreen extends StatefulWidget {
   const KitchenHomeScreen({super.key});
@@ -19,153 +15,33 @@ class KitchenHomeScreen extends StatefulWidget {
 }
 
 class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
-  final ApiService _apiService = ApiService();
   late Future<void> _loadOrdersFuture;
-  Timer? _refreshTimer;
-
-  List<Order> _pendingOrders = [];
-  List<Order> _preparingOrders = [];
-  List<Order> _readyOrders = [];
+  late KitchenHomeController _controller;
+  VoidCallback? _controllerListener;
 
   @override
   void initState() {
     super.initState();
-    _loadOrdersFuture = _fetchOrders(); // Muat data saat pertama kali
-
-    // Siapkan auto-refresh setiap 30 detik agar dapur selalu update
-    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (mounted) {
-        _fetchOrders();
-      }
-    });
+    _controller = KitchenHomeController(context);
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+    _loadOrdersFuture = _controller.fetchOrders();
+    _controller.startAutoRefresh();
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel(); // Hentikan timer saat halaman ditutup
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+    _controller.dispose();
     super.dispose();
-  }
-
-  // Fungsi utama untuk mengambil data pesanan
-  // Fungsi utama untuk mengambil data pesanan (VERSI BARU YANG DIPERBAIKI)
-  Future<void> _fetchOrders() async {
-    try {
-      // 1. Ambil ID pengguna/restoran, sama seperti di CashierHomeScreen
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final userId = authService.user?.id;
-
-      if (userId == null) {
-        throw Exception("User tidak terautentikasi.");
-      }
-
-      // 2. Ambil SEMUA order untuk user/restoran ini (HANYA 1 PANGGILAN API)
-      final List<Order> allOrders = await _apiService.fetchOrders(
-        userId.toString(),
-      );
-
-      // 3. Siapkan list-list baru (kosong)
-      final List<Order> pending = [];
-      final List<Order> preparing = [];
-      final List<Order> ready = [];
-
-      // 4. Filter semua order secara manual (in-app), sama seperti di kasir
-      for (var order in allOrders) {
-        final status = order.status.toLowerCase();
-       if (status == 'pending' || status == 'paid') {
-          pending.add(order);
-        } else if (status == 'preparing') {
-          preparing.add(order);
-        } else if (status == 'ready') {
-          ready.add(order);
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          // 5. Update state dengan list yang sudah difilter
-          _pendingOrders = pending;
-          _preparingOrders = preparing;
-          _readyOrders = ready;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal mengambil data pesanan: $e')),
-        );
-      }
-    }
-  }
-  // Future<void> _fetchOrders() async {
-  //   try {
-  //     // Ambil 3 jenis pesanan secara bersamaan
-  //     final results = await Future.wait([
-  //       _apiService.fetchOrders('status=pending'),
-  //       _apiService.fetchOrders('status=preparing'),
-  //       _apiService.fetchOrders('status=ready'),
-  //     ]);
-
-  //     if (mounted) {
-  //       setState(() {
-  //         _pendingOrders = results[0];
-  //         _preparingOrders = results[1];
-  //         _readyOrders = results[2];
-  //       });
-  //     }
-  //   } catch (e) {
-  //     if (mounted) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text('Gagal mengambil data pesanan: $e')),
-  //       );
-  //     }
-  //   }
-  // }
-
-  // Fungsi untuk update status (dipanggil oleh tombol)
-  Future<void> _updateOrderStatus(int orderId, String newStatus) async {
-    try {
-      await _apiService.updateOrderStatus(orderId, newStatus);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Pesanan #$orderId diperbarui ke $newStatus'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-      // Ambil ulang data agar UI ter-update
-      await _fetchOrders();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal update status: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  // Fungsi untuk logout
-  void _logout() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    await authService.logout();
-    if (mounted) {
-      // Kembali ke login dan hapus semua halaman sebelumnya
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFFFF8E1,
-      ), // Background krem seperti di gambar
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
           'Dapur Eat.o',
@@ -176,8 +52,15 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: kSecondaryColor),
-            onPressed: _logout,
-            tooltip: 'Logout',
+            onPressed: () async {
+              await _controller.logout();
+              if (mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
+            },
           ),
         ],
       ),
@@ -188,40 +71,37 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
             return const Center(
               child: CircularProgressIndicator(color: kPrimaryColor),
             );
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          // UI Utama setelah data dimuat
           return RefreshIndicator(
-            onRefresh: _fetchOrders, // Tarik untuk refresh manual
+            onRefresh: _controller.fetchOrders,
             color: kPrimaryColor,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Kolom 1: Pesanan Baru (Pending)
                 _buildOrdersColumn(
-                  title: 'Pesanan Baru',
-                  orders: _pendingOrders,
-                  nextStatus: 'preparing',
-                  buttonText: 'Mulai Memasak',
+                  title: "Pesanan Baru",
+                  orders: _controller.pendingOrders,
+                  nextStatus: "preparing",
+                  buttonText: "Mulai Memasak",
                   buttonColor: const Color(0xFFFF9800),
+                  isChecklistMode: false,
                 ),
-                // Kolom 2: Sedang Disiapkan (Preparing)
                 _buildOrdersColumn(
-                  title: 'Sedang Dimasak',
-                  orders: _preparingOrders,
-                  nextStatus: 'ready',
-                  buttonText: 'Selesaikan',
+                  title: "Sedang Dimasak",
+                  orders: _controller.preparingOrders,
+                  nextStatus: "ready",
+                  buttonText: "Selesaikan",
                   buttonColor: const Color(0xFFFF9800),
+                  isChecklistMode: true,
                 ),
-                // Kolom 3: Selesai (Ready)
                 _buildOrdersColumn(
-                  title: 'Selesai',
-                  orders: _readyOrders,
-                  nextStatus: '',
-                  buttonText: '',
-                  buttonColor: const Color(0xFFFF9800),
+                  title: "Selesai",
+                  orders: _controller.readyOrders,
+                  nextStatus: "",
+                  buttonText: "",
+                  buttonColor: Colors.grey,
+                  isChecklistMode: false,
                 ),
               ],
             ),
@@ -231,27 +111,24 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     );
   }
 
-  // Widget untuk membuat satu kolom (Reusable)
   Widget _buildOrdersColumn({
     required String title,
     required List<Order> orders,
     required String nextStatus,
     required String buttonText,
     required Color buttonColor,
+    required bool isChecklistMode,
   }) {
     return Expanded(
       child: Column(
         children: [
-          // Judul Kolom dengan styling baru
           Container(
             width: double.infinity,
             margin: const EdgeInsets.all(16.0),
             padding: const EdgeInsets.symmetric(vertical: 16.0),
             decoration: BoxDecoration(
-              color: const Color(0xFFFF9800), // Orange sesuai gambar
-              borderRadius: BorderRadius.circular(
-                30.0,
-              ), // Border radius melengkung
+              color: const Color(0xFFFF9800),
+              borderRadius: BorderRadius.circular(30.0),
             ),
             child: Text(
               title,
@@ -259,12 +136,10 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white, // Text putih
+                color: Colors.white,
               ),
             ),
           ),
-
-          // Daftar Pesanan
           Expanded(
             child: orders.isEmpty
                 ? Center(
@@ -272,7 +147,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                       'Tidak ada pesanan',
                       style: TextStyle(
                         fontSize: 18,
-                        color: kSecondaryColor.withOpacity(0.5),
+                        color: kSecondaryColor.withValues(alpha: 0.5),
                       ),
                     ),
                   )
@@ -280,12 +155,12 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     itemCount: orders.length,
                     itemBuilder: (context, index) {
-                      final order = orders[index];
                       return _buildOrderCard(
-                        order: order,
+                        order: orders[index],
                         nextStatus: nextStatus,
                         buttonText: buttonText,
                         buttonColor: buttonColor,
+                        isChecklistMode: isChecklistMode,
                       );
                     },
                   ),
@@ -295,21 +170,27 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
     );
   }
 
-  // Widget untuk membuat satu kartu pesanan
   Widget _buildOrderCard({
     required Order order,
     required String nextStatus,
     required String buttonText,
     required Color buttonColor,
+    required bool isChecklistMode,
   }) {
+    // Cek apakah semua item sudah dicentang
+    bool allItemsChecked = true;
+    if (isChecklistMode) {
+      allItemsChecked = _controller.isAllItemsChecked(order);
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3CD), // Background kuning muda
+        color: const Color(0xFFFFF3CD),
         borderRadius: BorderRadius.circular(12.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -318,12 +199,11 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header dengan badge orange
+          // HEADER CARD
           Container(
             padding: const EdgeInsets.all(12.0),
             child: Row(
               children: [
-                // Badge nomor orange
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -334,7 +214,7 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    order.restoTable?.number.toString().padLeft(2, '0') ?? '01',
+                    order.restoTable?.number.toString().padLeft(2, '0') ?? '??',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -343,30 +223,32 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Info order
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      // 'Udean',
-                      order.customerName ?? 'Tanpa Nama', // D
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF5D4037),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        order.customerName ?? 'Tanpa Nama',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF5D4037),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Text(
-                      'Order #${order.id}',
-                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                    ),
-                  ],
+                      Text(
+                        'Order #${order.id}',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
 
-          // Container putih untuk items dengan table layout
+          // LIST ITEMS
           Container(
             margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             padding: const EdgeInsets.all(12),
@@ -376,95 +258,152 @@ class _KitchenHomeScreenState extends State<KitchenHomeScreen> {
             ),
             child: Column(
               children: [
-                // Header table
-                Row(
-                  children: const [
-                    Expanded(
-                      flex: 1,
-                      child: Text(
-                        'Qty',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                // Header Table
+                if (!isChecklistMode)
+                  const Row(
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: Text(
+                          'Qty',
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        'Items',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          'Items',
+                          style: TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 16),
-                // Items list
+                    ],
+                  ),
+                if (!isChecklistMode) const Divider(height: 16),
+
+                // ITEMS LIST
                 ...order.orderItems.map((item) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: 1,
-                          child: Text(
-                            item.quantity.toString().padLeft(2, '0'),
-                            style: const TextStyle(fontSize: 14),
-                          ),
+                  final key = "${order.id}_${item.id}";
+                  final isChecked = _controller.checkedItemIds.contains(key);
+
+                  if (isChecklistMode) {
+                    // TAMPILAN CHECKLIST
+                    return InkWell(
+                      onTap: () =>
+                          _controller.toggleItemCheck(order.id, item.id),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: Row(
+                          children: [
+                            // Checkbox Custom
+                            Container(
+                              width: 24,
+                              height: 24,
+                              margin: const EdgeInsets.only(right: 12),
+                              decoration: BoxDecoration(
+                                color: isChecked ? Colors.green : Colors.white,
+                                border: Border.all(
+                                  color: isChecked ? Colors.green : Colors.grey,
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: isChecked
+                                  ? const Icon(
+                                      Icons.check,
+                                      size: 16,
+                                      color: Colors.white,
+                                    )
+                                  : null,
+                            ),
+                            // Qty
+                            Text(
+                              "${item.quantity}x ",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: isChecked ? Colors.grey : Colors.black,
+                                decoration: isChecked
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                            // Nama Menu
+                            Expanded(
+                              child: Text(
+                                item.menu.name,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: isChecked ? Colors.grey : Colors.black,
+                                  decoration: isChecked
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        Expanded(
-                          flex: 3,
-                          child: Text(
-                            item.menu.name,
-                            style: const TextStyle(fontSize: 14),
+                      ),
+                    );
+                  } else {
+                    // TAMPILAN NORMAL
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: Text(
+                              item.quantity.toString().padLeft(2, '0'),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                          Expanded(flex: 3, child: Text(item.menu.name)),
+                        ],
+                      ),
+                    );
+                  }
+                }),
               ],
             ),
           ),
 
-
-            if (buttonText.isEmpty)
-              // Beri jarak agar card tetap sama tinggi
-              const SizedBox(height: 45 + 12) // (tinggi tombol + padding bawah)
-              else
-          // Tombol Aksi dengan border radius penuh
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: SizedBox(
-              width: double.infinity,
-              height: 45,
-              child: ElevatedButton(
-                onPressed: () {
-                  _updateOrderStatus(order.id, nextStatus);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: buttonColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      25.0,
-                    ), // Border radius melengkung penuh
+          // BUTTON ACTION
+          if (buttonText.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: SizedBox(
+                width: double.infinity,
+                height: 45,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (isChecklistMode && !allItemsChecked) {
+                      _controller.showSnack(
+                        "Harap selesaikan semua menu terlebih dahulu!",
+                        color: Colors.orange,
+                      );
+                    } else {
+                      _controller.updateOrderStatus(order.id, nextStatus);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: (isChecklistMode && !allItemsChecked)
+                        ? Colors.grey
+                        : buttonColor,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    elevation: 0,
                   ),
-                  elevation: 0,
-                ),
-                child: Text(
-                  buttonText,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                  child: Text(
+                    buttonText,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

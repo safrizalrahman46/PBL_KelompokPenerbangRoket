@@ -1,10 +1,9 @@
 // lib/screens/home/cashier_menu_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../models/menu_model.dart';
-import '../../providers/cart_provider.dart';
 import '../../utils/constants.dart';
+import '../../controllers/cashier_menu_controller.dart';
 
 class CashierMenuScreen extends StatefulWidget {
   final List<Menu> menus;
@@ -23,13 +22,63 @@ class CashierMenuScreen extends StatefulWidget {
 }
 
 class _CashierMenuScreenState extends State<CashierMenuScreen> {
-  int? _selectedCategoryId;
+  late CashierMenuController _controller;
+  VoidCallback? _controllerListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = CashierMenuController(
+      context: context,
+      menus: widget.menus,
+      categories: widget.categories,
+      onRefresh: widget.onRefresh,
+    );
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
+
+  @override
+  void didUpdateWidget(CashierMenuScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+
+    _controller = CashierMenuController(
+      context: context,
+      menus: widget.menus,
+      categories: widget.categories,
+      onRefresh: widget.onRefresh,
+    );
+
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
+
+  @override
+  void dispose() {
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final displayedMenus = _selectedCategoryId == null
-        ? widget.menus
-        : widget.menus.where((menu) => menu.categoryId == _selectedCategoryId).toList();
+    // ============================================================
+    // SORT: menu stok habis / tidak available pindah ke bawah
+    // ============================================================
+    final sortedMenus = List<Menu>.from(_controller.displayedMenus)
+      ..sort((a, b) {
+        final aOut = a.stock <= 0 || !a.isAvailable;
+        final bOut = b.stock <= 0 || !b.isAvailable;
+
+        if (aOut && !bOut) return 1; // a turun
+        if (!aOut && bOut) return -1; // b turun
+        return 0;
+      });
 
     return Container(
       color: kBackgroundColor,
@@ -39,6 +88,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
         children: [
           _buildCategoryFilterBar(),
           const SizedBox(height: 24),
+
           const Text(
             "Semua Menu Kami",
             style: TextStyle(
@@ -47,20 +97,33 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
               color: kSecondaryColor,
             ),
           ),
+
           const SizedBox(height: 16),
+
           Expanded(
-            child: GridView.builder(
-              padding: EdgeInsets.zero,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.8,
-                crossAxisSpacing: 20,
-                mainAxisSpacing: 20,
-              ),
-              itemCount: displayedMenus.length,
-              itemBuilder: (context, index) {
-                return _buildMenuCard(displayedMenus[index]);
-              },
+            child: RefreshIndicator(
+              onRefresh: widget.onRefresh,
+              child: sortedMenus.isEmpty
+                  ? const Center(
+                      child: Text(
+                        "Tidak ada menu",
+                        style: TextStyle(color: kSecondaryColor),
+                      ),
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.75,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: sortedMenus.length,
+                      itemBuilder: (context, index) {
+                        return _buildMenuCard(sortedMenus[index]);
+                      },
+                    ),
             ),
           ),
         ],
@@ -68,46 +131,22 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
     );
   }
 
+  // ======================================================================
+  // CATEGORY FILTER BAR
+  // ======================================================================
   Widget _buildCategoryFilterBar() {
-    List<Category> allCategories = [
-      Category(id: -1, name: "All", menusCount: widget.menus.length),
-      ...widget.categories,
-    ];
-
     return SizedBox(
       height: 100,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: allCategories.length,
+        itemCount: _controller.getAllCategories().length,
         itemBuilder: (context, index) {
-          final category = allCategories[index];
-          final bool isSelected = (category.id == -1 && _selectedCategoryId == null) ||
-                                  (category.id == _selectedCategoryId);
-
-          IconData icon;
-          switch (category.name.toLowerCase()) {
-            case 'main course':
-              icon = Icons.restaurant;
-              break;
-            case 'snack':
-              icon = Icons.fastfood;
-              break;
-            case 'makanan':
-              icon = Icons.restaurant;
-              break;
-            case 'minuman':
-              icon = Icons.local_cafe;
-              break;
-            default:
-              icon = Icons.category;
-          }
+          final category = _controller.getAllCategories()[index];
+          final isSelected = _controller.isCategorySelected(category);
+          final icon = _controller.getCategoryIcon(category);
 
           return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedCategoryId = category.id == -1 ? null : category.id;
-              });
-            },
+            onTap: () => _controller.selectCategory(category.id),
             child: Container(
               width: 160,
               margin: const EdgeInsets.only(right: 16),
@@ -122,30 +161,39 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                     Icon(
                       icon,
                       size: 32,
-                      color: isSelected ? kBackgroundColor : kSecondaryColor,
+                      color:
+                          isSelected ? kBackgroundColor : kSecondaryColor,
                     ),
                     const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          category.name,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected ? kBackgroundColor : kSecondaryColor,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            category.name,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? kBackgroundColor
+                                  : kSecondaryColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        Text(
-                          "${category.menusCount ?? 0} Items",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isSelected ? kBackgroundColor.withOpacity(0.8) : kSecondaryColor.withOpacity(0.6),
+                          Text(
+                            "${category.id == -1 ? widget.menus.length : (category.menusCount ?? 0)} Items",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isSelected
+                                  ? kBackgroundColor.withValues(alpha: 0.8)
+                                  : kSecondaryColor.withValues(alpha: 0.6),
+                            ),
                           ),
-                        ),
-                      ],
-                    )
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -156,99 +204,223 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
     );
   }
 
+  // ======================================================================
+  // MENU CARD
+  // ======================================================================
   Widget _buildMenuCard(Menu menu) {
-    final cart = Provider.of<CartProvider>(context, listen: false);
-    final int itemCountInCart = context.watch<CartProvider>().getItemQuantity(menu.id);
+    final itemCount = _controller.getItemQuantity(menu.id);
+    final fullImageUrl = _controller.normalizeImageUrl(menu.imageUrl);
+    final isAvailable = menu.isAvailable;
 
     return Card(
       elevation: 2,
+      color: isAvailable ? Colors.white : Colors.grey[200],
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          (menu.imageUrl == null || menu.imageUrl!.isEmpty)
-              ? Container(
-                  height: 120,
-                  width: double.infinity,
-                  color: kLightGreyColor,
-                  child: const Icon(Icons.image_not_supported, color: kSecondaryColor),
-                )
-              : Image.network(
-                  menu.imageUrl!,
-                  height: 120,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: 120,
-                    width: double.infinity,
-                    color: kLightGreyColor,
-                    child: const Icon(Icons.image_not_supported, color: kSecondaryColor),
-                  ),
-                ),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  menu.name,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  menu.description ?? 'Tidak ada deskripsi',
-                  style: TextStyle(fontSize: 12, color: kSecondaryColor.withOpacity(0.6)),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Row(
+      child: Opacity(
+        opacity: isAvailable ? 1.0 : 0.6,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildMenuImage(fullImageUrl, isAvailable),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      "Rp ${menu.price.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: kPrimaryColor,
-                      ),
-                    ),
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.remove_circle, color: kPrimaryColor),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          onPressed: () {
-                            cart.decreaseItem(menu.id);
-                          },
-                          iconSize: 22,
-                        ),
                         Text(
-                          itemCountInCart.toString(),
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          menu.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.add_circle, color: kPrimaryColor),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          onPressed: () {
-                            cart.addItem(menu);
-                          },
-                          iconSize: 22,
+                        const SizedBox(height: 4),
+                        Text(
+                          menu.description ?? 'Tidak ada deskripsi',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: kSecondaryColor.withValues(alpha: 0.6),
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                        if (isAvailable)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              "Sisa Stok: ${menu.stock}",
+                              style: TextStyle(
+                                fontSize: 11,
+                                color:
+                                    kPrimaryColor.withValues(alpha: 0.8),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                       ],
-                    )
+                    ),
+                    _buildPriceAndControls(menu, itemCount, isAvailable),
                   ],
-                )
-              ],
+                ),
+              ),
             ),
-          )
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ======================================================================
+  // IMAGE
+  // ======================================================================
+  Widget _buildMenuImage(String imageUrl, bool isAvailable) {
+    return AspectRatio(
+      aspectRatio: 1.5,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          imageUrl.isEmpty
+              ? Container(
+                  color: kLightGreyColor,
+                  child: const Icon(
+                    Icons.fastfood,
+                    size: 40,
+                    color: kSecondaryColor,
+                  ),
+                )
+              : Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  color: isAvailable ? null : Colors.grey,
+                  colorBlendMode:
+                      isAvailable ? null : BlendMode.saturation,
+                  loadingBuilder: (context, child, loadingProgress) =>
+                      loadingProgress == null
+                          ? child
+                          : const Center(
+                              child: CircularProgressIndicator(
+                                  color: kPrimaryColor),
+                            ),
+                  errorBuilder: (context, error, stackTrace) =>
+                      Container(
+                    color: kLightGreyColor,
+                    child: const Icon(Icons.broken_image),
+                  ),
+                ),
+          if (!isAvailable)
+            Container(
+              color: Colors.black.withValues(alpha: 0.4),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    "HABIS",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
+    );
+  }
+
+  // ======================================================================
+  // PRICE + ADD BUTTONS
+  // ======================================================================
+  Widget _buildPriceAndControls(
+      Menu menu, int itemCount, bool isAvailable) {
+    bool isMaxReached = itemCount >= menu.stock;
+    bool outOfStock = menu.stock <= 0;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Flexible(
+          child: Text(
+            "Rp ${menu.price.toStringAsFixed(0)}",
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: isAvailable ? kPrimaryColor : Colors.grey,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        if (!isAvailable)
+          const Text(
+            "Stok Kosong",
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.red,
+            ),
+          )
+        else
+          Container(
+            decoration: BoxDecoration(
+              color: itemCount > 0
+                  ? kPrimaryColor.withValues(alpha: 0.1)
+                  : null,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                if (itemCount > 0)
+                  IconButton(
+                    icon: const Icon(Icons.remove, size: 18),
+                    padding: const EdgeInsets.all(4),
+                    constraints: const BoxConstraints(),
+                    onPressed: () =>
+                        _controller.decreaseFromCart(menu.id),
+                  ),
+                if (itemCount > 0)
+                  Text(
+                    itemCount.toString(),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                IconButton(
+                  icon: Icon(
+                    itemCount > 0
+                        ? Icons.add
+                        : Icons.add_circle,
+                    size: 18,
+                    color: isMaxReached || outOfStock
+                        ? Colors.grey
+                        : kPrimaryColor,
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  constraints: const BoxConstraints(),
+                  onPressed: isMaxReached || outOfStock
+                      ? null
+                      : () => _controller.addToCart(menu),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import '../../models/order_model.dart';
 import '../../services/api_service.dart';
 import '../../utils/constants.dart';
+import '../../controllers/cashier_table_controller.dart';
 
-class CashierTableScreen extends StatelessWidget {
+class CashierTableScreen extends StatefulWidget {
   final List<RestoTable> tables;
   final Future<void> Function() onRefresh;
   final ApiService apiService;
@@ -16,6 +17,54 @@ class CashierTableScreen extends StatelessWidget {
     required this.onRefresh,
     required this.apiService,
   });
+
+  @override
+  State<CashierTableScreen> createState() => _CashierTableScreenState();
+}
+
+class _CashierTableScreenState extends State<CashierTableScreen> {
+  late CashierTableController _controller;
+  VoidCallback? _controllerListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = CashierTableController(
+      context: context,
+      tables: widget.tables,
+      onRefresh: widget.onRefresh,
+      apiService: widget.apiService,
+    );
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
+
+  @override
+  void didUpdateWidget(CashierTableScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+
+    // Update controller jika data berubah
+    _controller = CashierTableController(
+      context: context,
+      tables: widget.tables,
+      onRefresh: widget.onRefresh,
+      apiService: widget.apiService,
+    );
+
+    _controllerListener = () => setState(() {});
+    _controller.addListener(_controllerListener!);
+  }
+
+  @override
+  void dispose() {
+    if (_controllerListener != null) {
+      _controller.removeListener(_controllerListener!);
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,27 +79,25 @@ class CashierTableScreen extends StatelessWidget {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: kSecondaryColor,
+              color: Color.fromARGB(255, 0, 0, 0),
             ),
           ),
           const SizedBox(height: 16),
           Expanded(
             child: RefreshIndicator(
-              onRefresh: onRefresh,
+              onRefresh: widget.onRefresh,
               child: GridView.builder(
                 padding: EdgeInsets.zero,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 6,
-                  childAspectRatio: 1.1,
+                  childAspectRatio: 1,
                   crossAxisSpacing: 20,
                   mainAxisSpacing: 20,
                 ),
-                itemCount: tables.length,
+                itemCount: _controller.getSortedTables().length,
                 itemBuilder: (context, index) {
-                  final sortedTables = List<RestoTable>.from(tables)
-                    ..sort((a, b) => a.number.compareTo(b.number));
-                  final table = sortedTables[index];
-                  return _buildTableCard(table, context);
+                  final table = _controller.getSortedTables()[index];
+                  return _buildTableCard(table);
                 },
               ),
             ),
@@ -60,21 +107,17 @@ class CashierTableScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTableCard(RestoTable table, BuildContext context) {
-    final bool isAvailable = table.status.toLowerCase() == 'available';
-    final Color cardColor = isAvailable ? Colors.grey.shade500 : Colors.red.shade600;
-    final Color textColor = isAvailable ? kSecondaryColor : Colors.white;
-    final Color statusColor = isAvailable ? kSecondaryColor.withOpacity(0.8) : Colors.white.withOpacity(0.8);
-    final String statusText = isAvailable ? 'Tersedia' : 'Terisi';
+  Widget _buildTableCard(RestoTable table) {
+    final statusInfo = _controller.getTableStatusInfo(table);
 
     return GestureDetector(
       onTap: () {
-        _showUpdateStatusDialog(table, context);
+        _controller.showUpdateStatusDialog(table);
       },
       child: Card(
         elevation: 4,
-        color: cardColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: statusInfo['cardColor'] as Color,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -84,72 +127,21 @@ class CashierTableScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: textColor,
+                  color: statusInfo['textColor'] as Color,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 1),
               Text(
-                statusText,
+                statusInfo['statusText'] as String,
                 style: TextStyle(
                   fontSize: 14,
-                  color: statusColor,
+                  color: statusInfo['statusColor'] as Color,
                 ),
               ),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Future<void> _showUpdateStatusDialog(RestoTable table, BuildContext context) async {
-    final bool isAvailable = table.status.toLowerCase() == 'available';
-    final String newStatus = isAvailable ? 'occupied' : 'available';
-    final String newStatusText = isAvailable ? 'Terisi' : 'Tersedia';
-
-    await showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('Konfirmasi Ubah Status'),
-          content: Text('Ubah status "Meja ${table.number}" menjadi "$newStatusText"?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                try {
-                  final updatedTable = await apiService.updateTableStatus(table.id, newStatus);
-                  
-                  await onRefresh();
-                  
-                  // PERBAIKAN: Hapus pengecekan mounted, langsung tutup dialog
-                  Navigator.of(dialogContext).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Status Meja ${table.number} berhasil diubah!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                  
-                } catch (e) {
-                  // PERBAIKAN: Hapus pengecekan mounted, langsung tutup dialog
-                  Navigator.of(dialogContext).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Gagal update: ${e.toString()}'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Ubah'),
-            ),
-          ],
-        );
-      },
     );
   }
 }
