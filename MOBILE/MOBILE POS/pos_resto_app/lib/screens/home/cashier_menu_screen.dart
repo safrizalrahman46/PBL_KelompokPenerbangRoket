@@ -41,7 +41,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
   @override
   void didUpdateWidget(CashierMenuScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update controller jika data berubah
+
     if (_controllerListener != null) {
       _controller.removeListener(_controllerListener!);
     }
@@ -67,6 +67,19 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ============================================================
+    // SORT: menu stok habis / tidak available pindah ke bawah
+    // ============================================================
+    final sortedMenus = List<Menu>.from(_controller.displayedMenus)
+      ..sort((a, b) {
+        final aOut = a.stock <= 0 || !a.isAvailable;
+        final bOut = b.stock <= 0 || !b.isAvailable;
+
+        if (aOut && !bOut) return 1; // a turun
+        if (!aOut && bOut) return -1; // b turun
+        return 0;
+      });
+
     return Container(
       color: kBackgroundColor,
       padding: const EdgeInsets.all(24.0),
@@ -75,6 +88,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
         children: [
           _buildCategoryFilterBar(),
           const SizedBox(height: 24),
+
           const Text(
             "Semua Menu Kami",
             style: TextStyle(
@@ -83,11 +97,13 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
               color: kSecondaryColor,
             ),
           ),
+
           const SizedBox(height: 16),
+
           Expanded(
             child: RefreshIndicator(
               onRefresh: widget.onRefresh,
-              child: _controller.displayedMenus.isEmpty
+              child: sortedMenus.isEmpty
                   ? const Center(
                       child: Text(
                         "Tidak ada menu",
@@ -98,16 +114,14 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                       padding: const EdgeInsets.only(bottom: 20),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.75,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                          ),
-                      itemCount: _controller.displayedMenus.length,
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.75,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                      ),
+                      itemCount: sortedMenus.length,
                       itemBuilder: (context, index) {
-                        return _buildMenuCard(
-                          _controller.displayedMenus[index],
-                        );
+                        return _buildMenuCard(sortedMenus[index]);
                       },
                     ),
             ),
@@ -118,7 +132,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
   }
 
   // ======================================================================
-  // CATEGORY FILTER BAR (UI only)
+  // CATEGORY FILTER BAR
   // ======================================================================
   Widget _buildCategoryFilterBar() {
     return SizedBox(
@@ -147,7 +161,8 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                     Icon(
                       icon,
                       size: 32,
-                      color: isSelected ? kBackgroundColor : kSecondaryColor,
+                      color:
+                          isSelected ? kBackgroundColor : kSecondaryColor,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -190,7 +205,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
   }
 
   // ======================================================================
-  // MENU CARD (UI only)
+  // MENU CARD
   // ======================================================================
   Widget _buildMenuCard(Menu menu) {
     final itemCount = _controller.getItemQuantity(menu.id);
@@ -245,7 +260,8 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                               "Sisa Stok: ${menu.stock}",
                               style: TextStyle(
                                 fontSize: 11,
-                                color: kPrimaryColor.withValues(alpha: 0.8),
+                                color:
+                                    kPrimaryColor.withValues(alpha: 0.8),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -264,7 +280,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
   }
 
   // ======================================================================
-  // IMAGE WIDGET (UI only)
+  // IMAGE
   // ======================================================================
   Widget _buildMenuImage(String imageUrl, bool isAvailable) {
     return AspectRatio(
@@ -285,16 +301,17 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                   imageUrl,
                   fit: BoxFit.cover,
                   color: isAvailable ? null : Colors.grey,
-                  colorBlendMode: isAvailable ? null : BlendMode.saturation,
+                  colorBlendMode:
+                      isAvailable ? null : BlendMode.saturation,
                   loadingBuilder: (context, child, loadingProgress) =>
                       loadingProgress == null
-                      ? child
-                      : const Center(
-                          child: CircularProgressIndicator(
-                            color: kPrimaryColor,
-                          ),
-                        ),
-                  errorBuilder: (context, error, stackTrace) => Container(
+                          ? child
+                          : const Center(
+                              child: CircularProgressIndicator(
+                                  color: kPrimaryColor),
+                            ),
+                  errorBuilder: (context, error, stackTrace) =>
+                      Container(
                     color: kLightGreyColor,
                     child: const Icon(Icons.broken_image),
                   ),
@@ -305,9 +322,7 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                      horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(4),
@@ -330,9 +345,10 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
   }
 
   // ======================================================================
-  // PRICE + BUTTONS (UI only)
+  // PRICE + ADD BUTTONS
   // ======================================================================
-  Widget _buildPriceAndControls(Menu menu, int itemCount, bool isAvailable) {
+  Widget _buildPriceAndControls(
+      Menu menu, int itemCount, bool isAvailable) {
     bool isMaxReached = itemCount >= menu.stock;
     bool outOfStock = menu.stock <= 0;
 
@@ -374,7 +390,8 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                     icon: const Icon(Icons.remove, size: 18),
                     padding: const EdgeInsets.all(4),
                     constraints: const BoxConstraints(),
-                    onPressed: () => _controller.decreaseFromCart(menu.id),
+                    onPressed: () =>
+                        _controller.decreaseFromCart(menu.id),
                   ),
                 if (itemCount > 0)
                   Text(
@@ -386,7 +403,9 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
                   ),
                 IconButton(
                   icon: Icon(
-                    itemCount > 0 ? Icons.add : Icons.add_circle,
+                    itemCount > 0
+                        ? Icons.add
+                        : Icons.add_circle,
                     size: 18,
                     color: isMaxReached || outOfStock
                         ? Colors.grey
