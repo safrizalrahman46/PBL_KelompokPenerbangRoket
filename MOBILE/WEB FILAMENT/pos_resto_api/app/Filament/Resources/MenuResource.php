@@ -21,6 +21,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Illuminate\Support\Facades\Auth;
+// use Filament\Forms\Components\TextInput\Mask; // <-- HAPUS INI, tidak perlu import Mask
 
 class MenuResource extends Resource
 {
@@ -29,7 +30,7 @@ class MenuResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-shopping-bag'; // Icon yang lebih pas
     protected static ?string $navigationGroup = 'Manajemen Menu';
 
-        public static function canViewAny(): bool
+    public static function canViewAny(): bool
     {
         /** @var \App\Models\User|null $user */
         $user = Auth::user(); // Gunakan Facade Auth::user() lebih aman untuk IDE
@@ -57,10 +58,15 @@ class MenuResource extends Resource
                         ->required()
                         ->maxLength(255),
 
-                    TextInput::make('price')
+                    // ⬇️ PERBAIKAN: Gunakan mask untuk format rupiah di input ⬇️
+                        TextInput::make('price')
                         ->required()
-                        ->numeric()
-                        ->prefix('Rp'),
+                        ->prefix('Rp')
+                        ->placeholder('0')
+                        ->minValue(0)
+                        ->extraInputAttributes(['x-mask:dynamic' => '$money($input, \'.\', \',\')'])
+                        ->dehydrateStateUsing(fn ($state) => (int) preg_replace('/[^0-9]/', '', $state))
+                        ->formatStateUsing(fn ($state) => $state ? number_format($state, 0, ',', '.') : ''), // Kelipatan 1000 untuk kemudahan input
 
                     TextInput::make('stock')
                         ->label('Stok')
@@ -72,26 +78,19 @@ class MenuResource extends Resource
                 Textarea::make('description')
                     ->columnSpanFull(),
 
-    //             FileUpload::make('image')
-    //                 ->image()
-    //                 ->directory('menus')
-    //                 ->imageEditor()
-    //                 ->columnSpanFull(),
-    //         ]);
-    // }
                 FileUpload::make('image')
-                        ->image()
-                        ->directory('menus')
-                        ->imageEditor() // Izinkan edit
+                    ->image()
+                    ->directory('menus')
+                    ->imageEditor() // Izinkan edit
 
-                        // ⬇️ KODE OPTIMASI DI SINI ⬇️
-                        ->maxSize(1050) // Maksimal 1MB
-                        ->imageCropAspectRatio('1:1') // Paksa rasio 1:1 (Kotak)
-                        ->imageResizeTargetWidth('500') // Resize jadi 500px lebar
-                        ->imageResizeTargetHeight('500') // Resize jadi 500px tinggi
-                        ->columnSpanFull(),
-                    ]);
-                    }
+                    // ⬇️ KODE OPTIMASI DI SINI ⬇️
+                    ->maxSize(1050) // Maksimal 1MB
+                    ->imageCropAspectRatio('1:1') // Paksa rasio 1:1 (Kotak)
+                    ->imageResizeTargetWidth('500') // Resize jadi 500px lebar
+                    ->imageResizeTargetHeight('500') // Resize jadi 500px tinggi
+                    ->columnSpanFull(),
+            ]);
+    }
 
     public static function table(Table $table): Table
     {
@@ -109,7 +108,7 @@ class MenuResource extends Resource
                     ->searchable(),
 
                 TextColumn::make('price')
-                    ->money('IDR')
+                    ->money('IDR', locale: 'id') // Sudah benar, format rupiah di output
                     ->sortable(),
 
                 TextColumn::make('stock')

@@ -24,7 +24,7 @@
             </div>
             <nav class="flex items-center space-x-4">
                 <a href="#" class="text-orange-600 font-semibold hover:text-orange-800 px-3">Contact Us</a>
-                <a href="#" class="orange-button">Download</a>
+                <a href="https://drive.google.com/drive/folders/1rxlTUD3LsSvaOSwAptSQ7phO1A3I15gf?usp=sharing" class="orange-button">Download</a>
                 <a href="/admin" class="orange-button">Login</a>
             </nav>
         </div>
