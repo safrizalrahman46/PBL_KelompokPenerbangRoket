@@ -34,10 +34,15 @@ dependencies:
   http: ^1.2.1
   # Untuk State Management (Auth & Keranjang)
   provider: ^6.1.2
+  # untuk animasi popup
+  confetti: ^0.7.0
   # Untuk menyimpan Token API
   flutter_secure_storage: ^9.2.2
   # Untuk format mata uang (Rp) dan Tanggal
   intl: ^0.19.0
+  
+  # Untuk membuat icon aplikasi
+  flutter_launcher_icons: "^0.13.1"
 
   # tesx to speech untuk panggila customer
   flutter_tts: ^3.8.3
@@ -49,6 +54,13 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+
+#Icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/AppIcons/appstore.png"
+  adaptive_icon_background: "FFFFFF"
 
 dev_dependencies:
   flutter_test:

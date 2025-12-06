@@ -6,6 +6,7 @@ const bool isWeb = kIsWeb;
 // 🔥 Ubah ke URL server deploy kamu
 const String BASE_URL = "http://203.194.114.3:8190";
 
+
 // Endpoint API Laravel
 const String API_URL = "$BASE_URL/api/v1";
 
