@@ -13,7 +13,8 @@ import '../../utils/constants.dart';
 
 class CashierPaymentController extends ChangeNotifier {
   final BuildContext context;
-  final CartProvider cart;
+  // final CartProvider cart;
+  CartProvider cart;
   final List<RestoTable> tables;
   final ApiService apiService;
   final VoidCallback onOrderSuccess;

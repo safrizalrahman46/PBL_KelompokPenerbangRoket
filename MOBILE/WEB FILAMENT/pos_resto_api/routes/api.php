@@ -10,7 +10,8 @@ use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\RestoTableController;
 use App\Http\Controllers\Api\V1\TransactionController;
 use App\Http\Controllers\Api\V1\AuthController;
-use App\Http\Controllers\Api\V1\DataController; // (Dari file Anda)
+use App\Http\Controllers\Api\V1\DataController; 
+use App\Http\Controllers\Api\V1\MirrorController; // (Dari file Anda)
 
 /*
 |--------------------------------------------------------------------------
@@ -35,6 +36,13 @@ Route::prefix('v1')->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/tables', [RestoTableController::class, 'index']);
     Route::get('/orders', [OrderController::class, 'index']); // (Untuk Dapur GET pesanan)
+
+// 🔥 TAMBAHAN LOGIC MIRROR DISPLAY (REAL-TIME) 🔥
+    // Kita taruh di publik agar Mirror Screen tidak perlu login rumit
+    // 1. Untuk Kasir Update Data (POST)
+    Route::post('/active-transaction/update', [MirrorController::class, 'update']);
+    // 2. Untuk Mirror Screen Ambil Data (GET)
+    Route::get('/active-transaction', [MirrorController::class, 'index']);
 
 
     // --- Rute TERLINDUNGI (Perlu Token / Login) ---

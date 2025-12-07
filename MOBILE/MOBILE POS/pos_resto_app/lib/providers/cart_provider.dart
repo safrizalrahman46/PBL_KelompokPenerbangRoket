@@ -1,179 +1,182 @@
 // lib/providers/cart_provider.dart
 
+import 'dart:convert'; // Tambahan untuk JSON
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../models/menu_model.dart'; // Import model Menu Anda
+import 'package:http/http.dart' as http; // Tambahan untuk Request API
+import '../models/menu_model.dart';
+import '../utils/constants.dart'; // Pastikan BASE_URL/API_URL ada disini
+
 // 1. Definisikan Model untuk Item di Keranjang
-//  Model ini menggabungkan Menu dengan kuantitasnya
 class CartItem {
- final Menu menu;
- int quantity;
+  final Menu menu;
+  int quantity;
 
- CartItem({
-  required this.menu,
-  this.quantity = 1,
- });
+  CartItem({required this.menu, this.quantity = 1});
 
- // Helper untuk menambah harga item
- double get totalPrice => menu.price * quantity;
+  // Helper untuk menambah harga item
+  double get totalPrice => menu.price * quantity;
 }
-
 
 // 2. Buat Class Provider-nya
 class CartProvider with ChangeNotifier {
- 
- // --- STATE ---
- 
- // Daftar privat untuk menyimpan item keranjang
- final Map<int, CartItem> _items = {};
+  // --- STATE ---
 
- // Ambil nilai pajak & diskon dari desain Anda
- final double _taxPercent = 10.0;
- final double _discountPercent = 0.0;
+  // Daftar privat untuk menyimpan item keranjang
+  final Map<int, CartItem> _items = {};
 
- // --- GETTERS (Untuk dibaca oleh UI) ---
+  // Ambil nilai pajak & diskon dari desain Anda
+  final double _taxPercent = 10.0;
+  final double _discountPercent = 0.0;
 
- // Getter publik untuk mengakses daftar item
- List<CartItem> get items {
-  return _items.values.toList();
- }
+  // --- GETTERS (Untuk dibaca oleh UI) ---
 
- // Getter untuk jumlah item unik di keranjang
- int get itemCount {
-  return _items.length;
- }
- 
- // Getter untuk mengambil kuantitas item tertentu
- // (Digunakan oleh _buildMenuCard di home screen)
- int getItemQuantity(int menuId) {
-  return _items.containsKey(menuId) ? _items[menuId]!.quantity : 0;
- }
+  // Getter publik untuk mengakses daftar item
+  List<CartItem> get items {
+    return _items.values.toList();
+  }
 
- // Getter untuk kalkulasi
- double get taxPercent => _taxPercent;
- double get discountPercent => _discountPercent;
+  // Getter untuk jumlah item unik di keranjang
+  int get itemCount {
+    return _items.length;
+  }
 
- double get subtotal {
-  double total = 0.0;
-  _items.forEach((key, cartItem) {
-   total += cartItem.totalPrice;
-  });
-  return total;
- }
+  // Getter untuk mengambil kuantitas item tertentu
+  int getItemQuantity(int menuId) {
+    return _items.containsKey(menuId) ? _items[menuId]!.quantity : 0;
+  }
 
- double get total {
-  final sub = subtotal;
-  final taxAmount = sub * (_taxPercent / 100);
-  final discountAmount = sub * (_discountPercent / 100);
+  // Getter untuk kalkulasi
+  double get taxPercent => _taxPercent;
+  double get discountPercent => _discountPercent;
+
+  double get subtotal {
+    double total = 0.0;
+    _items.forEach((key, cartItem) {
+      total += cartItem.totalPrice;
+    });
+    return total;
+  }
+
+  double get total {
+    final sub = subtotal;
+    final taxAmount = sub * (_taxPercent / 100);
+    final discountAmount = sub * (_discountPercent / 100);
+    return sub + taxAmount - discountAmount;
+  }
+
+  // --- LOGIC TAMBAHAN: SYNC KE SERVER (UNTUK MIRROR DISPLAY) ---
   
-  // Sesuai perhitungan di desain Anda: 125.000 + 10% = 137.500
-  return sub + taxAmount - discountAmount;
- }
- 
+  Future<void> _syncToServer() async {
+    try {
+      // 1. Siapkan data JSON yang menggambarkan isi keranjang saat ini
+      // Struktur ini disesuaikan agar mudah dibaca oleh Controller Laravel 'update'
+      final cartData = {
+        "cart_items": _items.values.map((item) => {
+          "product_name": item.menu.name,
+          "quantity": item.quantity,
+          "price": item.menu.price,
+        }).toList(),
+        "subtotal": subtotal,
+        "total": total,
+        // Kita bisa tambahkan info lain jika perlu
+      };
 
- // --- ACTIONS (Fungsi untuk mengubah state) ---
-
- // Menambah item ke keranjang (dipanggil dari _buildMenuCard)
- void addItem(Menu menu) {
-  if (_items.containsKey(menu.id)) {
-   // Jika sudah ada, tambah kuantitasnya
-   _items.update(menu.id, (existingItem) {
-    existingItem.quantity++;
-    return existingItem;
-   });
-  } else {
-   // Jika belum ada, tambahkan sebagai item baru
-   _items.putIfAbsent(menu.id, () => CartItem(menu: menu));
+      // 2. Kirim ke Endpoint Laravel (pastikan endpoint ini ada di api.php)
+      // Endpoint ini hanya menyimpan data sementara di Cache server
+      await http.post(
+        Uri.parse('$API_URL/active-transaction/update'), 
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+        },
+        body: json.encode(cartData),
+      );
+      
+      if (kDebugMode) {
+        print("✅ Cart Synced to Server: ${_items.length} unique items");
+      }
+    } catch (e) {
+      // Kita hanya print error di console agar tidak mengganggu flow kasir
+      print("❌ Gagal Sync ke Mirror: $e");
+    }
   }
-  // Beri tahu semua widget yang mendengarkan!
-  notifyListeners();
- }
 
- // Mengurangi item dari keranjang (dipanggil dari _buildMenuCard)
- void decreaseItem(int menuId) {
-  if (!_items.containsKey(menuId)) return; // Tidak ada item, abaikan
+  // --- ACTIONS (Fungsi untuk mengubah state) ---
 
-  if (_items[menuId]!.quantity > 1) {
-   // Jika kuantitas > 1, kurangi
-   _items.update(menuId, (existingItem) {
-    existingItem.quantity--;
-    return existingItem;
-   });
-  } else {
-   // Jika kuantitas == 1, hapus dari keranjang
-   _items.remove(menuId);
+  // Menambah item ke keranjang
+  void addItem(Menu menu) {
+    if (_items.containsKey(menu.id)) {
+      _items.update(menu.id, (existingItem) {
+        existingItem.quantity++;
+        return existingItem;
+      });
+    } else {
+      _items.putIfAbsent(menu.id, () => CartItem(menu: menu));
+    }
+    
+    notifyListeners();
+    _syncToServer(); // 🔥 Panggil Sync setelah update UI
   }
-  notifyListeners();
- }
 
- // Menghapus item dari keranjang (dipanggil dari _buildCartItem)
- void removeItem(int menuId) {
-  _items.remove(menuId);
-  notifyListeners();
- }
+  // Mengurangi item dari keranjang
+  void decreaseItem(int menuId) {
+    if (!_items.containsKey(menuId)) return;
 
- // Membersihkan keranjang (dipanggil dari "Batalkan Transaksi")
- void clearCart() {
-  _items.clear();
-  notifyListeners();
- }
+    if (_items[menuId]!.quantity > 1) {
+      _items.update(menuId, (existingItem) {
+        existingItem.quantity--;
+        return existingItem;
+      });
+    } else {
+      _items.remove(menuId);
+    }
+    
+    notifyListeners();
+    _syncToServer(); // 🔥 Panggil Sync setelah update UI
+  }
 
- // Di dalam file lib/providers/cart_provider.dart
-// Di dalam class CartProvider
+  // Menghapus item dari keranjang
+  void removeItem(int menuId) {
+    _items.remove(menuId);
+    
+    notifyListeners();
+    _syncToServer(); // 🔥 Panggil Sync setelah update UI
+  }
 
- // ... (setelah fungsi clearCart() )
+  // Membersihkan keranjang
+  void clearCart() {
+    _items.clear();
+    
+    notifyListeners();
+    _syncToServer(); // 🔥 Panggil Sync agar layar mirror juga bersih
+  }
 
- // --- FUNGSI BARU UNTUK API ---
- 
- // Map<String, dynamic> createOrderJson(int tableId) {
- //  // Ubah daftar items menjadi format List<Map>
- //  List<Map<String, dynamic>> itemsJson = _items.values.map((cartItem) {
- //   return {
- //    'menu_id': cartItem.menu.id,
- //    'quantity': cartItem.quantity,
- //    'price': cartItem.menu.price, // Kirim harga saat itu
- //   };
- //  }).toList();
+  // --- FUNGSI UNTUK PEMBAYARAN FINAL API ---
 
- //  // Kembalikan Map lengkap sesuai ekspektasi Laravel
- //  return {
- //   'resto_table_id': tableId, // atau 'table_id' sesuai API Anda
- //   'total_price': total,
- //   'items': itemsJson,
- //  };
- // }
- // lib/providers/cart_provider.dart
+  Map<String, dynamic> createOrderJson({
+    int? tableId,
+    required String paymentMethod,
+    required String customerName,
+    required String status,
+  }) {
+    // Ubah daftar items menjadi format List<Map>
+    List<Map<String, dynamic>> itemsJson = _items.values.map((cartItem) {
+      return {
+        'menu_id': cartItem.menu.id,
+        'quantity': cartItem.quantity,
+        'price_at_time': cartItem.menu.price,
+      };
+    }).toList();
 
-// --- FUNGSI BARU UNTUK API (SUDAH DIPERBAIKI) ---
-
-Map<String, dynamic> createOrderJson({
-  // PERBAIKAN 1: 'tableId' sekarang boleh null (int?)
-  int? tableId, 
-  required String paymentMethod,
-  // 'customerName' sekarang wajib diisi
-  required String customerName, 
-  // PERBAIKAN 2: Tambahkan parameter 'status'
-  required String status, 
-}) {
-  // Ubah daftar items menjadi format List<Map>
-  List<Map<String, dynamic>> itemsJson = _items.values.map((cartItem) {
+    // Kembalikan Map lengkap sesuai ekspektasi Laravel TransactionController
     return {
-      'menu_id': cartItem.menu.id,
-      'quantity': cartItem.quantity,
-      // Koreksi: 'price' menjadi 'price_at_time' agar konsisten
-      'price_at_time': cartItem.menu.price, 
+      'resto_table_id': tableId, 
+      'total_price': total,
+      'items': itemsJson, // Sesuaikan key dengan validasi di Laravel
+      'payment_method': paymentMethod,
+      'customer_name': customerName,
+      'status': status,
     };
-  }).toList();
-
-  // Kembalikan Map lengkap sesuai ekspektasi Laravel
-  return {
-    'resto_table_id': tableId, // Pastikan key ini ('resto_table_id') SAMA PERSIS dengan di API Anda
-    'total_price': total,
-    // Koreksi: 'items' menjadi 'order_items' agar konsisten
-    'items': itemsJson, 
-    'payment_method': paymentMethod,
-    'customer_name': customerName,
-    // PERBAIKAN 2 (Lanjutan): Gunakan parameter 'status'
-    'status': status, 
-  };
-}
+  }
 }
