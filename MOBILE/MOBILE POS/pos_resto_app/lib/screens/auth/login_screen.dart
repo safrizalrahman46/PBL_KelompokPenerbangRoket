@@ -86,6 +86,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Email Input
                 TextFormField(
+                  key: const Key('email_field'),
+
                   controller: controller.emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
@@ -107,6 +109,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Password Input
                 TextFormField(
+                  key: const Key('password_field'),
+                  
                   controller: controller.passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
@@ -132,6 +136,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     return SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
+                        key: const Key('login_btn'),
+                        
                         onPressed: authService.isLoading
                             ? null
                             : controller.submitLogin,
