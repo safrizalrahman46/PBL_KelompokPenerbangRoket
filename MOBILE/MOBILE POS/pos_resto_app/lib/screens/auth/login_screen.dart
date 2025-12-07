@@ -204,6 +204,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: controller.navigateToQueueDisplay,
                   style: TextButton.styleFrom(foregroundColor: kPrimaryColor),
                 ),
+
+                
+                // halaman Miror
+                const SizedBox(height: 24),
+                TextButton.icon(
+                  icon: const Icon(Icons.tv_rounded, size: 18),
+                  label: const Text(
+                    'Lihat Halaman Miror Untuk Pelanggan',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: kPrimaryColor,
+                    ),
+                  ),
+                  onPressed: controller.navigateToMirrorDisplay,
+                  style: TextButton.styleFrom(foregroundColor: kPrimaryColor),
+                ),
               ],
             ),
           ),

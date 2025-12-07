@@ -13,8 +13,14 @@ import 'screens/auth/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 
-// tambahan 
+// tambahan
 import 'screens/home/queue_display_screen.dart';
+import 'screens/home/mirror_order.dart';
+
+import 'services/api_service.dart';
+import 'controllers/cashier_payment_controller.dart';
+import 'controllers/mirror_order_logic.dart'; // <--- TAMBAHKAN INI
+
 // Anda tidak perlu import Cashier/Kitchen di sini karena Splash/Login
 // yang akan menanganinya.
 
@@ -24,7 +30,7 @@ import 'utils/constants.dart';
 void main() {
   // Pastikan Flutter siap
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // KUNCI APLIKASI KE MODE LANDSCAPE (MIRING)
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
@@ -44,11 +50,24 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        // ChangeNotifierProxyProvider<CartProvider, CashierPaymentController>(
+        //   create: (context) => CashierPaymentController(
+        //     context: context,
+        //     cart: Provider.of<CartProvider>(context, listen: false),
+        //     tables: [], // Perlu dihandle nnti
+        //     apiService: ApiService(), // Sesuaikan
+        //     onOrderSuccess: () {},
+        //   ),
+        //   update: (context, cart, previous) =>
+        //       previous!..cart = cart, // Update cart ref
+        // ),
+
+        ChangeNotifierProvider(create: (_) => MirrorOrderLogic()),
       ],
       child: MaterialApp(
         title: 'Eat.o POS',
         debugShowCheckedModeBanner: false,
-        
+
         // --- TEMA ANDA (Sangat bagus, kita pertahankan) ---
         theme: ThemeData(
           primaryColor: kPrimaryColor,
@@ -59,16 +78,18 @@ class MyApp extends StatelessWidget {
             secondary: kSecondaryColor,
             background: kLightGreyColor,
           ),
-          fontFamily: 'Inter', // Pastikan Anda sudah menambahkan file font 'Inter' ke assets
+          fontFamily:
+              'Inter', // Pastikan Anda sudah menambahkan file font 'Inter' ke assets
           appBarTheme: const AppBarTheme(
             backgroundColor: kBackgroundColor,
             elevation: 0,
             iconTheme: IconThemeData(color: kSecondaryColor),
             titleTextStyle: TextStyle(
-                color: kSecondaryColor,
-                fontFamily: 'Inter',
-                fontSize: 20,
-                fontWeight: FontWeight.bold),
+              color: kSecondaryColor,
+              fontFamily: 'Inter',
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           elevatedButtonTheme: ElevatedButtonThemeData(
             style: ElevatedButton.styleFrom(
@@ -98,7 +119,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // --- INI PERUBAHAN UTAMANYA ---
         // Kita mulai dari SplashScreen, yang akan menangani
         // logika "apakah sudah login atau belum".
@@ -113,6 +134,12 @@ class MyApp extends StatelessWidget {
 
           // Tambahan safrizal
           '/queue_display': (context) => const QueueDisplayScreen(),
+          '/mirror_order': (context) => const MirrorOrderScreen(
+            // customerName: "",
+            // queueNumber: 0,
+            // items: [],
+            // total: 0,
+          ),
         },
       ),
     );

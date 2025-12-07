@@ -35,7 +35,7 @@ use Filament\Forms\Set;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use Maatwebsite\Excel\Excel;
-
+// use Illuminate\Support\Facades\Auth;
 class OrderResource extends Resource
 {
     protected static ?string $model = Order::class;
@@ -53,6 +53,27 @@ class OrderResource extends Resource
         return $user !== null && in_array($user->role, ['admin', 'cashier', 'kitchen']);
     }
     
+    public static function canCreate(): bool
+    {
+        /** @var \App\Models\User|null $user */
+        $user = Auth::user();
+        // Izinkan Admin & Kasir membuat order
+        return $user !== null && in_array($user->role, ['admin', 'cashier']);
+
+        return true;
+    }
+
+    public static function canEdit($record): bool
+    {
+        return true; // Atau sesuaikan dengan logic role seperti di atas
+    }
+
+    
+    public static function canDelete($record): bool
+    {
+        return true; // Atau sesuaikan dengan logic role seperti di atas
+    }
+
     // ✅ FORM DENGAN KALKULASI OTOMATIS (Live Update)
     public static function form(Form $form): Form
     {
