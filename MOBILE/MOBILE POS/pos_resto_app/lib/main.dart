@@ -16,9 +16,8 @@ import 'screens/auth/register_screen.dart';
 // tambahan
 import 'screens/home/queue_display_screen.dart';
 import 'screens/home/mirror_order.dart';
+import 'screens/public/menu_display_screen.dart';
 
-import 'services/api_service.dart';
-import 'controllers/cashier_payment_controller.dart';
 import 'controllers/mirror_order_logic.dart'; // <--- TAMBAHKAN INI
 
 // Anda tidak perlu import Cashier/Kitchen di sini karena Splash/Login
@@ -50,6 +49,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
+
         // ChangeNotifierProxyProvider<CartProvider, CashierPaymentController>(
         //   create: (context) => CashierPaymentController(
         //     context: context,
@@ -61,7 +61,6 @@ class MyApp extends StatelessWidget {
         //   update: (context, cart, previous) =>
         //       previous!..cart = cart, // Update cart ref
         // ),
-
         ChangeNotifierProvider(create: (_) => MirrorOrderLogic()),
       ],
       child: MaterialApp(
@@ -134,6 +133,7 @@ class MyApp extends StatelessWidget {
 
           // Tambahan safrizal
           '/queue_display': (context) => const QueueDisplayScreen(),
+          '/menu_display': (context) => const MenuDisplayScreen(),
           '/mirror_order': (context) => const MirrorOrderScreen(
             // customerName: "",
             // queueNumber: 0,
