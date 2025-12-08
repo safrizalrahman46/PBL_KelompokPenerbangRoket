@@ -51,10 +51,18 @@ class _MenuDisplayScreenState extends State<MenuDisplayScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Menu Pelanggan'),
-        backgroundColor: kBackgroundColor,
-        foregroundColor: kSecondaryColor,
+        backgroundColor: kPrimaryColor,
         elevation: 0,
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+        iconTheme: const IconThemeData(
+          color: Colors.white, 
+        ),
       ),
+
       backgroundColor: kBackgroundColor,
       body: _controller.isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -68,7 +76,7 @@ class _MenuDisplayScreenState extends State<MenuDisplayScreen> {
                 padding: const EdgeInsets.all(16),
                 child: GridView.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
+                    crossAxisCount: 3,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                     childAspectRatio: 0.98,
