@@ -116,14 +116,14 @@ class CashierHomeController extends ChangeNotifier {
   }
 
   void logout() async {
-    showNotification(
-      title: 'Konfirmasi Logout',
-      message: 'Anda yakin ingin logout?',
-      type: NotificationType.warning,
-      duration: const Duration(seconds: 5),
-    );
+    // showNotification(
+    //   title: 'Konfirmasi Logout',
+    //   message: 'Anda yakin ingin logout?',
+    //   type: NotificationType.warning,
+    //   duration: const Duration(seconds: 6),
+    // );
 
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 0));
 
     final authService = Provider.of<AuthService>(context, listen: false);
     await authService.logout();
@@ -253,7 +253,8 @@ class NotificationPopup extends StatelessWidget {
   final NotificationType type;
   final VoidCallback onClose;
 
-  const NotificationPopup({super.key, 
+  const NotificationPopup({
+    super.key,
     required this.title,
     required this.message,
     required this.type,

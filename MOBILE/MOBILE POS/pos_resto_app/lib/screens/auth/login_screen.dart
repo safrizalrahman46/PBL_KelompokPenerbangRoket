@@ -189,37 +189,96 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                // Queue Display Button
                 const SizedBox(height: 24),
-                TextButton.icon(
-                  icon: const Icon(Icons.tv_rounded, size: 18),
-                  label: const Text(
-                    'Lihat Layar Antrian',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: kPrimaryColor,
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(
+                          Icons.tv_rounded,
+                          size: 18,
+                          color: kPrimaryColor,
+                        ),
+                        label: const Text(
+                          'Layar Antrian',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: kPrimaryColor,
+                          ),
+                        ),
+                        onPressed: controller.navigateToQueueDisplay,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: kPrimaryColor),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  onPressed: controller.navigateToQueueDisplay,
-                  style: TextButton.styleFrom(foregroundColor: kPrimaryColor),
-                ),
-
-                
-                // halaman Miror
-                const SizedBox(height: 24),
-                TextButton.icon(
-                  icon: const Icon(Icons.tv_rounded, size: 18),
-                  label: const Text(
-                    'Lihat Halaman Miror Untuk Pelanggan',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: kPrimaryColor,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(
+                          Icons.menu_book_rounded,
+                          size: 18,
+                          color: kPrimaryColor,
+                        ),
+                        label: const Text(
+                          'Menu Pelanggan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: kPrimaryColor,
+                          ),
+                        ),
+                        onPressed: controller.navigateToMenuDisplay,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: kPrimaryColor),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  onPressed: controller.navigateToMirrorDisplay,
-                  style: TextButton.styleFrom(foregroundColor: kPrimaryColor),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: const Icon(
+                          Icons.smart_display_rounded,
+                          size: 18,
+                          color: kPrimaryColor,
+                        ),
+                        label: const Text(
+                          'Halaman Miror Pelanggan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: kPrimaryColor,
+                          ),
+                        ),
+                        onPressed: controller.navigateToMirrorDisplay,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: kPrimaryColor),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

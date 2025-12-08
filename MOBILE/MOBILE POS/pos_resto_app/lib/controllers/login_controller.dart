@@ -103,7 +103,11 @@ class LoginController extends ChangeNotifier {
     Navigator.of(context).pushNamed('/queue_display');
   }
 
-    // Navigate to queue display
+  void navigateToMenuDisplay() {
+    Navigator.of(context).pushNamed('/menu_display');
+  }
+
+  // Navigate to queue display
   void navigateToMirrorDisplay() {
     Navigator.of(context).pushNamed('/mirror_order');
   }

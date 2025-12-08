@@ -67,9 +67,9 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ============================================================
+    
     // SORT: menu stok habis / tidak available pindah ke bawah
-    // ============================================================
+    
     final sortedMenus = List<Menu>.from(_controller.displayedMenus)
       ..sort((a, b) {
         final aOut = a.stock <= 0 || !a.isAvailable;
@@ -131,9 +131,9 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
     );
   }
 
-  // ======================================================================
+  
   // CATEGORY FILTER BAR
-  // ======================================================================
+  
   Widget _buildCategoryFilterBar() {
     return SizedBox(
       height: 100,
@@ -204,9 +204,9 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
     );
   }
 
-  // ======================================================================
+  
   // MENU CARD
-  // ======================================================================
+  
   Widget _buildMenuCard(Menu menu) {
     final itemCount = _controller.getItemQuantity(menu.id);
     final fullImageUrl = _controller.normalizeImageUrl(menu.imageUrl);
@@ -279,9 +279,9 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
     );
   }
 
-  // ======================================================================
+  
   // IMAGE
-  // ======================================================================
+  
   Widget _buildMenuImage(String imageUrl, bool isAvailable) {
     return AspectRatio(
       aspectRatio: 1.5,
@@ -344,9 +344,9 @@ class _CashierMenuScreenState extends State<CashierMenuScreen> {
     );
   }
 
-  // ======================================================================
+  
   // PRICE + ADD BUTTONS
-  // ======================================================================
+  
   Widget _buildPriceAndControls(
       Menu menu, int itemCount, bool isAvailable) {
     bool isMaxReached = itemCount >= menu.stock;

@@ -44,13 +44,20 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Row(
           children: [
-            // Kolom Kiri: Dalam Proses
+            // KIRI: Dalam Proses
             Expanded(
               flex: 2,
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF9500),
                   borderRadius: BorderRadius.circular(24.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -82,13 +89,20 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
 
             const SizedBox(width: 16),
 
-            // Kolom Tengah: Order Antrian & Selesai
+            // TENGAH: Antrian + Selesai
             Expanded(
               flex: 2,
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF4E0),
                   borderRadius: BorderRadius.circular(24.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
                 child: Column(
                   children: [
@@ -115,13 +129,20 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
 
             const SizedBox(width: 16),
 
-            // Kolom Kanan: Iklan
+            // KANAN: Iklan
             Expanded(
               flex: 1,
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Image.asset(
@@ -146,6 +167,7 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
     );
   }
 
+  // ====== Queue Section ======
   Widget _buildQueueSection() {
     final queueOrder = _controller.getQueueNumberOrder();
 
@@ -195,12 +217,11 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
     );
   }
 
-  // --- Widget Pembantu ---
-
+  // ======== Header ========
   Widget _buildHeader(String title, Color backgroundColor) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32.0),
+      padding: const EdgeInsets.symmetric(vertical: 28.0),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: const BorderRadius.only(
@@ -212,7 +233,7 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
         child: Text(
           title,
           style: const TextStyle(
-            fontSize: 56,
+            fontSize: 42,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
@@ -221,6 +242,7 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
     );
   }
 
+  // ======== Card Dalam Proses ========
   Widget _buildProcessItem(
     String customerName,
     String itemName,
@@ -232,6 +254,13 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF4E0),
         borderRadius: BorderRadius.circular(16.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.07),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -280,6 +309,7 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
     );
   }
 
+  // ======== Card Antrian (Nomor Besar) ========
   Widget _buildQueueNumber(String orderNumber, String customerName) {
     return Container(
       margin: const EdgeInsets.only(bottom: 24.0),
@@ -300,7 +330,7 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
           Text(
             orderNumber,
             style: const TextStyle(
-              fontSize: 120,
+              fontSize: 110,
               fontWeight: FontWeight.bold,
               color: Colors.black,
               height: 1.0,
@@ -310,18 +340,19 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
           Text(
             customerName,
             style: const TextStyle(
-              fontSize: 32,
+              fontSize: 28,
               fontWeight: FontWeight.w600,
               color: Colors.black,
             ),
-            overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
+  // ======== Card Selesai ========
   Widget _buildFinishedItem(
     String customerName,
     String itemName,
@@ -333,6 +364,13 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF4E0),
         borderRadius: BorderRadius.circular(16.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.07),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -362,7 +400,7 @@ class _QueueDisplayScreenState extends State<QueueDisplayScreen> {
           ),
           const SizedBox(width: 16),
           Container(
-            constraints: const BoxConstraints(minWidth: 100),
+            constraints: const BoxConstraints(minWidth: 110),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.white,
